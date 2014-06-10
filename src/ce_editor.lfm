@@ -1,0 +1,42 @@
+inherited CEEditorWidget: TCEEditorWidget
+  Left = 1248
+  Height = 514
+  Top = 89
+  Width = 457
+  Caption = 'EditorWidget'
+  ClientHeight = 514
+  ClientWidth = 457
+  inherited Back: TPanel
+    Height = 514
+    Width = 457
+    ClientHeight = 514
+    ClientWidth = 457
+    inherited Content: TScrollBox
+      Height = 488
+      Width = 457
+      HorzScrollBar.Page = 453
+      VertScrollBar.Page = 484
+      ClientHeight = 484
+      ClientWidth = 453
+      object PageControl: TExtendedNotebook[0]
+        Left = 2
+        Height = 480
+        Top = 2
+        Width = 449
+        Align = alClient
+        BorderSpacing.Around = 2
+        TabOrder = 0
+        OnChange = PageControlChange
+      end
+    end
+    inherited Header: TPanel
+      Width = 457
+    end
+  end
+  object macRecorder: TSynMacroRecorder[1]
+    RecordShortCut = 24658
+    PlaybackShortCut = 24656
+    left = 8
+    top = 8
+  end
+end

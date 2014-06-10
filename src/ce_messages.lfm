@@ -1,0 +1,36 @@
+inherited CEMessagesWidget: TCEMessagesWidget
+  Left = 1248
+  Height = 139
+  Top = 640
+  Width = 652
+  Caption = 'MessagesWidget'
+  ClientHeight = 139
+  ClientWidth = 652
+  inherited Back: TPanel
+    Height = 139
+    Width = 652
+    ClientHeight = 139
+    ClientWidth = 652
+    inherited Content: TScrollBox
+      Height = 113
+      Width = 652
+      HorzScrollBar.Page = 631
+      VertScrollBar.Page = 109
+      ClientHeight = 109
+      ClientWidth = 631
+      object List: TListView[0]
+        Left = 2
+        Height = 150
+        Top = 2
+        Width = 627
+        Align = alClient
+        BorderSpacing.Around = 2
+        Columns = <>
+        TabOrder = 0
+      end
+    end
+    inherited Header: TPanel
+      Width = 652
+    end
+  end
+end
