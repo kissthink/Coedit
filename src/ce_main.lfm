@@ -12,6 +12,9 @@ object CEMainForm: TCEMainForm
       object MenuItem5: TMenuItem
         Action = actNewFile
       end
+      object MenuItem24: TMenuItem
+        Action = actNewRunnable
+      end
       object MenuItem2: TMenuItem
         Action = actOpenFile
       end
@@ -172,5 +175,13 @@ object CEMainForm: TCEMainForm
       OnExecute = actMacPlayExecute
       ShortCut = 24656
     end
+    object actNewRunnable: TAction
+      Category = 'File'
+      Caption = 'New runnable module'
+      OnExecute = actNewRunnableExecute
+    end
+  end
+  object imgList: TImageList
+    left = 64
   end
 end

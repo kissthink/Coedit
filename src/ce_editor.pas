@@ -7,18 +7,19 @@ interface
 uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, Graphics,
   SynEditKeyCmds, ComCtrls, SynEditHighlighter, SynEditHighlighterFoldBase, SynMacroRecorder,
-  SynPluginSyncroEdit, SynEdit, Dialogs, ExtCtrls, ce_frame, ce_d2syn, ce_synmemo;
+  SynPluginSyncroEdit, SynEdit, Dialogs, ExtCtrls, ce_widget, ce_d2syn, ce_synmemo;
 
 type
-  { TCEWidgetEditor }
-
   { TCEEditorWidget }
-
   TCEEditorWidget = class(TCEWidget)
+    imgList: TImageList;
     PageControl: TExtendedNotebook;
     macRecorder: TSynMacroRecorder;
     procedure PageControlChange(Sender: TObject);
   private
+    // a TSynPluginSyncroEdit cannot be created from design(comp streaming err.)
+    fSyncEdit: TSynPluginSyncroEdit;
+    procedure focusedEditorChanged;
     function getCurrentEditor: TCESynMemo;
     function getEditor(index: NativeInt): TCESynMemo;
     function getEditorCount: NativeInt;
@@ -42,9 +43,19 @@ implementation
 {$R *.lfm}
 
 constructor TCEEditorWidget.create(aOwner: TComponent);
+var
+  bmp: TBitmap;
 begin
   inherited;
   fID := 'ID_EDIT';
+  fSyncEdit := TSynPluginSyncroEdit.Create(self);
+  bmp := TBitmap.Create;
+  try
+    imgList.GetBitmap(0,bmp);
+    fSyncEdit.GutterGlyph.Assign(bmp);
+  finally
+    bmp.Free;
+  end;
 end;
 
 destructor TCEEditorWidget.destroy;
@@ -73,10 +84,16 @@ begin
   result := TCESynMemo(pageControl.Pages[index].Controls[0]);
 end;
 
+procedure TCEEditorWidget.focusedEditorChanged;
+begin
+  macRecorder.Editor := getCurrentEditor;
+  fSyncEdit.Editor := getCurrentEditor;
+end;
+
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
 begin
   //http://bugs.freepascal.org/view.php?id=26320
-  macRecorder.Editor := getCurrentEditor;
+  focusedEditorChanged;
 end;
 
 procedure TCEEditorWidget.addEditor;
@@ -94,7 +111,8 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnMouseDown := @memoMouseDown;
   //
-  macRecorder.Editor := memo; //http://bugs.freepascal.org/view.php?id=26320
+  //http://bugs.freepascal.org/view.php?id=26320
+  focusedEditorChanged;
 end;
 
 procedure TCEEditorWidget.identifierToD2Syn(const aMemo: TCESynMemo);

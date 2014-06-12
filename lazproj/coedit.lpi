@@ -50,6 +50,11 @@
               <UseHeaptrc Value="True"/>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
           </Linking>
           <Other>
             <CompilerMessages>
@@ -75,7 +80,7 @@
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
             <Optimizations>
-              <OptimizationLevel Value="3"/>
+              <OptimizationLevel Value="2"/>
             </Optimizations>
           </CodeGeneration>
           <Linking>
@@ -90,6 +95,9 @@
             </Options>
           </Linking>
           <Other>
+            <Verbosity>
+              <ShowHints Value="False"/>
+            </Verbosity>
             <CompilerMessages>
               <MsgFileName Value=""/>
             </CompilerMessages>
@@ -133,12 +141,12 @@
         <UnitName Value="ce_main"/>
       </Unit1>
       <Unit2>
-        <Filename Value="..\src\ce_frame.pas"/>
+        <Filename Value="..\src\ce_widget.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="CEWidget"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="ce_frame"/>
+        <UnitName Value="ce_widget"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\src\ce_common.pas"/>

@@ -20,9 +20,17 @@ type
   (**
    * An implementer informs when a new document is added, focused or closed.
    *)
-  ICEMultiDocEmitter = interface
-    procedure docChange(const aNewIndex: integer);
-    procedure docClose(const aNewIndex: integer);
+  ICEMultiDocEmitter = interface(ICEMultiDocMonitor)
+  end;
+
+  (**
+   * An implementer adds some menu actions when its context is valid.
+   * Called from mainForm to a widget when necessary.
+   *)
+  ICEContextualActions = interface
+    function contextName: string;
+    function contextActionCount: integer;
+    function contextAction(index: integer): TBasicAction;
   end;
 
   (*****************************************************************************

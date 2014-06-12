@@ -1,28 +1,28 @@
 inherited CEProjectWidget: TCEProjectWidget
-  Left = 1721
-  Height = 514
+  Left = 1745
+  Height = 517
   Top = 89
-  Width = 180
+  Width = 163
   Caption = 'ProjectWidget'
-  ClientHeight = 514
-  ClientWidth = 180
+  ClientHeight = 517
+  ClientWidth = 163
   inherited Back: TPanel
-    Height = 514
-    Width = 180
-    ClientHeight = 514
-    ClientWidth = 180
+    Height = 517
+    Width = 163
+    ClientHeight = 517
+    ClientWidth = 163
     inherited Content: TScrollBox
-      Height = 488
-      Width = 180
-      HorzScrollBar.Page = 176
-      VertScrollBar.Page = 484
-      ClientHeight = 484
-      ClientWidth = 176
+      Height = 491
+      Width = 163
+      HorzScrollBar.Page = 159
+      VertScrollBar.Page = 487
+      ClientHeight = 487
+      ClientWidth = 159
       object Tree: TTreeView[0]
         Left = 2
         Height = 206
         Top = 2
-        Width = 172
+        Width = 155
         Align = alTop
         BorderSpacing.Around = 2
         DefaultItemHeight = 18
@@ -31,7 +31,7 @@ inherited CEProjectWidget: TCEProjectWidget
       end
     end
     inherited Header: TPanel
-      Width = 180
+      Width = 163
     end
   end
 end

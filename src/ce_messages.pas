@@ -5,13 +5,12 @@ unit ce_messages;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, ComCtrls, ce_frame, ce_common;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
+  ExtCtrls, ComCtrls, ce_widget, ce_common;
 
 type
 
-  { TCEWidgetMessages }
-
+  { TCEMessagesWidget }
   TCEMessagesWidget = class(TCEWidget,ICEMultiDocMonitor)
     List: TListView;
   private
@@ -19,12 +18,21 @@ type
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     //
+    procedure addMessage(const aMsg: string);
+    //
     procedure docChange(const aNewIndex: integer);
     procedure docClose(const aNewIndex: integer);
   end;
 
+  PTCEMessageItem = ^TCEMessageItem;
+  TCEMessageItem = class(TListItem)
+  end;
+
 implementation
 {$R *.lfm}
+
+uses
+  ce_main;
 
 constructor TCEMessagesWidget.create(aOwner: TComponent);
 begin
@@ -35,6 +43,16 @@ end;
 destructor TCEMessagesWidget.destroy;
 begin
   inherited;
+end;
+
+procedure TCEMessagesWidget.addMessage(const aMsg: string);
+var
+  item: TCEMessageItem;
+begin
+  item := TCEMessageItem.Create(List.Items);
+  item.Caption := aMsg;
+  item.Data := mainForm.EditWidget.currentEditor;
+  List.Items.AddItem(item);
 end;
 
 procedure TCEMessagesWidget.docChange(const aNewIndex: integer);

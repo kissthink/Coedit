@@ -5,9 +5,9 @@ unit ce_main;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Menus,
-  ActnList, ce_common, ce_frame, ce_messages, ce_editor, ce_project,
-  ce_synmemo;
+  Classes, SysUtils, FileUtil, SynEditKeyCmds, Forms, Controls, Graphics,
+  Dialogs, Menus, ActnList, ce_common, ce_widget, ce_messages, ce_editor,
+  ce_project, ce_synmemo, process;
 
 type
 
@@ -19,6 +19,7 @@ type
     ActCompAndRunFileWithArgs: TAction;
     Action1: TAction;
     actCut: TAction;
+    actNewRunnable: TAction;
     actMacPlay: TAction;
     actMacStartStop: TAction;
     actRedo: TAction;
@@ -32,6 +33,7 @@ type
     Action3: TAction;
     Action4: TAction;
     Actions: TActionList;
+    imgList: TImageList;
     mainMenu: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
@@ -49,6 +51,7 @@ type
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
     MenuItem23: TMenuItem;
+    MenuItem24: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -64,6 +67,7 @@ type
     procedure actMacPlayExecute(Sender: TObject);
     procedure actMacStartStopExecute(Sender: TObject);
     procedure actNewFileExecute(Sender: TObject);
+    procedure actNewRunnableExecute(Sender: TObject);
     procedure actOpenFileExecute(Sender: TObject);
     procedure actPasteExecute(Sender: TObject);
     procedure actRedoExecute(Sender: TObject);
@@ -77,6 +81,8 @@ type
     fEditWidg: TCEEditorWidget;
     fProjWidg: TCEProjectWidget;
     //
+    procedure ProcessOutputToMsg(const aProcess: TProcess);
+    //
     procedure newFile;
     function findFile(const aFilename: string): NativeInt;
     procedure openFile(const aFilename: string);
@@ -87,6 +93,11 @@ type
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    //
+    property WidgetList: TCEWidgetList read fWidgList;
+    property MessageWidget: TCEMessagesWidget read fMesgWidg;
+    property EditWidget: TCEEditorWidget read fEditWidg;
+    property ProjectWidget: TCEProjectWidget read fProjWidg;
   end;
 
 var
@@ -96,7 +107,7 @@ implementation
 {$R *.lfm}
 
 uses
-  process, SynMacroRecorder;
+  SynMacroRecorder;
 
 {$REGION std comp methods ******************************************************}
 constructor TCEMainForm.create(aOwner: TComponent);
@@ -279,6 +290,22 @@ begin
   newFile;
 end;
 
+procedure TCEMainForm.actNewRunnableExecute(Sender: TObject);
+begin
+  newFile;
+  fEditWidg.currentEditor.Text :=
+  'module runnable;' + #13#10 +
+  '' + #13#10 +
+  'import std.stdio;' + #13#10 +
+  '' + #13#10 +
+  'void main(string args[])' + #13#10 +
+  '{' + #13#10 +
+  '    writeln("runnable module is just a `toy feature`");' + #13#10 +
+  '    writeln;' + #13#10 +
+  '    writeln("coedit just saves a temporar d module before compiling it and running it...");' + #13#10 +
+  '}' + #13#10;
+end;
+
 procedure TCEMainForm.actSaveFileAsExecute(Sender: TObject);
 begin
   if fEditWidg = nil then exit;
@@ -374,6 +401,38 @@ end;
 {$ENDREGION}
 
 {$REGION run  ******************************************************************}
+procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess);
+const
+  ioBuffSz = 2048;
+var
+  str: TMemoryStream;
+  lns: TStringList;
+  readCnt: LongInt;
+  readSz: LongInt;
+  msg: string;
+begin
+  If not (poUsePipes in aProcess.Options) then exit;
+  //
+  str := TMemorystream.Create;
+  lns := TStringList.Create;
+  readSz := 0;
+  try
+    while true do
+    begin
+      str.SetSize(readSz + ioBuffSz);
+      readCnt := aProcess.Output.Read((str.Memory + readSz)^, ioBuffSz);
+      if readCnt = 0 then break;
+      Inc(readSz, readCnt);
+    end;
+    Str.SetSize(readSz);
+    lns.LoadFromStream(Str);
+    for msg in lns do fMesgWidg.addMessage(msg);
+  finally
+    str.Free;
+    lns.Free;
+  end;
+end;
+
 procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
 var
   dmdproc: TProcess;
@@ -385,23 +444,23 @@ begin
   try
     temppath := '';
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + format('temp_%.8x',[NativeInt(@dmdproc)]);
+    fname := temppath + format('temp_%.8x',[LongWord(@dmdproc)]);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 
-    dmdproc.Options:= [poWaitOnExit];
+    dmdproc.Options:= [poWaitOnExit,poUsePipes,poStdErrToOutput];
     dmdproc.Executable:= 'dmd';
     dmdproc.Parameters.Text := '"'+ fname +'.d"';
     try
       dmdproc.Execute;
+      ProcessOutputToMsg(dmdproc);
     finally
       DeleteFile(fname + '.d');
     end;
-    // + output to msgs widget
 
     if dmdProc.ExitStatus = 0 then
     begin
-      runproc.Options:= [poWaitOnExit,poStderrToOutPut];
+      runproc.Options:= [poWaitOnExit,poStderrToOutPut,poUsePipes];
       {$IFDEF MSWINDOWS}
       runproc.Executable := fname + '.exe';
       runproc.Parameters.Text := runArgs;
@@ -409,8 +468,7 @@ begin
       runproc.Executable := fname;
       {$ENDIF}
       runproc.Execute;
-      // + output to msgs widget
-
+      ProcessOutputToMsg(runproc);
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');

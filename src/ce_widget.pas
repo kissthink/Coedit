@@ -1,11 +1,12 @@
-unit ce_frame;
+unit ce_widget;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls, ce_common;
+  Classes, SysUtils, FileUtil, DividerBevel, Forms, Controls, ExtCtrls,
+  ce_common;
 
 type
 

@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces,
-  Forms, lazcontrols, ce_main, ce_frame, ce_common,
+  Forms, lazcontrols, ce_main, ce_widget, ce_common,
   ce_messages, ce_editor, ce_project, ce_synmemo;
 
 {$R *.res}

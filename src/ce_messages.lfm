@@ -1,36 +1,46 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1248
-  Height = 139
-  Top = 640
-  Width = 652
+  Left = 1249
+  Height = 186
+  Top = 643
+  Width = 656
   Caption = 'MessagesWidget'
-  ClientHeight = 139
-  ClientWidth = 652
+  ClientHeight = 186
+  ClientWidth = 656
   inherited Back: TPanel
-    Height = 139
-    Width = 652
-    ClientHeight = 139
-    ClientWidth = 652
+    Height = 186
+    Width = 656
+    ClientHeight = 186
+    ClientWidth = 656
     inherited Content: TScrollBox
-      Height = 113
-      Width = 652
-      HorzScrollBar.Page = 631
-      VertScrollBar.Page = 109
-      ClientHeight = 109
-      ClientWidth = 631
+      Height = 160
+      Width = 656
+      HorzScrollBar.Page = 652
+      VertScrollBar.Page = 156
+      ClientHeight = 156
+      ClientWidth = 652
       object List: TListView[0]
         Left = 2
-        Height = 150
+        Height = 152
         Top = 2
-        Width = 627
+        Width = 648
         Align = alClient
+        AutoSort = False
+        AutoWidthLastColumn = True
         BorderSpacing.Around = 2
-        Columns = <>
+        Columns = <        
+          item
+            Width = 644
+          end>
+        GridLines = True
+        IconOptions.Arrangement = iaLeft
+        ReadOnly = True
+        RowSelect = True
         TabOrder = 0
+        ViewStyle = vsReport
       end
     end
     inherited Header: TPanel
-      Width = 652
+      Width = 656
     end
   end
 end
