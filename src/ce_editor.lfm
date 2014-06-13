@@ -20,13 +20,30 @@ inherited CEEditorWidget: TCEEditorWidget
       ClientWidth = 477
       object PageControl: TExtendedNotebook[0]
         Left = 2
-        Height = 483
+        Height = 460
         Top = 2
         Width = 473
         Align = alClient
         BorderSpacing.Around = 2
         TabOrder = 0
         OnChange = PageControlChange
+      end
+      object editorStatus: TStatusBar[1]
+        Left = 0
+        Height = 23
+        Top = 464
+        Width = 477
+        Panels = <        
+          item
+            Width = 100
+          end        
+          item
+            Width = 150
+          end        
+          item
+            Width = 200
+          end>
+        SimplePanel = False
       end
     end
     inherited Header: TPanel
@@ -74,5 +91,8 @@ inherited CEEditorWidget: TCEEditorWidget
       00330000001F0000003300000033000000330000000000000000000000000000
       0000000000000000000000000000
     }
+  end
+  object ApplicationProperties1: TApplicationProperties[3]
+    left = 64
   end
 end

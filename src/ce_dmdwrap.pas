@@ -212,7 +212,7 @@ type
   public
     constructor create(aCollection: TCollection); override;
     destructor destroy; override;
-    property cmdLine: string read getCmdLine;
+    property getOpts: string read getCmdLine;
     property onChanged: TNotifyEvent read fOnChanged write fOnChanged;
   end;
 

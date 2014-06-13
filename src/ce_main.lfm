@@ -27,6 +27,12 @@ object CEMainForm: TCEMainForm
       object MenuItem4: TMenuItem
         Action = actSaveFile
       end
+      object MenuItem25: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem26: TMenuItem
+        Action = actAddCurrToProj
+      end
     end
     object MenuItem7: TMenuItem
       Caption = 'Edit'
@@ -60,6 +66,21 @@ object CEMainForm: TCEMainForm
     end
     object MenuItem14: TMenuItem
       Caption = 'Project'
+      object MenuItem31: TMenuItem
+        Action = actNewProj
+      end
+      object MenuItem30: TMenuItem
+        Action = actOpenProj
+      end
+      object MenuItem29: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem27: TMenuItem
+        Action = actSaveProj
+      end
+      object MenuItem28: TMenuItem
+        Action = actSaveProjAs
+      end
     end
     object MenuItem8: TMenuItem
       Caption = 'Run'
@@ -94,9 +115,10 @@ object CEMainForm: TCEMainForm
       OnExecute = actCopyExecute
       ShortCut = 16451
     end
-    object Action3: TAction
+    object actSaveProj: TAction
       Category = 'Project'
-      Caption = 'Action3'
+      Caption = 'Save project'
+      OnExecute = actSaveProjExecute
     end
     object Action4: TAction
       Category = 'Windows'
@@ -135,9 +157,10 @@ object CEMainForm: TCEMainForm
       Category = 'Run'
       Caption = 'Compile and run project'
     end
-    object Action1: TAction
+    object actSaveProjAs: TAction
       Category = 'Project'
-      Caption = 'Action1'
+      Caption = 'Save project as...'
+      OnExecute = actSaveProjAsExecute
     end
     object actPaste: TAction
       Category = 'Edit'
@@ -179,6 +202,21 @@ object CEMainForm: TCEMainForm
       Category = 'File'
       Caption = 'New runnable module'
       OnExecute = actNewRunnableExecute
+    end
+    object actAddCurrToProj: TAction
+      Category = 'File'
+      Caption = 'Add file to project'
+      OnExecute = actAddCurrToProjExecute
+    end
+    object actOpenProj: TAction
+      Category = 'Project'
+      Caption = 'Open project...'
+      OnExecute = actOpenProjExecute
+    end
+    object actNewProj: TAction
+      Category = 'Project'
+      Caption = 'New project'
+      OnExecute = actNewProjExecute
     end
   end
   object imgList: TImageList

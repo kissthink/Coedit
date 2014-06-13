@@ -1,7 +1,7 @@
 object CEWidget: TCEWidget
-  Left = 1337
+  Left = 1373
   Height = 327
-  Top = 424
+  Top = 440
   Width = 320
   Caption = 'CEWidget'
   ClientHeight = 327
@@ -37,5 +37,8 @@ object CEWidget: TCEWidget
       BevelOuter = bvNone
       TabOrder = 1
     end
+  end
+  object Updater: TTimer
+    Interval = 50
   end
 end

@@ -6,22 +6,28 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, ce_widget, ce_common;
+  ExtCtrls, ComCtrls, ce_widget, ActnList;
 
 type
 
   { TCEMessagesWidget }
-  TCEMessagesWidget = class(TCEWidget,ICEMultiDocMonitor)
+  TCEMessagesWidget = class(TCEWidget)
+    imgList: TImageList;
     List: TListView;
   private
+    fActClear: TAction;
+    fActSaveMsg: TAction;
+    procedure actClearExecute(Sender: TObject);
+    procedure actSaveMsgExecute(Sender: TObject);
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     //
     procedure addMessage(const aMsg: string);
     //
-    procedure docChange(const aNewIndex: integer);
-    procedure docClose(const aNewIndex: integer);
+    function contextName: string; override;
+    function contextActionCount: integer; override;
+    function contextAction(index: integer): TAction; override;
   end;
 
   PTCEMessageItem = ^TCEMessageItem;
@@ -38,6 +44,13 @@ constructor TCEMessagesWidget.create(aOwner: TComponent);
 begin
   inherited;
   fID := 'ID_MSGS';
+  //
+  fActClear := TAction.Create(self);
+  fActClear.OnExecute := @actClearExecute;
+  fActClear.caption := 'Clear messages';
+  fActSaveMsg := TAction.Create(self);
+  fActSaveMsg.OnExecute := @actSaveMsgExecute;
+  fActSaveMsg.caption := 'Save messages to...';
 end;
 
 destructor TCEMessagesWidget.destroy;
@@ -55,15 +68,50 @@ begin
   List.Items.AddItem(item);
 end;
 
-procedure TCEMessagesWidget.docChange(const aNewIndex: integer);
+function TCEMessagesWidget.contextName: string;
 begin
-  // can grow the list...
-  // can display matching msgs from a list...
+  result := 'Messages';
 end;
 
-procedure TCEMessagesWidget.docClose(const aNewIndex: integer);
+function TCEMessagesWidget.contextActionCount: integer;
 begin
-  // can shrink the list...
+  result := 2;
+end;
+
+function TCEMessagesWidget.contextAction(index: integer): TAction;
+begin
+  case index of
+    0: result := fActClear;
+    1: result := fActSaveMsg;
+  end;
+end;
+
+procedure TCEMessagesWidget.actClearExecute(Sender: TObject);
+begin
+  List.Clear;
+end;
+
+procedure TCEMessagesWidget.actSaveMsgExecute(Sender: TObject);
+var
+  lst: TStringList;
+  itm: TListItem;
+begin
+  with TSaveDialog.Create(nil) do
+  try
+    if execute then
+    begin
+      lst := TStringList.Create;
+      try
+        for itm in List.Items do
+          lst.Add(itm.Caption);
+        lst.SaveToFile(filename);
+      finally
+        lst.Free;
+      end;
+    end;
+  finally
+    free;
+  end;
 end;
 
 end.
