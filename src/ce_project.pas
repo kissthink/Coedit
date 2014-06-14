@@ -66,13 +66,15 @@ begin
     if i > -1 then
     begin
       fname := fProject.getAbsoluteSourceName(i);
-      mainForm.openFile(fname);
+      if fileExists(fname) then
+        mainForm.openFile(fname);
     end;
   end
   else if Tree.Selected.Parent = fConfNode then
   begin
     i := Tree.Selected.Index;
-    fProject.ConfigurationIndex:= i;
+    fProject.ConfigurationIndex := i;
+    updateView;
   end;
 end;
 
@@ -82,10 +84,10 @@ var
   itm: TTreeNode;
   i: NativeInt;
 begin
-  if fProject = nil then exit;
-  //
   fConfNode.DeleteChildren;
   fFileNode.DeleteChildren;
+  if fProject = nil then exit;
+  //
   for src in fProject.Sources do
    begin
      itm := Tree.Items.AddChild(fFileNode, src);
@@ -95,6 +97,7 @@ begin
   for i := 0 to fProject.OptionsCollection.Count-1 do
   begin
     conf := fProject.configuration[i].name;
+    if i = fProject.ConfigurationIndex then conf += ' (active)';
     itm := Tree.Items.AddChild(fConfNode, conf);
     itm.ImageIndex := 3;
     itm.SelectedIndex:= 3;

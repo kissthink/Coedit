@@ -64,7 +64,6 @@ type
     fWarnEx: boolean;
     fVtls: boolean;
     fQuiet: boolean;
-    fProp: boolean;
     procedure setDepHandling(const aValue: TDepHandling);
     procedure setVerb(const aValue: boolean);
     procedure setWarn(const aValue: boolean);
@@ -79,20 +78,39 @@ type
     property tlsInformations: boolean read fVtls write setVtls;
     property quiet: boolean read fQuiet write setQuiet;
   public
+    constructor create;
     function getOpts: string; override;
   end;
+
+  (*****************************************************************************
+     * Describes the target registry size
+     *)
+    TTargetSystem = (auto, os32bit, os64bit);
+    (**
+     * Describes the output kind
+     *)
+    TBinaryKind = (executable, staticlib, sharedlib, obj);
+
 
   (*****************************************************************************
    * Encapsulates the options/args related to the analysis & the code gen.
    *)
   TOutputOpts= class(TOptsGroup)
   private
+    fTrgKind: TTargetSystem;
+    fBinKind: TBinaryKind;
+    fUt: boolean;
+    fVerId: string;
     fInline: boolean;
     fNoBounds: boolean;
-    fOptims: boolean;
+    fOptimz: boolean;
     fGenStack: boolean;
     fMain: boolean;
     fRelease: boolean;
+    procedure setUt(const aValue: boolean);
+    procedure setVerId(const aValue: string);
+    procedure setTrgKind(const aValue: TTargetSystem);
+    procedure setBinKind(const aValue: TBinaryKind);
     procedure setInline(const aValue: boolean);
     procedure setNoBounds(const aValue: boolean);
     procedure setOptims(const aValue: boolean);
@@ -100,24 +118,19 @@ type
     procedure setMain(const aValue: boolean);
     procedure setRelease(const aValue: boolean);
   published
+    property targetKind: TTargetSystem read fTrgKind write setTrgKind;
+    property binaryKind: TBinaryKind read fBinKind write setBinKind;
     property inlining: boolean read fInline write setInline;
     property noBoundsCheck: boolean read fNoBounds write setNoBounds;
-    property optimisations: boolean read fOptims write setOptims;
+    property optimizations: boolean read fOptimz write setOptims;
     property generateStackFrame: boolean read fGenStack write setGenStack;
     property addMain: boolean read fMain write setMain;
     property release: boolean read fRelease write setRelease;
+    property unittest: boolean read fUt write setUt;
+    property versionIdentifier: string read fVerId write setVerId;
   public
     function getOpts: string; override;
   end;
-
-  (*****************************************************************************
-   * Describes the target registry size
-   *)
-  TTargetSystem = (auto, os32bit, os64bit);
-  (**
-   * Describes the output kind
-   *)
-  TBinaryKind = (executable, staticlib, sharedlib);
 
   (**
    * Encapsulates the options/args related to the debuging
@@ -129,9 +142,19 @@ type
     fDbgD: boolean;
     fDbgC: boolean;
     fMap: boolean;
+    procedure setDbg(const aValue: boolean);
+    procedure setDbgIdent(const aValue: string);
+    procedure setDbgD(const aValue: boolean);
+    procedure setDbgC(const aValue: boolean);
+    procedure setMap(const aValue: boolean);
   published
+    property debug: boolean read fDbg write setDbg;
+    property debugIdentifier: string read fDbgIdent write setDbgIdent;
+    property addDInformations: boolean read fDbgD write setDbgD;
+    property addCInformations: boolean read fDbgC write setDbgC;
+    property generateMapFile: boolean read fMap write setMap;
   public
-    //function getOpts: string; override;
+    function getOpts: string; override;
   end;
 
   (*****************************************************************************
@@ -269,9 +292,14 @@ end;
 (*******************************************************************************
  * TMsgOpts
  *)
+constructor TMsgOpts.create;
+begin
+  fDepHandling := TDepHandling.warning;
+end;
+
 function TMsgOpts.getOpts: string;
 const
-  DepStr : array[TDepHandling] of string = ('-d ','-dw ','-de ');
+  DepStr : array[TDepHandling] of string = ('-d ','-dw ', '-de ');
 begin
   result := DepStr[fDepHandling];
   if fVerb then result += '-v ';
@@ -327,14 +355,48 @@ end;
  * TOutputOpts
  *)
 function TOutputOpts.getOpts: string;
+const
+  trgKindStr: array[TTargetSystem] of string = ('', '-m32 ','-m64 ');
+  binKindStr: array[TBinaryKind] of string = ('', '-lib ', '-shared ', '-c ');
 begin
-  result := '';
+  result := binKindStr[fBinKind];
+  result += trgKindStr[fTrgKind];
+  if fUt then result += '-unittest ';
+  if fVerId <> '' then result += '-version=' + fVerId + ' ';;
   if fInline then result += '-inline ';
   if fNoBounds then result += '-noboundscheck ';
-  if fOptims then result += '-O ';
+  if fOptimz then result += '-O ';
   if fGenStack then result += '-gs ';
   if fMain then result += '-main ';
   if fRelease then result += '-release ';
+end;
+
+procedure TOutputOpts.setUt(const aValue: boolean);
+begin
+  if fUt = aValue then exit;
+  fUt := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setVerId(const aValue: string);
+begin
+  if fVerId = aValue then exit;
+  fVerId := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setTrgKind(const aValue: TTargetSystem);
+begin
+  if fTrgKind = aValue then exit;
+  fTrgKind := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setBinKind(const aValue: TBinaryKind);
+begin
+  if fBinKind = aValue then exit;
+  fBinKind := aValue;
+  doChanged;
 end;
 
 procedure TOutputOpts.setInline(const aValue: boolean);
@@ -353,8 +415,8 @@ end;
 
 procedure TOutputOpts.setOptims(const aValue: boolean);
 begin
-  if fOptims = aValue then exit;
-  fOptims := aValue;
+  if fOptimz = aValue then exit;
+  fOptimz := aValue;
   doChanged;
 end;
 
@@ -376,6 +438,54 @@ procedure TOutputOpts.setRelease(const aValue: boolean);
 begin
   if fRelease = aValue then exit;
   fRelease := aValue;
+  doChanged;
+end;
+
+(*******************************************************************************
+ * TDebugOpts
+ *)
+function TDebugOpts.getOpts: string;
+begin
+  result := '';
+  if fDbg then result += '-debug ';
+  if fDbgIdent <> '' then result += '-debug=' + fDbgIdent + ' ';
+  if fDbgD then result += '-g ';
+  if fDbgC then result += '-gc ';
+  if fMap then result += '-map ';
+end;
+
+procedure TDebugOpts.setDbg(const aValue: boolean);
+begin
+  if fDbg = aValue then exit;
+  fDbg := aValue;
+  doChanged;
+end;
+
+procedure TDebugOpts.setDbgIdent(const aValue: string);
+begin
+  if fDbgIdent = aValue then exit;
+  fDbgIdent := aValue;
+  doChanged;
+end;
+
+procedure TDebugOpts.setDbgD(const aValue: boolean);
+begin
+  if fDbgD = aValue then exit;
+  fDbgD := aValue;
+  doChanged;
+end;
+
+procedure TDebugOpts.setDbgC(const aValue: boolean);
+begin
+  if fDbgC = aValue then exit;
+  fDbgC := aValue;
+  doChanged;
+end;
+
+procedure TDebugOpts.setMap(const aValue: boolean);
+begin
+  if fMap = aValue then exit;
+  fMap := aValue;
   doChanged;
 end;
 
@@ -515,11 +625,11 @@ end;
 
 function TCompilerConfiguration.getCmdLine: string;
 begin
-   result :=
-    fDocOpts.getOpts + (*fDebugOpts.getOpts +*) fMsgOpts.getOpts
+  result :=
+    fDocOpts.getOpts + fDebugOpts.getOpts + fMsgOpts.getOpts
     + fOutputOpts.getOpts + fPathsOpts.getOpts + fOthers.getOpts;
-   if result[length(result)] = ' ' then
-    setlength(result, length(result)-1);
+    if result[length(result)] = ' ' then
+      setlength(result, length(result)-1);
 end;
 
 procedure TCompilerConfiguration.setName(const aValue: string);
@@ -528,6 +638,7 @@ begin
   fName := aValue;
   if fName = '' then fName := nameFromID;
   Changed(true);
+  doChanged;
 end;
 
 procedure TCompilerConfiguration.subOptsChanged(sender: TObject);

@@ -1,11 +1,11 @@
 object CEWidget: TCEWidget
-  Left = 1373
+  Left = 1264
   Height = 327
-  Top = 440
+  Top = 448
   Width = 320
   Caption = 'CEWidget'
-  ClientHeight = 327
-  ClientWidth = 320
+  ClientHeight = 0
+  ClientWidth = 0
   LCLVersion = '1.2.2.0'
   object Back: TPanel
     Left = 0

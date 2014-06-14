@@ -50,11 +50,6 @@
               <UseHeaptrc Value="True"/>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
-            <Options>
-              <Win32>
-                <GraphicApplication Value="True"/>
-              </Win32>
-            </Options>
           </Linking>
           <Other>
             <CompilerMessages>
@@ -115,18 +110,21 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="RunTimeTypeInfoControls"/>
       </Item1>
       <Item2>
-        <PackageName Value="LazControls"/>
+        <PackageName Value="SynEdit"/>
       </Item2>
       <Item3>
-        <PackageName Value="LCL"/>
+        <PackageName Value="LazControls"/>
       </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
     </RequiredPackages>
-    <Units Count="10">
+    <Units Count="13">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -192,6 +190,30 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="ce_dmdwrap"/>
       </Unit9>
+      <Unit10>
+        <Filename Value="..\src\ce_projconfframe.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="CEProjConfFrame"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+        <UnitName Value="ce_projconfframe"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\src\ce_projconf.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="CEProjectConfigurationWidget"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="ce_projconf"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\src\ce_projconfall.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="CEProjConfAll"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+        <UnitName Value="ce_projconfall"/>
+      </Unit12>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

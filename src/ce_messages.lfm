@@ -1,35 +1,35 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1248
-  Height = 186
-  Top = 643
-  Width = 657
+  Left = 1247
+  Height = 85
+  Top = 463
+  Width = 658
   Caption = 'MessagesWidget'
-  ClientHeight = 186
-  ClientWidth = 657
+  ClientHeight = 85
+  ClientWidth = 658
   inherited Back: TPanel
-    Height = 186
-    Width = 657
-    ClientHeight = 186
-    ClientWidth = 657
+    Height = 85
+    Width = 658
+    ClientHeight = 85
+    ClientWidth = 658
     inherited Content: TScrollBox
-      Height = 160
-      Width = 657
-      HorzScrollBar.Page = 653
-      VertScrollBar.Page = 156
-      ClientHeight = 156
-      ClientWidth = 653
+      Height = 59
+      Width = 658
+      HorzScrollBar.Page = 637
+      VertScrollBar.Page = 55
+      ClientHeight = 55
+      ClientWidth = 637
       object List: TListView[0]
         Left = 2
-        Height = 152
+        Height = 150
         Top = 2
-        Width = 649
+        Width = 633
         Align = alClient
         AutoSort = False
         AutoWidthLastColumn = True
         BorderSpacing.Around = 2
         Columns = <        
           item
-            Width = 645
+            Width = 629
           end>
         GridLines = True
         IconOptions.Arrangement = iaLeft
@@ -40,10 +40,10 @@ inherited CEMessagesWidget: TCEMessagesWidget
       end
     end
     inherited Header: TPanel
-      Width = 657
+      Width = 658
     end
   end
-  object imgList: TImageList[1]
+  object imgList: TImageList[2]
     Bitmap = {
       4C69030000001000000010000000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF

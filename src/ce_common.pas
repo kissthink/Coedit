@@ -45,7 +45,7 @@ type
     fFilename: string;
     fBasePath: string;
     fOptsColl: TCollection;
-    fSrcs, fSrcsCop: TStringList; // an editor can be associated to a file using the Object[] property
+    fSrcs, fSrcsCop: TStringList;
     fConfIx: Integer;
     procedure doChanged;
     procedure subMemberChanged(sender : TObject);
@@ -55,6 +55,7 @@ type
     procedure setConfIx(aValue: Integer);
     function getConfig(const ix: integer): TCompilerConfiguration;
     function getSrcs: TStringList;
+    function getCurrConf: TCompilerConfiguration;
   published
     property OptionsCollection: TCollection read fOptsColl write setOptsColl;
     property Sources: TStringList read fSrcs write setSrcs; // 'read' should return a copy to avoid abs/rel errors
@@ -69,6 +70,7 @@ type
     function getOpts: string;
     //
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
+    property currentConfiguration: TCompilerConfiguration read getCurrConf;
     property fileName: string read fFilename write setFname;
     property onChange: TNotifyEvent read fOnChange write fOnChange;
   end;
@@ -111,7 +113,10 @@ begin
     str1.Position := 0;
     ObjectTextToBinary(str1,str2);
     str2.Position := 0;
-    str2.ReadComponent(aComp);
+    try
+      str2.ReadComponent(aComp);
+    except
+    end;
   finally
     str1.Free;
     str2.Free;
@@ -133,7 +138,7 @@ begin
   end;
 end;
 
-// TODO: comments handling
+// TODO: block comments handling
 function getModuleName(const aSource: TStrings): string;
 var
   ln: string;
@@ -161,13 +166,16 @@ begin
       end;
 
       if tok then if ln[pos] = ';'then
-      begin
-        result := id;
-        exit;
-      end;
+        exit(id);
 
       id += ln[pos];
       Inc(pos);
+
+      if id = '//' then
+      begin
+        Inc(pos, length(ln));
+        break;
+      end;
 
       if id = 'module' then
       begin
@@ -188,9 +196,9 @@ begin
   inherited create(aOwner);
   fSrcs := TStringList.Create;
   fSrcsCop := TStringList.Create;
-  fSrcs.OnChange := @subMemberChanged;
   fOptsColl := TCollection.create(TCompilerConfiguration);
   reset;
+  fSrcs.OnChange := @subMemberChanged;
 end;
 
 destructor TCEProject.destroy;
@@ -269,11 +277,20 @@ procedure TCEProject.doChanged;
 begin
   fModified := true;
   if assigned(fOnChange) then fOnChange(Self);
+  {$IFDEF DEBUG}
+  writeln(getOpts);
+  {$ENDIF}
 end;
 
 function TCEProject.getConfig(const ix: integer): TCompilerConfiguration;
 begin
   result := TCompilerConfiguration(fOptsColl.Items[ix]);
+  result.onChanged := @subMemberChanged;
+end;
+
+function TCEProject.getCurrConf: TCompilerConfiguration;
+begin
+  result := TCompilerConfiguration(fOptsColl.Items[fConfIx]);
 end;
 
 function TCEProject.getSrcs: TStringList;
@@ -300,13 +317,12 @@ procedure TCEProject.reset;
 var
   defConf: TCompilerConfiguration;
 begin
+  fConfIx := 0;
   fOptsColl.Clear;
   defConf := addConfiguration;
   defConf.name := 'default';
   fSrcs.Clear;
   fFilename := '';
-  fModified := true;
-  fConfIx := 0;
   doChanged;
 end;
 
@@ -315,12 +331,13 @@ var
   rel, abs: string;
 begin
   result := '';
+  if fConfIx = -1 then exit;
   for rel in fSrcs do
   begin
     abs := expandFilenameEx(fBasePath,rel);
     result += '"' + abs + '"';
   end;
-  result += TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts;
+  result += ' ' + TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts;
 end;
 
 function TCEProject.getAbsoluteSourceName(const aIndex: integer): string;

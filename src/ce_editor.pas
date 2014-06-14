@@ -13,7 +13,6 @@ uses
 type
   { TCEEditorWidget }
   TCEEditorWidget = class(TCEWidget)
-    ApplicationProperties1: TApplicationProperties;
     imgList: TImageList;
     PageControl: TExtendedNotebook;
     macRecorder: TSynMacroRecorder;

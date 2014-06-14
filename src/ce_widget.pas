@@ -5,7 +5,7 @@ unit ce_widget;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, DividerBevel, Forms, Controls, ExtCtrls,
+  Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
   ce_common, ActnList;
 
 type
@@ -26,6 +26,7 @@ type
   protected
     fID: string;
     fNeedUpdate: boolean;
+    fUpdating: boolean;
     procedure UpdaterProc; virtual;
   published
     property ID: string read fID write fID;
@@ -51,6 +52,16 @@ type
     property widget[index: integer]: TCEWidget read getWidget;
   end;
 
+  TWidgetEnumerator = class
+    fList: TCEWidgetList;
+    fIndex: Integer;
+    function getCurrent: TCEWidget;
+    Function moveNext: boolean;
+    property current: TCEWidget read getCurrent;
+  end;
+
+  operator enumerator(aWidgetList: TCEWidgetList): TWidgetEnumerator;
+
 implementation
 {$R *.lfm}
 
@@ -72,8 +83,13 @@ end;
 procedure TCEWidget.updaterTimer(Sender: TObject);
 begin
   if not fNeedUpdate then exit;
-  fNeedUpdate := false;
-  UpdaterProc;
+  fUpdating := true;
+  try
+    UpdaterProc;
+  finally
+    fUpdating := false;
+    fNeedUpdate := false;
+  end;
 end;
 
 procedure TCEWidget.UpdaterProc;
@@ -110,6 +126,24 @@ end;
 procedure TCEWidgetList.addWidget(aValue: PTCEWidget);
 begin
   add(Pointer(aValue));
+end;
+
+function TWidgetEnumerator.getCurrent:TCEWidget;
+begin
+  result := fList.widget[fIndex];
+end;
+
+function TWidgetEnumerator.moveNext: boolean;
+begin
+  Inc(fIndex);
+  result := fIndex < fList.Count;
+end;
+
+operator enumerator(aWidgetList: TCEWidgetList): TWidgetEnumerator;
+begin
+  result := TWidgetEnumerator.Create;
+  result.fList := aWidgetList;
+  result.fIndex := -1;
 end;
 
 end.

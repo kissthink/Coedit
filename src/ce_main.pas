@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, Forms, Controls, Graphics,
   Dialogs, Menus, ActnList, ce_common, ce_widget, ce_messages, ce_editor,
-  ce_project, ce_synmemo, process;
+  ce_project, ce_synmemo, ce_projconf, process, ce_dmdwrap;
 
 type
 
@@ -15,8 +15,10 @@ type
   TCEMainForm = class(TForm)
     actCompAndRunFile: TAction;
     actCompileProj: TAction;
-    ActCompileAndRunProj: TAction;
+    actCompileAndRunProj: TAction;
     ActCompAndRunFileWithArgs: TAction;
+    actCompAndRunProjWithArgs: TAction;
+    actProjOpts: TAction;
     actNewProj: TAction;
     actOpenProj: TAction;
     actSaveProjAs: TAction;
@@ -63,6 +65,17 @@ type
     MenuItem3: TMenuItem;
     MenuItem30: TMenuItem;
     MenuItem31: TMenuItem;
+    MenuItem32: TMenuItem;
+    MenuItem33: TMenuItem;
+    MenuItem34: TMenuItem;
+    MenuItem35: TMenuItem;
+    MenuItem36: TMenuItem;
+    MenuItem37: TMenuItem;
+    MenuItem38: TMenuItem;
+    MenuItem39: TMenuItem;
+    MenuItem40: TMenuItem;
+    MenuItem41: TMenuItem;
+    mnuItemWin: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
@@ -72,6 +85,7 @@ type
     procedure actAddCurrToProjExecute(Sender: TObject);
     procedure actCompAndRunFileExecute(Sender: TObject);
     procedure ActCompAndRunFileWithArgsExecute(Sender: TObject);
+    procedure actCompileProjExecute(Sender: TObject);
     procedure actCopyExecute(Sender: TObject);
     procedure actCutExecute(Sender: TObject);
     procedure ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
@@ -83,25 +97,31 @@ type
     procedure actOpenFileExecute(Sender: TObject);
     procedure actOpenProjExecute(Sender: TObject);
     procedure actPasteExecute(Sender: TObject);
+    procedure actProjOptsExecute(Sender: TObject);
     procedure actRedoExecute(Sender: TObject);
     procedure actSaveFileAsExecute(Sender: TObject);
     procedure actSaveFileExecute(Sender: TObject);
     procedure actSaveProjAsExecute(Sender: TObject);
     procedure actSaveProjExecute(Sender: TObject);
     procedure actUndoExecute(Sender: TObject);
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
     fProject: TCEProject;
     fWidgList: TCEWidgetList;
     fMesgWidg: TCEMessagesWidget;
     fEditWidg: TCEEditorWidget;
     fProjWidg: TCEProjectWidget;
+    fPrjCfWidg: TCEProjectConfigurationWidget;
 
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
+    procedure widgetShowFromAction(sender: TObject);
 
     // run & exec sub routines
     procedure ProcessOutputToMsg(const aProcess: TProcess);
     procedure compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
+    procedure compileProject(const aProject: TCEProject);
+    procedure runProject(const aProject: TCEProject);
 
     // file sub routines
     procedure newFile;
@@ -141,6 +161,10 @@ uses
 
 {$REGION std comp methods ******************************************************}
 constructor TCEMainForm.create(aOwner: TComponent);
+var
+  act: TAction;
+  itm: TMenuItem;
+  widg: TCEWidget;
 begin
   inherited create(aOwner);
   //
@@ -148,19 +172,31 @@ begin
   fMesgWidg := TCEMessagesWidget.create(nil);
   fEditWidg := TCEEditorWidget.create(nil);
   fProjWidg := TCEProjectWidget.create(nil);
+  fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
   fWidgList.addWidget(@fProjWidg);
+  fWidgList.addWidget(@fPrjCfWidg);
 
-  checkWidgetActions(fMesgWidg);
+  for widg in fWidgList do widg.Show;
 
-  fMesgWidg.Show;
-  fEditWidg.Show;
-  fProjWidg.Show;
+  for widg in fWidgList do
+  begin
+    act := TAction.Create(self);
+    act.Category := 'Window';
+    act.Caption := widg.Caption;
+    act.OnExecute := @widgetShowFromAction;
+    act.Tag := ptrInt(widg);
+    itm := TMenuItem.Create(self);
+    itm.Action := act;
+    itm.Tag := ptrInt(widg);
+    mnuItemWin.Add(itm);
+  end;
 
   fProject := TCEProject.Create(self);
   fProject.onChange := @projChange;
+  projChange(nil);
 
 end;
 
@@ -170,6 +206,7 @@ begin
   fMesgWidg.Free;
   fEditWidg.Free;
   fProjWidg.Free;
+  fPrjCfWidg.Free;
   //
   inherited;
 end;
@@ -399,6 +436,14 @@ begin
   str := fEditWidg.editor[fEditWidg.editorIndex].fileName;
   fProject.addSource(str);
 end;
+
+procedure TCEMainForm.FormDropFiles(Sender: TObject;const FileNames: array of String);
+var
+  fname: string;
+begin
+  for fname in FileNames do
+    openFile(fname);
+end;
 {$ENDREGION}
 
 {$REGION edit ******************************************************************}
@@ -503,18 +548,21 @@ procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs:
 var
   dmdproc: TProcess;
   runproc: TProcess;
-  fname, temppath: string;
+  fname, temppath, olddir: string;
 begin
+  olddir  := '';
   dmdproc := TProcess.Create(nil);
   runproc := TProcess.Create(nil);
+  getDir(0,olddir);
   try
-    temppath := GetTempDir;
+    temppath := GetTempDir(false);
+    chDir(temppath);
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
     fname := temppath + format('temp_%.8x',[LongWord(@dmdproc)]);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 
-    dmdproc.Options:= [poWaitOnExit,poUsePipes,poStdErrToOutput];
+    dmdproc.Options:= [poWaitOnExit,poStdErrToOutput,poUsePipes];
     dmdproc.Executable:= 'dmd';
     dmdproc.Parameters.Text := '"'+ fname +'.d"';
     try
@@ -547,7 +595,37 @@ begin
   finally
     dmdproc.Free;
     runproc.Free;
+    chDir(olddir);
   end;
+end;
+
+procedure TCEMainForm.compileProject(const aProject: TCEProject);
+var
+  dmdproc: TProcess;
+  olddir, prjpath: string;
+begin
+  dmdproc := TProcess.Create(nil);
+  getDir(0,olddir);
+  try
+
+    prjpath := extractFilePath(aProject.fileName);
+    if directoryExists(prjpath) then chDir(prjpath);
+    dmdproc.Options:= [poStdErrToOutput,poUsePipes];
+    dmdproc.Executable := 'dmd';
+    dmdproc.Parameters.Text := aProject.getOpts;
+    dmdproc.Execute;
+    ProcessOutputToMsg(dmdproc);
+
+  finally
+    dmdproc.Free;
+    chDir(olddir);
+  end;
+end;
+
+procedure TCEMainForm.runProject(const aProject: TCEProject);
+begin
+  if aProject.currentConfiguration.outputOptions.binaryKind <>
+    executable then exit;
 end;
 
 procedure TCEMainForm.actCompAndRunFileExecute(Sender: TObject);
@@ -569,9 +647,19 @@ begin
   if InputQuery('Execution arguments', 'enter switches and arguments',
     runargs) then compileAndRunFile(fEditWidg.editorIndex, runargs);
 end;
+
+procedure TCEMainForm.actCompileProjExecute(Sender: TObject);
+begin
+  compileProject(fProject);
+end;
 {$ENDREGION}
 
 {$REGION view ******************************************************************}
+procedure TCEMainForm.widgetShowFromAction(sender: TObject);
+begin
+  TCEWidget( TComponent(sender).tag ).Show;
+end;
+
 {$ENDREGION}
 
 {$REGION project ***************************************************************}
@@ -584,8 +672,21 @@ begin
 end;
 
 procedure TCEMainForm.newProj;
+var
+  // cf. with ce_projconf, fProject is hook
+  // ICEProjectMonitor would recquire beforeProjChanged-), afterProjChage(), ...
+  old: TCEProject;
 begin
-  fProject.reset;
+  old := fProject;
+  fProject := nil;
+  projChange(nil);
+  //
+  old.Free;
+  old := nil;
+  //
+  fProject := TCEProject.Create(self);
+  fProject.onChange := @projChange;
+  projChange(nil);
 end;
 
 procedure TCEMainForm.saveProj;
@@ -646,6 +747,11 @@ begin
   finally
     Free;
   end;
+end;
+
+procedure TCEMainForm.actProjOptsExecute(Sender: TObject);
+begin
+  fPrjCfWidg.Show;
 end;
 {$ENDREGION}
 end.

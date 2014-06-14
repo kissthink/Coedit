@@ -1,37 +1,39 @@
 inherited CEEditorWidget: TCEEditorWidget
   Left = 1248
-  Height = 517
+  Height = 336
   Top = 89
   Width = 481
   Caption = 'EditorWidget'
-  ClientHeight = 517
+  ClientHeight = 336
   ClientWidth = 481
   inherited Back: TPanel
-    Height = 517
+    Height = 336
     Width = 481
-    ClientHeight = 517
+    ClientHeight = 336
     ClientWidth = 481
     inherited Content: TScrollBox
-      Height = 491
+      Height = 310
       Width = 481
       HorzScrollBar.Page = 477
-      VertScrollBar.Page = 487
-      ClientHeight = 487
+      VertScrollBar.Page = 306
+      ClientHeight = 306
       ClientWidth = 477
       object PageControl: TExtendedNotebook[0]
         Left = 2
-        Height = 460
+        Height = 279
         Top = 2
         Width = 473
         Align = alClient
         BorderSpacing.Around = 2
         TabOrder = 0
         OnChange = PageControlChange
+        TabDragMode = dmAutomatic
+        TabDragAcceptMode = dmAutomatic
       end
       object editorStatus: TStatusBar[1]
         Left = 0
         Height = 23
-        Top = 464
+        Top = 283
         Width = 477
         Panels = <        
           item
@@ -50,11 +52,12 @@ inherited CEEditorWidget: TCEEditorWidget
       Width = 481
     end
   end
-  object macRecorder: TSynMacroRecorder[1]
+  object macRecorder: TSynMacroRecorder[2]
     RecordShortCut = 24658
     PlaybackShortCut = 24656
+    left = 64
   end
-  object imgList: TImageList[2]
+  object imgList: TImageList[3]
     left = 32
     Bitmap = {
       4C69010000001000000010000000CCCBC900CCCBC900CCCBC900CCCBC900CCCB
@@ -91,8 +94,5 @@ inherited CEEditorWidget: TCEEditorWidget
       00330000001F0000003300000033000000330000000000000000000000000000
       0000000000000000000000000000
     }
-  end
-  object ApplicationProperties1: TApplicationProperties[3]
-    left = 64
   end
 end

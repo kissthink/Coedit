@@ -1,0 +1,20 @@
+inherited CEProjConfAll: TCEProjConfAll
+  Height = 428
+  Width = 297
+  ClientHeight = 428
+  ClientWidth = 297
+  DesignLeft = 1271
+  DesignTop = 500
+  object Grid: TTIPropertyGrid[0]
+    Left = 0
+    Height = 428
+    Top = 0
+    Width = 297
+    Align = alClient
+    DefaultValueFont.Color = clWindowText
+    Filter = [tkInteger, tkChar, tkEnumeration, tkFloat, tkSet, tkMethod, tkSString, tkLString, tkAString, tkWString, tkVariant, tkArray, tkRecord, tkInterface, tkClass, tkObject, tkWChar, tkBool, tkInt64, tkQWord, tkDynArray, tkInterfaceRaw, tkProcVar, tkUString, tkUChar, tkHelper]
+    Indent = 16
+    NameFont.Color = clWindowText
+    ValueFont.Color = clMaroon
+  end
+end
