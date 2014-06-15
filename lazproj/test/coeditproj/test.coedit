@@ -1,0 +1,65 @@
+object TCEProject
+  OptionsCollection = <  
+    item
+      name = 'default'
+      documentationOptions.generateDocumentation = True
+      documentationOptions.generateJSON = False
+      documentationOptions.DocumentationDirectory = '..\doc'
+      debugingOptions.debug = True
+      debugingOptions.debugIdentifier = '2'
+      debugingOptions.addDInformations = False
+      debugingOptions.addCInformations = False
+      debugingOptions.generateMapFile = False
+      messagesOptions.depreciationHandling = warning
+      messagesOptions.verbose = False
+      messagesOptions.warnings = True
+      messagesOptions.additionalWarnings = True
+      messagesOptions.tlsInformations = False
+      messagesOptions.quiet = False
+      outputOptions.targetKind = auto
+      outputOptions.binaryKind = executable
+      outputOptions.inlining = False
+      outputOptions.noBoundsCheck = False
+      outputOptions.optimizations = False
+      outputOptions.generateStackFrame = False
+      outputOptions.addMain = False
+      outputOptions.release = False
+      outputOptions.unittest = True
+      outputOptions.versionIdentifier = 'revision_1'
+      pathsOptions.outputFilename = '..\output\main.exe'
+    end  
+    item
+      name = 'alternative'
+      documentationOptions.generateDocumentation = True
+      documentationOptions.generateJSON = False
+      documentationOptions.DocumentationDirectory = '..\doc'
+      debugingOptions.debug = True
+      debugingOptions.debugIdentifier = '2'
+      debugingOptions.addDInformations = False
+      debugingOptions.addCInformations = False
+      debugingOptions.generateMapFile = False
+      messagesOptions.depreciationHandling = warning
+      messagesOptions.verbose = False
+      messagesOptions.warnings = True
+      messagesOptions.additionalWarnings = True
+      messagesOptions.tlsInformations = False
+      messagesOptions.quiet = False
+      outputOptions.targetKind = auto
+      outputOptions.binaryKind = executable
+      outputOptions.inlining = True
+      outputOptions.noBoundsCheck = True
+      outputOptions.optimizations = True
+      outputOptions.generateStackFrame = False
+      outputOptions.addMain = False
+      outputOptions.release = False
+      outputOptions.unittest = True
+      outputOptions.versionIdentifier = 'revision_1'
+      pathsOptions.outputFilename = '..\output\main.exe'
+    end>
+  Sources.Strings = (
+    '..\src\main.d'
+    '..\src\foo.d'
+    '..\src\bar.d'
+  )
+  ConfigurationIndex = 1
+end

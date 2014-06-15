@@ -6,47 +6,75 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  ComCtrls, StdCtrls, ce_widget, ce_common, ce_projconfall, ce_dmdwrap;
+  ComCtrls, StdCtrls, Menus, Buttons, ce_widget, ce_common, ce_projconfall,
+  ce_dmdwrap;
 
 type
 
   { TCEProjectConfigurationWidget }
   TCEProjectConfigurationWidget = class(TCEWidget)
-    btnAddConf: TButton;
-    btnDelConf: TButton;
+    imgList: TImageList;
     selConf: TComboBox;
     frameEditAll: TCEProjConfAll;
     Panel1: TPanel;
+    btnAddConf: TSpeedButton;
+    btnDelConf: TSpeedButton;
+    btnCloneConf: TSpeedButton;
     Tree: TTreeView;
     procedure btnAddConfClick(Sender: TObject);
     procedure btnDelConfClick(Sender: TObject);
+    procedure btnCloneCurrClick(Sender: TObject);
     procedure selConfChange(Sender: TObject);
+    procedure SpeedButton1Click(Sender: TObject);
   private
     fProj: TCEProject;
   protected
-    procedure updaterProc2; //override;
+    procedure manualWidgetUpdate; override;
   public
+    procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
+    procedure projClose(const aProject: TCEProject); override;
     property project: TCEProject read fProj;
   end;
 
 implementation
 {$R *.lfm}
 
+procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
+begin
+  beginManualWidgetUpdate;
+  fProj := aProject;
+  endManualWidgetUpdate;
+end;
+
 procedure TCEProjectConfigurationWidget.projChange(const aProject: TCEProject);
 begin
+  beginManualWidgetUpdate;
   fProj := aProject;
-  updaterProc2;
+  endManualWidgetUpdate;
+end;
+
+procedure TCEProjectConfigurationWidget.projClose(const aProject: TCEProject);
+begin
+  frameEditAll.Grid.TIObject := nil;
+  frameEditAll.Grid.ItemIndex :=-1;
+  fProj := nil;
 end;
 
 procedure TCEProjectConfigurationWidget.selConfChange(Sender: TObject);
 begin
-  if fUpdating then exit;
   if fProj = nil then exit;
+  if isManualUpdating then exit;
   if selConf.ItemIndex = -1 then exit;
   //
+  beginManualWidgetUpdate;
   fProj.ConfigurationIndex := selConf.ItemIndex;
-  updaterProc2;
+  endManualWidgetUpdate;
+end;
+
+procedure TCEProjectConfigurationWidget.SpeedButton1Click(Sender: TObject);
+begin
+
 end;
 
 procedure TCEProjectConfigurationWidget.btnAddConfClick(Sender: TObject);
@@ -56,10 +84,12 @@ var
 begin
   if fProj = nil then exit;
   //
-  cfg := fProj.addConfiguration;
   nme := '';
+  beginManualWidgetUpdate;
+  cfg := fProj.addConfiguration;
   if InputQuery('Configuration name', '', nme) then cfg.name := nme;
   fProj.ConfigurationIndex := cfg.Index;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.btnDelConfClick(Sender: TObject);
@@ -67,40 +97,44 @@ begin
   if fProj = nil then exit;
   if fProj.OptionsCollection.Count = 1 then exit;
   //
+  beginManualWidgetUpdate;
   frameEditAll.Grid.TIObject := nil;
   frameEditAll.Grid.Clear;
   frameEditAll.Invalidate;
   fProj.OptionsCollection.Delete(selConf.ItemIndex);
   fProj.ConfigurationIndex := 0;
-  updaterProc2;
+  endManualWidgetUpdate;
 end;
 
-procedure TCEProjectConfigurationWidget.updaterProc2;
+procedure TCEProjectConfigurationWidget.btnCloneCurrClick(Sender: TObject);
+var
+  nme: string;
+  trg,src: TCompilerConfiguration;
+begin
+  if fProj = nil then exit;
+  //
+  nme := '';
+  beginManualWidgetUpdate;
+  src := fProj.currentConfiguration;
+  trg := fProj.addConfiguration;
+  trg.assign(src);
+  if InputQuery('Configuration name', '', nme) then trg.name := nme;
+  fProj.ConfigurationIndex := trg.Index;
+  endManualWidgetUpdate;
+end;
+
+procedure TCEProjectConfigurationWidget.manualWidgetUpdate;
 var
   i: NativeInt;
-  obj: TPersistent;
 begin
-
+  selConf.ItemIndex:= -1;
   selConf.Clear;
-
-  if (fProj = nil) then
-  begin
-    frameEditAll.Grid.Selection.Clear;
-    frameEditAll.Grid.Clear;
-    // AV if the previous TIObject is already destroyed
-    frameEditAll.Grid.TIObject := nil;
-    frameEditAll.Invalidate;
-    exit;
-  end;
-
   for i:= 0 to fProj.OptionsCollection.Count-1 do
     selConf.Items.Add(fProj.configuration[i].name);
   selConf.ItemIndex := fProj.ConfigurationIndex;
 
-  obj := fProj.configuration[fProj.ConfigurationIndex];
-  if frameEditAll.Grid.TIObject <> obj then
-    frameEditAll.Grid.TIObject := obj;
-
+  frameEditAll.Grid.TIObject :=
+    fProj.configuration[fProj.ConfigurationIndex];
 end;
 
 end.

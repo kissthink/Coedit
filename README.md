@@ -1,7 +1,7 @@
 Coedit
 ======
 
-Coedit is a simple IDE for the D2 lang. (**Co**mpile & **Edit**).
+Coedit is a simple IDE for the [D2](http://dlang.org) lang. (**Co** mpile & **Edit**).
 
 Initial features (planed)
 -------------------------
@@ -20,12 +20,12 @@ Project information
 - draft
 - programmed in Object pascal.
 - [Lazarus](http://www.lazarus.freepascal.org) is used as IDE.
-- based on dmd (specific gdc or lmd options are not wrapped).
+- based on dmd (gdc or lmd characteristics are not hanlded).
 - no other third party dependencies (so far...)
 
 Setup
 -----
 - clone this repo.
-- optionally install [dmd](http://dlang.org/download.html) and or [Lazarus](http://www.lazarus.freepascal.org)
-- open "coedit.lpr".
+- both [dmd](http://dlang.org/download.html) and [Lazarus](http://www.lazarus.freepascal.org) must be setup.
+- open "coedit.lpr" in Lazarus.
 - press the Run button.

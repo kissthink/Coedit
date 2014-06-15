@@ -32,7 +32,9 @@ type
    * An implementer is informed when a project changes.
    *)
   ICEProjectMonitor = interface
+    procedure projNew(const aProject: TCEProject);
     procedure projChange(const aProject: TCEProject);
+    procedure projClose(const aProject: TCEProject);
   end;
 
   (*****************************************************************************
@@ -47,6 +49,7 @@ type
     fOptsColl: TCollection;
     fSrcs, fSrcsCop: TStringList;
     fConfIx: Integer;
+    fChangedCount: NativeInt;
     procedure doChanged;
     procedure subMemberChanged(sender : TObject);
     procedure setOptsColl(const aValue: TCollection);
@@ -63,6 +66,8 @@ type
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    procedure beforeChanged;
+    procedure afterChanged;
     procedure reset;
     function getAbsoluteSourceName(const aIndex: integer): string;
     procedure addSource(const aFilename: string);
@@ -165,7 +170,7 @@ begin
         continue;
       end;
 
-      if tok then if ln[pos] = ';'then
+      if tok then if ln[pos] = ';' then
         exit(id);
 
       id += ln[pos];
@@ -195,14 +200,15 @@ constructor TCEProject.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
   fSrcs := TStringList.Create;
+  fSrcs.OnChange := @subMemberChanged;
   fSrcsCop := TStringList.Create;
   fOptsColl := TCollection.create(TCompilerConfiguration);
   reset;
-  fSrcs.OnChange := @subMemberChanged;
 end;
 
 destructor TCEProject.destroy;
 begin
+  fOnChange := nil;
   fSrcs.free;
   fSrcsCop.Free;
   fOptsColl.free;
@@ -238,6 +244,9 @@ var
   i: NativeInt;
 begin
   if fFilename = aValue then exit;
+  //
+  beforeChanged;
+
   fFilename := aValue;
   oldBase := fBasePath;
   fBasePath := extractFilePath(fFilename);
@@ -249,27 +258,47 @@ begin
     fSrcs[i] := newRel;
   end;
   //
-  doChanged;
+  afterChanged;
 end;
 
 procedure TCEProject.setSrcs(const aValue: TStringList);
 begin
+  beforeChanged;
   fSrcs.Assign(aValue);
-  doChanged;
+  afterChanged;
 end;
 
 procedure TCEProject.setConfIx(aValue: Integer);
 begin
   if fConfIx = aValue then exit;
+  beforeChanged;
   if aValue < 0 then aValue := 0;
   if aValue > fOptsColl.Count-1 then aValue := fOptsColl.Count-1;
   fConfIx := aValue;
-  doChanged;
+  afterChanged;
 end;
 
 procedure TCEProject.subMemberChanged(sender : TObject);
 begin
+  beforeChanged;
   fModified := true;
+  afterChanged;
+end;
+
+procedure TCEProject.beforeChanged;
+begin
+  Inc(fChangedCount);
+end;
+
+procedure TCEProject.afterChanged;
+begin
+  Dec(fChangedCount);
+  if fChangedCount > 0 then
+  begin
+    writeln('project update count > 0');
+    exit;
+  end;
+  fChangedCount := 0;
   doChanged;
 end;
 
@@ -285,7 +314,7 @@ end;
 function TCEProject.getConfig(const ix: integer): TCompilerConfiguration;
 begin
   result := TCompilerConfiguration(fOptsColl.Items[ix]);
-  result.onChanged := @subMemberChanged;
+  //result.onChanged := @subMemberChanged;
 end;
 
 function TCEProject.getCurrConf: TCompilerConfiguration;
@@ -317,13 +346,14 @@ procedure TCEProject.reset;
 var
   defConf: TCompilerConfiguration;
 begin
+  beforeChanged;
   fConfIx := 0;
   fOptsColl.Clear;
   defConf := addConfiguration;
   defConf.name := 'default';
   fSrcs.Clear;
   fFilename := '';
-  doChanged;
+  afterChanged;
 end;
 
 function TCEProject.getOpts: string;
@@ -335,9 +365,9 @@ begin
   for rel in fSrcs do
   begin
     abs := expandFilenameEx(fBasePath,rel);
-    result += '"' + abs + '"';
+    result += '"' + abs + '" ' ;
   end;
-  result += ' ' + TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts;
+  result += TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts;
 end;
 
 function TCEProject.getAbsoluteSourceName(const aIndex: integer): string;

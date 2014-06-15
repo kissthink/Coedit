@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, ce_widget, ActnList;
+  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus;
 
 type
 
@@ -23,7 +23,11 @@ type
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     //
+    procedure scrollToBack;
     procedure addMessage(const aMsg: string);
+    procedure addCeInf(const aMsg: string);
+    procedure addCeErr(const aMsg: string);
+    procedure addCeWarn(const aMsg: string);
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -34,6 +38,10 @@ type
   TCEMessageItem = class(TListItem)
   end;
 
+  TMessageKind = (msgkUnknown, msgkInfo, msgkHint, msgkWarn, msgkError);
+
+  function semanticMsgAna(const aMessg: string): TMessageKind;
+
 implementation
 {$R *.lfm}
 
@@ -41,6 +49,8 @@ uses
   ce_main;
 
 constructor TCEMessagesWidget.create(aOwner: TComponent);
+var
+  itm: TMenuItem;
 begin
   inherited;
   fID := 'ID_MSGS';
@@ -51,11 +61,58 @@ begin
   fActSaveMsg := TAction.Create(self);
   fActSaveMsg.OnExecute := @actSaveMsgExecute;
   fActSaveMsg.caption := 'Save messages to...';
+  //
+  List.PopupMenu := contextMenu;
+  itm := TMenuItem.Create(self);
+  itm.Action := fActClear;
+  contextMenu.Items.Add(itm);
+  itm := TMenuItem.Create(self);
+  itm.Action := fActSaveMsg;
+  contextMenu.Items.Add(itm);
 end;
 
 destructor TCEMessagesWidget.destroy;
 begin
   inherited;
+end;
+
+procedure TCEMessagesWidget.scrollToBack;
+begin
+  if not Visible then exit;
+  List.ViewOrigin := Point(0,List.Items.Count * 25);
+end;
+
+procedure TCEMessagesWidget.addCeInf(const aMsg: string);
+var
+  item: TCEMessageItem;
+begin
+  item := TCEMessageItem.Create(List.Items);
+  item.Caption := 'Coedit information: ' + aMsg;
+  item.ImageIndex := 1;
+  List.Items.AddItem(item);
+  scrollToBack;
+end;
+
+procedure TCEMessagesWidget.addCeWarn(const aMsg: string);
+var
+  item: TCEMessageItem;
+begin
+  item := TCEMessageItem.Create(List.Items);
+  item.Caption := 'Coedit warning: ' + aMsg;
+  item.ImageIndex := 3;
+  List.Items.AddItem(item);
+  scrollToBack;
+end;
+
+procedure TCEMessagesWidget.addCeErr(const aMsg: string);
+var
+  item: TCEMessageItem;
+begin
+  item := TCEMessageItem.Create(List.Items);
+  item.Caption := 'Coedit error: ' + aMsg;
+  item.ImageIndex := 4;
+  List.Items.AddItem(item);
+  scrollToBack;
 end;
 
 procedure TCEMessagesWidget.addMessage(const aMsg: string);
@@ -65,6 +122,7 @@ begin
   item := TCEMessageItem.Create(List.Items);
   item.Caption := aMsg;
   item.Data := mainForm.EditWidget.currentEditor;
+  item.ImageIndex := Integer( semanticMsgAna(aMsg) );
   List.Items.AddItem(item);
 end;
 
@@ -111,6 +169,45 @@ begin
     end;
   finally
     free;
+  end;
+end;
+
+function semanticMsgAna(const aMessg: string): TMessageKind;
+var
+  pos: Nativeint;
+  idt: string;
+begin
+  idt := '';
+  pos := 1;
+  result := msgkUnknown;
+  while(true) do
+  begin
+    if pos > length(aMessg) then exit;
+    if aMessg[pos] in [#0..#32] then
+    begin
+      Inc(pos);
+      idt := '';
+      continue;
+    end;
+    if not (aMessg[pos] in ['a'..'z', 'A'..'Z']) then
+    begin
+      Inc(pos);
+      idt := '';
+      continue;
+    end;
+    idt += aMessg[pos];
+    case idt of
+      'ERROR', 'error', 'Error', 'Invalid', 'invalid',
+      'illegal', 'Illegal', 'fatal', 'Fatal', 'Critical', 'critical':
+        exit(msgkError);
+      'Warning', 'warning':
+        exit(msgkWarn);
+      'Hint', 'hint', 'Tip', 'tip':
+        exit(msgkHint);
+      'Information', 'information':
+        exit(msgkInfo);
+    end;
+    Inc(pos);
   end;
 end;
 

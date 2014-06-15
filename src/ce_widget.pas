@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
-  ce_common, ActnList;
+  ce_common, ActnList, Menus, syncobjs;
 
 type
 
@@ -20,25 +20,39 @@ type
     Content: TScrollBox;
     Back: TPanel;
     Header: TPanel;
-    Updater: TTimer;
+    contextMenu: TPopupMenu;
   private
-    procedure updaterTimer(Sender: TObject);
+    fAutoUpdater: TTimer;
+    fAutoUpdating: boolean;
+    fManuUpdating: boolean;
+    fWidgUpdateCount: NativeInt;
+    procedure autoUpdaterEvent(Sender: TObject);
   protected
     fID: string;
-    fNeedUpdate: boolean;
-    fUpdating: boolean;
-    procedure UpdaterProc; virtual;
+    fNeedAutoUpdate: boolean;
+    fLocker: TCriticalSection;
+    procedure autoWidgetUpdate; virtual;
+    procedure manualWidgetUpdate; virtual;
   published
     property ID: string read fID write fID;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     //
+    procedure beginManualWidgetUpdate;
+    procedure endManualWidgetUpdate;
+    procedure forceManualWidgetUpdate;
+    //
+    procedure projNew(const aProject: TCEProject); virtual;
     procedure projChange(const aProject: TCEProject); virtual;
+    procedure projClose(const aProject: TCEProject); virtual;
     //
     function contextName: string; virtual;
     function contextActionCount: integer; virtual;
     function contextAction(index: integer): TAction; virtual;
+    //
+    property isAutoUpdating: boolean read fAutoUpdating;
+    property isManualUpdating: boolean read fManuUpdating;
   end;
 
   (**
@@ -72,31 +86,83 @@ constructor TCEWidget.create(aOwner: TComponent);
 begin
   inherited;
   fID := 'ID_XXXX';
-  Updater.OnTimer := @updaterTimer;
+  fAutoUpdater := TTimer.Create(self);
+  fAutoUpdater.Interval := 50;
+  fAutoUpdater.OnTimer := @autoUpdaterEvent;
+  fLocker := TCriticalSection.Create;
 end;
 
 destructor TCEWidget.destroy;
 begin
+  fLocker.Leave;
+  fLocker.Free;
   inherited;
 end;
 
-procedure TCEWidget.updaterTimer(Sender: TObject);
+procedure TCEWidget.beginManualWidgetUpdate;
 begin
-  if not fNeedUpdate then exit;
-  fUpdating := true;
+  Inc(fWidgUpdateCount);
+end;
+
+procedure TCEWidget.endManualWidgetUpdate;
+begin
+  Dec(fWidgUpdateCount);
+  if fWidgUpdateCount > 0 then
+  begin
+    writeln('widget update count > 0');
+    exit;
+
+  end;
+
+  fManuUpdating := true;
+  //fLocker.Enter;
+  manualWidgetUpdate;
+  //fLocker.Leave;
+  fManuUpdating := false;
+  fWidgUpdateCount := 0;
+
+end;
+
+procedure TCEWidget.forceManualWidgetUpdate;
+begin
+  fManuUpdating := true;
+  //fLocker.Enter;
+  manualWidgetUpdate;
+  //fLocker.Leave;
+  fManuUpdating := false;
+end;
+
+procedure TCEWidget.autoUpdaterEvent(Sender: TObject);
+begin
+  if not fNeedAutoUpdate then exit;
+  fAutoUpdating := true;
   try
-    UpdaterProc;
+    //fLocker.Enter;
+    autoWidgetUpdate;
   finally
-    fUpdating := false;
-    fNeedUpdate := false;
+    //fLocker.Leave;
+    fAutoUpdating := false;
+    fNeedAutoUpdate := false;
   end;
 end;
 
-procedure TCEWidget.UpdaterProc;
+procedure TCEWidget.autoWidgetUpdate;
+begin
+end;
+
+procedure TCEWidget.manualWidgetUpdate;
+begin
+end;
+
+procedure TCEWidget.projNew(const aProject: TCEProject);
 begin
 end;
 
 procedure TCEWidget.projChange(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projClose(const aProject: TCEProject);
 begin
 end;
 

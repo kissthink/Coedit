@@ -1,28 +1,31 @@
 inherited CEEditorWidget: TCEEditorWidget
-  Left = 1248
+  Left = 1167
   Height = 336
   Top = 89
-  Width = 481
+  Width = 508
+  BorderIcons = [biSystemMenu, biMinimize, biMaximize]
   Caption = 'EditorWidget'
   ClientHeight = 336
-  ClientWidth = 481
+  ClientWidth = 508
   inherited Back: TPanel
     Height = 336
-    Width = 481
+    Width = 508
     ClientHeight = 336
-    ClientWidth = 481
+    ClientWidth = 508
     inherited Content: TScrollBox
       Height = 310
-      Width = 481
-      HorzScrollBar.Page = 477
+      Width = 508
+      HorzScrollBar.Page = 504
       VertScrollBar.Page = 306
+      AutoSize = True
+      AutoScroll = True
       ClientHeight = 306
-      ClientWidth = 477
+      ClientWidth = 504
       object PageControl: TExtendedNotebook[0]
         Left = 2
         Height = 279
         Top = 2
-        Width = 473
+        Width = 500
         Align = alClient
         BorderSpacing.Around = 2
         TabOrder = 0
@@ -34,7 +37,7 @@ inherited CEEditorWidget: TCEEditorWidget
         Left = 0
         Height = 23
         Top = 283
-        Width = 477
+        Width = 504
         Panels = <        
           item
             Width = 100
@@ -49,7 +52,7 @@ inherited CEEditorWidget: TCEEditorWidget
       end
     end
     inherited Header: TPanel
-      Width = 481
+      Width = 508
     end
   end
   object macRecorder: TSynMacroRecorder[2]

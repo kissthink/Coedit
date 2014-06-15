@@ -5,24 +5,33 @@ unit ce_project;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  ComCtrls, ce_common, ce_widget;
+  Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
+  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_common, ce_widget;
 
 type
   { TCEProjectWidget }
   TCEProjectWidget = class(TCEWidget)
     imgList: TImageList;
+    Panel1: TPanel;
+    btnAddFile: TSpeedButton;
+    btnProjOpts: TSpeedButton;
+    btnAddFold: TSpeedButton;
     Tree: TTreeView;
+    TreeFilterEdit1: TTreeFilterEdit;
+    procedure btnAddFileClick(Sender: TObject);
+    procedure btnAddFoldClick(Sender: TObject);
+  protected
+    procedure manualWidgetUpdate; override;
   private
     fProject: TCEProject;
     fFileNode, fConfNode: TTreeNode;
-    procedure updateView;
     procedure TreeDblClick(sender: TObject);
   public
     constructor create(aOwner: TComponent); override;
-    destructor destroy; override;
     //
+    procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
+    procedure projClose(const aProject: TCEProject); override;
   end;
 
 implementation
@@ -40,15 +49,22 @@ begin
   fConfNode := Tree.Items[1];
 end;
 
-destructor TCEProjectWidget.destroy;
+procedure TCEProjectWidget.projNew(const aProject: TCEProject);
 begin
-  inherited;
+  fProject := aProject;
+  manualWidgetUpdate;
 end;
 
 procedure TCEProjectWidget.projChange(const aProject: TCEProject);
 begin
   fProject := aProject;
-  updateView;
+  manualWidgetUpdate;
+end;
+
+procedure TCEProjectWidget.projClose(const aProject: TCEProject);
+begin
+  fProject := nil;
+  manualWidgetUpdate;
 end;
 
 procedure TCEProjectWidget.TreeDblClick(sender: TObject);
@@ -74,11 +90,58 @@ begin
   begin
     i := Tree.Selected.Index;
     fProject.ConfigurationIndex := i;
-    updateView;
+    manualWidgetUpdate;
   end;
 end;
 
-procedure TCEProjectWidget.updateView;
+procedure TCEProjectWidget.btnAddFileClick(Sender: TObject);
+begin
+  if fProject = nil then exit;
+  //
+  with TOpenDialog.Create(nil) do
+  try
+    filter := 'd source|*.d|d interface|*.di|all files|*.*';
+    if execute then
+      fProject.addSource(filename);
+  finally
+    free;
+  end;
+end;
+
+procedure TCEProjectWidget.btnAddFoldClick(Sender: TObject);
+var
+  dir, ext, fname: string;
+  sr: TSearchRec;
+  lst: TStringList;
+begin
+  if fProject = nil then exit;
+  //
+  if fileexists(fProject.fileName) then
+    dir := extractfilePath(fProject.fileName)
+  else dir := '';
+  if selectDirectory(dir, [], 0) then
+  begin
+    if FindFirst(dir + DirectorySeparator + '*.*', faAnyFile, sr ) = 0 then
+    try
+      lst := TStringList.Create;
+      ext := ExtractFileExt(sr.Name);
+      if (ext = '.d') or (ext = '.di') then
+        lst.Add(dir + DirectorySeparator + sr.Name);
+      while FindNext(sr) = 0 do
+      begin
+        ext := ExtractFileExt(sr.Name);
+        if (ext = '.d') or (ext = '.di') then
+          lst.Add(dir + DirectorySeparator + sr.Name);
+      end;
+      for fname in lst do
+        fProject.addSource(fname);
+    finally
+      lst.Free;
+    end;
+  end;
+end;
+
+procedure TCEProjectWidget.manualWidgetUpdate;
 var
   src, conf: string;
   itm: TTreeNode;

@@ -19,7 +19,7 @@ type
     editorStatus: TStatusBar;
     procedure PageControlChange(Sender: TObject);
   protected
-    procedure UpdaterProc; override;
+    procedure autoWidgetUpdate; override;
   private
     // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
@@ -36,6 +36,7 @@ type
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     procedure addEditor;
+    procedure removeEditor(const aIndex: NativeInt);
     //
     property currentEditor: TCESynMemo read getCurrentEditor;
     property editor[index: NativeInt]: TCESynMemo read getEditor;
@@ -112,7 +113,7 @@ var
   sheet: TTabSheet;
   memo: TCESynMemo;
 begin
-  fNeedUpdate := true;
+  fNeedAutoUpdate := true;
   sheet := pageControl.AddTabSheet;
   memo  := TCESynMemo.Create(sheet);
   //
@@ -128,6 +129,12 @@ begin
   focusedEditorChanged;
 end;
 
+procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);
+begin
+  editor[aIndex].OnChange:= nil;
+  pageControl.Pages[aIndex].Free;
+end;
+
 procedure TCEEditorWidget.identifierToD2Syn(const aMemo: TCESynMemo);
 begin
   D2Syn.CurrentIdentifier := aMemo.GetWordAtRowCol(aMemo.LogicalCaretXY);
@@ -135,14 +142,14 @@ end;
 
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  fNeedUpdate := true;
+  fNeedAutoUpdate := true;
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
 end;
 
 procedure TCEEditorWidget.memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  fNeedUpdate := true;
+  fNeedAutoUpdate := true;
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
 end;
@@ -151,12 +158,12 @@ procedure TCEEditorWidget.memoChange(Sender: TObject);
 var
   ed: TCESynMemo;
 begin
-  fNeedUpdate := true;
+  fNeedAutoUpdate := true;
   ed := TCESynMemo(sender);
   ed.modified := true;
 end;
 
-procedure TCEEditorWidget.UpdaterProc;
+procedure TCEEditorWidget.autoWidgetUpdate;
 const
   modstr: array[boolean] of string = ('...','MODIFIED');
 var

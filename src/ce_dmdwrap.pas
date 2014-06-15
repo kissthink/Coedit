@@ -44,6 +44,7 @@ type
     property DocumentationDirectory: string read fDocDir write setDocDir;
     property JSONFilename: string read fJsonFname write setJSONFile;
   public
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -79,6 +80,7 @@ type
     property quiet: boolean read fQuiet write setQuiet;
   public
     constructor create;
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -129,6 +131,7 @@ type
     property unittest: boolean read fUt write setUt;
     property versionIdentifier: string read fVerId write setVerId;
   public
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -154,6 +157,7 @@ type
     property addCInformations: boolean read fDbgC write setDbgC;
     property generateMapFile: boolean read fMap write setMap;
   public
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -181,6 +185,7 @@ type
   public
     constructor create;
     destructor destroy; override;
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -196,6 +201,7 @@ type
   public
     constructor create;
     destructor destroy; override;
+    procedure assign(aValue: TPersistent); override;
     function getOpts: string; override;
   end;
 
@@ -235,6 +241,7 @@ type
   public
     constructor create(aCollection: TCollection); override;
     destructor destroy; override;
+    procedure assign(aValue: TPersistent); override;
     property getOpts: string read getCmdLine;
     property onChanged: TNotifyEvent read fOnChanged write fOnChanged;
   end;
@@ -259,6 +266,21 @@ begin
   if fGenJson then result += '-X ';
   if fDocDir <> '' then result += '-Dd' + '"' + fDocDir + '" ';
   if fJsonFname <> '' then result += '-Xf' + '"'+ fJsonFname + '" ';
+end;
+
+procedure TDocOpts.assign(aValue: TPersistent);
+var
+  src: TDocOpts;
+begin
+  if (aValue is TDocOpts) then
+  begin
+    src       := TDocOpts(aValue);
+    fGenDoc   := src.fGenDoc;
+    fGenJson  := src.fGenJson;
+    fDocDir   := src.fDocDir;
+    fJsonFname:= src.fJsonFname;
+  end
+  else inherited;
 end;
 
 procedure TDocOpts.setGenDoc(const aValue: boolean);
@@ -307,6 +329,23 @@ begin
   if fWarnEx then result += '-wi ';
   if fVtls then result += '-vtls ';
   if fQuiet then result += '-quiet ';
+end;
+
+procedure TMsgOpts.assign(aValue: TPersistent);
+var
+  src: TMsgOpts;
+begin
+  if (aValue is TMsgOpts) then
+  begin
+    src := TMsgOpts(aValue);
+    fDepHandling := src.fDepHandling;
+    fVerb   := src.fVerb;
+    fWarn   := src.fWarn;
+    fWarnEx := src.fWarnEx;
+    fVtls   := src.fVtls;
+    fQuiet  := src.fQuiet;
+  end
+  else inherited;
 end;
 
 procedure TMsgOpts.setDepHandling(const aValue: TDepHandling);
@@ -369,6 +408,27 @@ begin
   if fGenStack then result += '-gs ';
   if fMain then result += '-main ';
   if fRelease then result += '-release ';
+end;
+
+procedure TOutputOpts.assign(aValue: TPersistent);
+var
+  src: TOutputOpts;
+begin
+  if (aValue is TOutputOpts) then
+  begin
+    src := TOutputOpts(aValue);
+    fBinKind := src.fBinKind;
+    fTrgKind := src.fTrgKind;
+    fUt := src.fUt;
+    fVerId := src.fVerId;
+    fInline := src.fInline;
+    fNoBounds := src.fNoBounds;
+    fOptimz := src.fOptimz;
+    fGenStack := src.fGenStack;
+    fMain := src.fMain;
+    fRelease := src.fRelease;
+  end
+  else inherited;
 end;
 
 procedure TOutputOpts.setUt(const aValue: boolean);
@@ -454,6 +514,22 @@ begin
   if fMap then result += '-map ';
 end;
 
+procedure TDebugOpts.assign(aValue: TPersistent);
+var
+  src: TDebugOpts;
+begin
+  if (aValue is TDebugOpts) then
+  begin
+    src := TDebugOpts(aValue);
+    fDbg := src.fDbg;
+    fDbgIdent := src.fDbgIdent;
+    fDbgD := src.fDbgD;
+    fDbgC := src.fDbgC;
+    fMap := src.fMap;
+  end
+  else inherited;
+end;
+
 procedure TDebugOpts.setDbg(const aValue: boolean);
 begin
   if fDbg = aValue then exit;
@@ -514,6 +590,22 @@ begin
   fImpt := TStringList.Create;
 end;
 
+procedure TPathsOpts.assign(aValue: TPersistent);
+var
+  src: TPathsOpts;
+begin
+  if (aValue is TPathsOpts) then
+  begin
+    src := TPathsOpts(aValue);
+    fSrcs.Assign(src.fSrcs);
+    fIncl.Assign(src.fIncl);
+    fImpt.Assign(src.fImpt);
+    fFName := src.fFname;
+    fObjDir := src.fObjDir;
+  end
+  else inherited;
+end;
+
 destructor TPathsOpts.destroy;
 begin
   fSrcs.free;
@@ -560,6 +652,18 @@ end;
 constructor TOtherOpts.create;
 begin
   fCustom := TStringList.Create;
+end;
+
+procedure TOtherOpts.assign(aValue: TPersistent);
+var
+  src: TOtherOpts;
+begin
+  if (aValue is TOtherOpts) then
+  begin
+    src := TOtherOpts(aValue);
+    fCustom.Assign(src.fCustom);
+  end
+  else inherited;
 end;
 
 destructor TOtherOpts.destroy;
@@ -616,6 +720,23 @@ begin
   fPathsOpts.free;
   fOthers.free;
   inherited;
+end;
+
+procedure TCompilerConfiguration.assign(aValue: TPersistent);
+var
+  src: TCompilerConfiguration;
+begin
+  if (aValue is TCompilerConfiguration) then
+  begin
+    src := TCompilerConfiguration(aValue);
+    fDocOpts.assign(src.fDocOpts);
+    fDebugOpts.assign(src.fDebugOpts);
+    fMsgOpts.assign(src.fMsgOpts);
+    fOutputOpts.assign(src.fOutputOpts);
+    fPathsOpts.assign(src.fPathsOpts);
+    fOthers.assign(src.fOthers);
+  end
+  else inherited;
 end;
 
 function TCompilerConfiguration.nameFromID: string;

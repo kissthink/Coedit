@@ -447,7 +447,7 @@ TODO:
 - binary literals.
 - alternative attributes for ddoc comments.
 - asm range.
-- stricter number litterals.
+- stricter number literals.
 - string literals: custom token, escape "\" not handled.
 - correct nested comments handling.
 }

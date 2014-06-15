@@ -1,31 +1,33 @@
 object CEWidget: TCEWidget
-  Left = 1264
-  Height = 327
-  Top = 448
+  Left = 1538
+  Height = 121
+  Top = 735
   Width = 320
+  BorderIcons = [biMinimize, biMaximize]
   Caption = 'CEWidget'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 121
+  ClientWidth = 320
   LCLVersion = '1.2.2.0'
   object Back: TPanel
     Left = 0
-    Height = 327
+    Height = 121
     Top = 0
     Width = 320
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 327
+    ClientHeight = 121
     ClientWidth = 320
     FullRepaint = False
     TabOrder = 0
     object Content: TScrollBox
       Left = 0
-      Height = 301
+      Height = 95
       Top = 26
       Width = 320
       HorzScrollBar.Page = 316
-      VertScrollBar.Page = 297
+      VertScrollBar.Page = 86
       Align = alClient
+      AutoScroll = False
       TabOrder = 0
     end
     object Header: TPanel
@@ -38,7 +40,6 @@ object CEWidget: TCEWidget
       TabOrder = 1
     end
   end
-  object Updater: TTimer
-    Interval = 50
+  object contextMenu: TPopupMenu
   end
 end
