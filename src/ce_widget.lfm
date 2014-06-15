@@ -19,15 +19,12 @@ object CEWidget: TCEWidget
     ClientWidth = 320
     FullRepaint = False
     TabOrder = 0
-    object Content: TScrollBox
+    object Content: TPanel
       Left = 0
       Height = 95
       Top = 26
       Width = 320
-      HorzScrollBar.Page = 316
-      VertScrollBar.Page = 86
       Align = alClient
-      AutoScroll = False
       TabOrder = 0
     end
     object Header: TPanel

@@ -14,13 +14,9 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
     ClientWidth = 445
     DragKind = dkDrag
     DragMode = dmManual
-    inherited Content: TScrollBox
+    inherited Content: TPanel
       Height = 252
       Width = 445
-      HorzScrollBar.Page = 441
-      VertScrollBar.Page = 248
-      AutoSize = True
-      AutoScroll = True
       ClientHeight = 248
       ClientWidth = 441
       object Tree: TTreeView[0]

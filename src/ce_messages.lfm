@@ -11,11 +11,9 @@ inherited CEMessagesWidget: TCEMessagesWidget
     Width = 737
     ClientHeight = 220
     ClientWidth = 737
-    inherited Content: TScrollBox
+    inherited Content: TPanel
       Height = 194
       Width = 737
-      HorzScrollBar.Page = 733
-      VertScrollBar.Page = 190
       ClientHeight = 190
       ClientWidth = 733
       object List: TListView[0]

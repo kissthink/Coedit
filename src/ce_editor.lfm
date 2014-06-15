@@ -12,13 +12,9 @@ inherited CEEditorWidget: TCEEditorWidget
     Width = 508
     ClientHeight = 336
     ClientWidth = 508
-    inherited Content: TScrollBox
+    inherited Content: TPanel
       Height = 310
       Width = 508
-      HorzScrollBar.Page = 504
-      VertScrollBar.Page = 306
-      AutoSize = True
-      AutoScroll = True
       ClientHeight = 306
       ClientWidth = 504
       object PageControl: TExtendedNotebook[0]

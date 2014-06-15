@@ -17,7 +17,7 @@ type
 
   { TCEWidget }
   TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor)
-    Content: TScrollBox;
+    Content: TPanel;
     Back: TPanel;
     Header: TPanel;
     contextMenu: TPopupMenu;

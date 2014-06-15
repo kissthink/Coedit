@@ -11,11 +11,9 @@ inherited CEProjectWidget: TCEProjectWidget
     Width = 217
     ClientHeight = 336
     ClientWidth = 217
-    inherited Content: TScrollBox
+    inherited Content: TPanel
       Height = 310
       Width = 217
-      HorzScrollBar.Page = 213
-      VertScrollBar.Page = 306
       ClientHeight = 306
       ClientWidth = 213
       object Tree: TTreeView[0]
