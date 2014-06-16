@@ -21,7 +21,6 @@ type
     procedure actSaveMsgExecute(Sender: TObject);
   public
     constructor create(aOwner: TComponent); override;
-    destructor destroy; override;
     //
     procedure scrollToBack;
     procedure addMessage(const aMsg: string);
@@ -69,11 +68,6 @@ begin
   itm := TMenuItem.Create(self);
   itm.Action := fActSaveMsg;
   contextMenu.Items.Add(itm);
-end;
-
-destructor TCEMessagesWidget.destroy;
-begin
-  inherited;
 end;
 
 procedure TCEMessagesWidget.scrollToBack;
@@ -212,4 +206,3 @@ begin
 end;
 
 end.
-

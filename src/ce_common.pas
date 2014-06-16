@@ -70,6 +70,7 @@ type
     procedure afterChanged;
     procedure reset;
     function getAbsoluteSourceName(const aIndex: integer): string;
+    function getAbsoluteFilename(const aFilename: string): string;
     procedure addSource(const aFilename: string);
     function addConfiguration: TCompilerConfiguration;
     function getOpts: string;
@@ -222,8 +223,12 @@ begin
 end;
 
 procedure TCEProject.setOptsColl(const aValue: TCollection);
+var
+  i: nativeInt;
 begin
   fOptsColl.Assign(aValue);
+  for i:= 0 to self.fOptsColl.Count-1 do
+    Configuration[i].onChanged := @subMemberChanged;
 end;
 
 procedure TCEProject.addSource(const aFilename: string);
@@ -314,7 +319,7 @@ end;
 function TCEProject.getConfig(const ix: integer): TCompilerConfiguration;
 begin
   result := TCompilerConfiguration(fOptsColl.Items[ix]);
-  //result.onChanged := @subMemberChanged;
+  result.onChanged := @subMemberChanged;
 end;
 
 function TCEProject.getCurrConf: TCompilerConfiguration;
@@ -374,7 +379,12 @@ function TCEProject.getAbsoluteSourceName(const aIndex: integer): string;
 begin
   if aIndex < 0 then exit;
   if aIndex > fSrcs.Count-1 then exit;
-  result := expandFileNameEx(fBasePath,fSrcs.Strings[aIndex]);
+  result := expandFileNameEx(fBasePath, fSrcs.Strings[aIndex]);
+end;
+
+function TCEProject.getAbsoluteFilename(const aFilename: string): string;
+begin
+  result := expandFileNameEx(fBasePath, aFilename);
 end;
 
 end.

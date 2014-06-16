@@ -1,7 +1,7 @@
 object CEWidget: TCEWidget
-  Left = 1538
+  Left = 1628
   Height = 121
-  Top = 735
+  Top = 721
   Width = 320
   BorderIcons = [biMinimize, biMaximize]
   Caption = 'CEWidget'

@@ -16,10 +16,12 @@ type
     btnAddFile: TSpeedButton;
     btnProjOpts: TSpeedButton;
     btnAddFold: TSpeedButton;
+    btnRemFile: TSpeedButton;
     Tree: TTreeView;
     TreeFilterEdit1: TTreeFilterEdit;
     procedure btnAddFileClick(Sender: TObject);
     procedure btnAddFoldClick(Sender: TObject);
+    procedure btnRemFileClick(Sender: TObject);
   protected
     procedure manualWidgetUpdate; override;
   private
@@ -100,7 +102,7 @@ begin
   //
   with TOpenDialog.Create(nil) do
   try
-    filter := 'd source|*.d|d interface|*.di|all files|*.*';
+    filter := 'D source|*.d|D interface|*.di|all files|*.*';
     if execute then
       fProject.addSource(filename);
   finally
@@ -116,8 +118,8 @@ var
 begin
   if fProject = nil then exit;
   //
-  if fileexists(fProject.fileName) then
-    dir := extractfilePath(fProject.fileName)
+  if fileExists(fProject.fileName) then
+    dir := extractFilePath(fProject.fileName)
   else dir := '';
   if selectDirectory(dir, [], 0) then
   begin
@@ -139,6 +141,23 @@ begin
       lst.Free;
     end;
   end;
+end;
+
+procedure TCEProjectWidget.btnRemFileClick(Sender: TObject);
+var
+  fname: string;
+  i: NativeInt;
+begin
+  if fProject = nil then exit;
+  if Tree.Selected = nil then exit;
+  //
+  if Tree.Selected.Parent = fFileNode then
+    begin
+      fname := Tree.Selected.Text;
+      i := fProject.Sources.IndexOf(fname);
+      if i > -1 then fProject.Sources.Delete(i);
+      manualWidgetUpdate;
+    end
 end;
 
 procedure TCEProjectWidget.manualWidgetUpdate;
@@ -168,4 +187,3 @@ begin
 end;
 
 end.
-

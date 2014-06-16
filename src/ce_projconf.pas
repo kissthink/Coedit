@@ -20,17 +20,20 @@ type
     btnAddConf: TSpeedButton;
     btnDelConf: TSpeedButton;
     btnCloneConf: TSpeedButton;
+    Splitter1: TSplitter;
     Tree: TTreeView;
     procedure btnAddConfClick(Sender: TObject);
     procedure btnDelConfClick(Sender: TObject);
     procedure btnCloneCurrClick(Sender: TObject);
     procedure selConfChange(Sender: TObject);
-    procedure SpeedButton1Click(Sender: TObject);
+    procedure TreeChange(Sender: TObject; Node: TTreeNode);
   private
     fProj: TCEProject;
+    function getGridTarget: TPersistent;
   protected
     procedure manualWidgetUpdate; override;
   public
+    constructor create(aOwner: TComponent); override;
     procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
     procedure projClose(const aProject: TCEProject); override;
@@ -39,6 +42,12 @@ type
 
 implementation
 {$R *.lfm}
+
+constructor TCEProjectConfigurationWidget.create(aOwner: TComponent);
+begin
+  inherited;
+  Tree.Selected := Tree.Items.GetLastNode;
+end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
 begin
@@ -72,9 +81,10 @@ begin
   endManualWidgetUpdate;
 end;
 
-procedure TCEProjectConfigurationWidget.SpeedButton1Click(Sender: TObject);
+procedure TCEProjectConfigurationWidget.TreeChange(Sender: TObject;
+  Node: TTreeNode);
 begin
-
+  frameEditAll.Grid.TIObject := getGridTarget;
 end;
 
 procedure TCEProjectConfigurationWidget.btnAddConfClick(Sender: TObject);
@@ -123,6 +133,24 @@ begin
   endManualWidgetUpdate;
 end;
 
+function TCEProjectConfigurationWidget.getGridTarget: TPersistent;
+begin
+  if fProj = nil then exit(nil);
+  if fProj.ConfigurationIndex = -1 then exit(nil);
+  if Tree.Selected = nil then exit(nil);
+  case Tree.Selected.StateIndex of
+    1: exit( fProj );
+    2: exit( fProj.currentConfiguration.messagesOptions );
+    3: exit( fProj.currentConfiguration.debugingOptions );
+    4: exit( fProj.currentConfiguration.documentationOptions );
+    5: exit( fProj.currentConfiguration.outputOptions );
+    6: exit( fProj.currentConfiguration.otherOptions );
+    7: exit( fProj.currentConfiguration.pathsOptions );
+    8: exit( fProj.currentConfiguration );
+    else result := nil;
+  end;
+end;
+
 procedure TCEProjectConfigurationWidget.manualWidgetUpdate;
 var
   i: NativeInt;
@@ -133,8 +161,7 @@ begin
     selConf.Items.Add(fProj.configuration[i].name);
   selConf.ItemIndex := fProj.ConfigurationIndex;
 
-  frameEditAll.Grid.TIObject :=
-    fProj.configuration[fProj.ConfigurationIndex];
+  frameEditAll.Grid.TIObject := getGridTarget;
 end;
 
 end.

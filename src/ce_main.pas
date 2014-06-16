@@ -22,9 +22,11 @@ type
     actFileOpen: TAction;
     actFileSaveAs: TAction;
     actFileSave: TAction;
+    actFileCompAndRunWithArgs: TAction;
+    actProjRun: TAction;
+    actProjRunWithArgs: TAction;
     actProjCompile: TAction;
     actProjCompileAndRun: TAction;
-    ActFileCompAndRunWithArgs: TAction;
     actProjCompAndRunWithArgs: TAction;
     actProjClose: TAction;
     actProjOpts: TAction;
@@ -32,14 +34,15 @@ type
     actProjOpen: TAction;
     actProjSave: TAction;
     actProjSaveAs: TAction;
-    actMacPlay: TAction;
-    actMacStartStop: TAction;
+    actEdMacPlay: TAction;
+    actEdMacStartStop: TAction;
     actEdCut: TAction;
     actEdRedo: TAction;
     actEdUndo: TAction;
     actEdPaste: TAction;
     actEdCopy: TAction;
     Actions: TActionList;
+    ApplicationProperties1: TApplicationProperties;
     imgList: TImageList;
     mainMenu: TMainMenu;
     MenuItem1: TMenuItem;
@@ -79,6 +82,13 @@ type
     MenuItem41: TMenuItem;
     MenuItem42: TMenuItem;
     MenuItem43: TMenuItem;
+    MenuItem44: TMenuItem;
+    MenuItem45: TMenuItem;
+    MenuItem46: TMenuItem;
+    MenuItem47: TMenuItem;
+    MenuItem48: TMenuItem;
+    MenuItem49: TMenuItem;
+    MenuItem50: TMenuItem;
     mnuItemWin: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -89,14 +99,16 @@ type
     procedure actFileAddToProjExecute(Sender: TObject);
     procedure actFileCloseExecute(Sender: TObject);
     procedure actFileCompAndRunExecute(Sender: TObject);
-    procedure ActFileCompAndRunWithArgsExecute(Sender: TObject);
+    procedure actFileCompAndRunWithArgsExecute(Sender: TObject);
     procedure actFileSaveAllExecute(Sender: TObject);
+    procedure actProjCompAndRunWithArgsExecute(Sender: TObject);
+    procedure actProjCompileAndRunExecute(Sender: TObject);
     procedure actProjCompileExecute(Sender: TObject);
     procedure actEdCopyExecute(Sender: TObject);
     procedure actEdCutExecute(Sender: TObject);
     procedure ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
-    procedure actMacPlayExecute(Sender: TObject);
-    procedure actMacStartStopExecute(Sender: TObject);
+    procedure actEdMacPlayExecute(Sender: TObject);
+    procedure actEdMacStartStopExecute(Sender: TObject);
     procedure actFileNewExecute(Sender: TObject);
     procedure actProjNewExecute(Sender: TObject);
     procedure actFileNewRunExecute(Sender: TObject);
@@ -108,6 +120,8 @@ type
     procedure actEdRedoExecute(Sender: TObject);
     procedure actFileSaveAsExecute(Sender: TObject);
     procedure actFileSaveExecute(Sender: TObject);
+    procedure actProjRunExecute(Sender: TObject);
+    procedure actProjRunWithArgsExecute(Sender: TObject);
     procedure actProjSaveAsExecute(Sender: TObject);
     procedure actProjSaveExecute(Sender: TObject);
     procedure actEdUndoExecute(Sender: TObject);
@@ -128,7 +142,7 @@ type
     procedure ProcessOutputToMsg(const aProcess: TProcess);
     procedure compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
     procedure compileProject(const aProject: TCEProject);
-    procedure runProject(const aProject: TCEProject);
+    procedure runProject(const aProject: TCEProject; const runArgs: string = '');
 
     // file sub routines
     procedure newFile;
@@ -165,6 +179,8 @@ implementation
 
 uses
   SynMacroRecorder;
+
+// TODO: warnings, OkCancel dialogs
 
 {$REGION std comp methods ******************************************************}
 constructor TCEMainForm.create(aOwner: TComponent);
@@ -235,15 +251,15 @@ begin
     actEdPaste.Enabled := curr.CanPaste;
     actEdUndo.Enabled := curr.CanUndo;
     actEdRedo.Enabled := curr.CanRedo;
-    actMacPlay.Enabled := true;
-    actMacStartStop.Enabled := true;
+    actEdMacPlay.Enabled := true;
+    actEdMacStartStop.Enabled := true;
     //
     actFileCompAndRun.Enabled := true;
     actFileCompAndRunWithArgs.Enabled := true;
     actFileSave.Enabled := true;
     actFileSaveAs.Enabled := true;
-    actFileClose.Enabled:=true;
-    actFileSaveAll.Enabled:=true;
+    actFileClose.Enabled := true;
+    actFileSaveAll.Enabled := true;
   end
   else begin
     actEdCopy.Enabled := false;
@@ -251,8 +267,8 @@ begin
     actEdPaste.Enabled := false ;
     actEdUndo.Enabled := false ;
     actEdRedo.Enabled := false ;
-    actMacPlay.Enabled := false;
-    actMacStartStop.Enabled := false;
+    actEdMacPlay.Enabled := false;
+    actEdMacStartStop.Enabled := false;
     //
     actFileCompAndRun.Enabled := false;
     actFileCompAndRunWithArgs.Enabled := false;
@@ -270,6 +286,8 @@ begin
   actProjCompile.Enabled := hasProj;
   actProjCompileAndRun.Enabled := hasProj;
   actProjCompAndRunWithArgs.Enabled := hasProj;
+  actProjRun.Enabled := hasProj;
+  actProjRunWithArgs.Enabled := hasProj;
 
   actFileAddToProj.Enabled := hasEd and hasProj;
 
@@ -518,7 +536,7 @@ begin
   if assigned(curr) then curr.Redo;
 end;
 
-procedure TCEMainForm.actMacPlayExecute(Sender: TObject);
+procedure TCEMainForm.actEdMacPlayExecute(Sender: TObject);
 var
   curr: TCESynMemo;
 begin
@@ -526,7 +544,7 @@ begin
   if assigned(curr) then fEditWidg.macRecorder.PlaybackMacro(curr);
 end;
 
-procedure TCEMainForm.actMacStartStopExecute(Sender: TObject);
+procedure TCEMainForm.actEdMacStartStopExecute(Sender: TObject);
 var
   curr: TCESynMemo;
 begin
@@ -576,6 +594,7 @@ begin
   end;
 end;
 
+// TODO: input handling
 procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
 var
   dmdproc: TProcess;
@@ -685,10 +704,45 @@ begin
   end;
 end;
 
-procedure TCEMainForm.runProject(const aProject: TCEProject);
+procedure TCEMainForm.runProject(const aProject: TCEProject; const runArgs: string = '');
+var
+  runproc: TProcess;
+  procname: string;
 begin
   if aProject.currentConfiguration.outputOptions.binaryKind <>
     executable then exit;
+
+  runproc := TProcess.Create(nil);
+  try
+    runproc.Options:= [poNewConsole];
+
+    procname := aProject.currentConfiguration.pathsOptions.outputFilename;
+    if procname <> '' then procname := aProject.getAbsoluteFilename(procname)
+    else
+    begin
+      procname := extractFilename(aProject.Sources.Strings[0]);
+      procname := procname[1..length(procname)-2];
+      procname := extractFilePath(aProject.fileName) +
+        DirectorySeparator + procname;
+      {$IFDEF MSWINDOWS}
+      procname += '.exe';
+      {$ENDIF}
+    end;
+
+    if not fileExists(procname) then
+    begin
+      fMesgWidg.addCeErr('output executable missing: ' + procname);
+      exit;
+    end;
+
+    runproc.Executable := procname;
+    runproc.Parameters.Text := runArgs;
+    runproc.Execute;
+
+  finally
+    runproc.Free;
+  end;
+
 end;
 
 procedure TCEMainForm.actFileCompAndRunExecute(Sender: TObject);
@@ -699,7 +753,7 @@ begin
   compileAndRunFile(fEditWidg.editorIndex);
 end;
 
-procedure TCEMainForm.ActFileCompAndRunWithArgsExecute(Sender: TObject);
+procedure TCEMainForm.actFileCompAndRunWithArgsExecute(Sender: TObject);
 var
   runargs: string;
 begin
@@ -714,6 +768,37 @@ end;
 procedure TCEMainForm.actProjCompileExecute(Sender: TObject);
 begin
   compileProject(fProject);
+end;
+
+procedure TCEMainForm.actProjCompileAndRunExecute(Sender: TObject);
+begin
+  compileProject(fProject);
+  runProject(fProject);
+end;
+
+procedure TCEMainForm.actProjCompAndRunWithArgsExecute(Sender: TObject);
+var
+  runargs: string;
+begin
+  compileProject(fProject);
+  //
+  runargs := '';
+  if InputQuery('Execution arguments', 'enter switches and arguments',
+    runargs) then runProject(fProject, runargs);
+end;
+
+procedure TCEMainForm.actProjRunExecute(Sender: TObject);
+begin
+  runProject(fProject);
+end;
+
+procedure TCEMainForm.actProjRunWithArgsExecute(Sender: TObject);
+var
+  runargs: string;
+begin
+  runargs := '';
+  if InputQuery('Execution arguments', 'enter switches and arguments',
+    runargs) then runProject(fProject, runargs);
 end;
 {$ENDREGION}
 

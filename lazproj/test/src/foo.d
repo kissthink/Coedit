@@ -12,5 +12,6 @@ class Foo{
         debug(1) writeln("foo says: debug level < 2");
         debug(2) writeln("foo says: debug level < 3");
         debug(3) writeln("foo says: debug level < 4");
+
     }
 }

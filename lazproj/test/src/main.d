@@ -17,4 +17,6 @@ void main(string args[])
 {
     auto foo = new Foo;
     auto bar = new Bar;
+
+    readln;
 }

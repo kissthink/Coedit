@@ -713,6 +713,7 @@ end;
 
 destructor TCompilerConfiguration.destroy;
 begin
+  fOnChanged := nil;
   fDocOpts.free;
   fDebugOpts.free;
   fMsgOpts.free;

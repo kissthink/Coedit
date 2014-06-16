@@ -12,5 +12,6 @@ class Bar{
         debug(1) writeln("bar says: debug level < 2");
         debug(2) writeln("bar says: debug level < 3");
         debug(3) writeln("bar says: debug level < 4");
+
     }
 }

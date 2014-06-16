@@ -34,7 +34,7 @@ object TCEProject
       documentationOptions.generateJSON = False
       documentationOptions.DocumentationDirectory = '..\doc'
       debugingOptions.debug = True
-      debugingOptions.debugIdentifier = '2'
+      debugingOptions.debugIdentifier = '1'
       debugingOptions.addDInformations = False
       debugingOptions.addCInformations = False
       debugingOptions.generateMapFile = False
@@ -54,7 +54,6 @@ object TCEProject
       outputOptions.release = False
       outputOptions.unittest = True
       outputOptions.versionIdentifier = 'revision_1'
-      pathsOptions.outputFilename = '..\output\main.exe'
     end>
   Sources.Strings = (
     '..\src\main.d'
