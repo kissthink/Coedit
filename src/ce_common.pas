@@ -148,16 +148,19 @@ end;
 function getModuleName(const aSource: TStrings): string;
 var
   ln: string;
-  pos: NativeInt;
+  pos, lcnt: NativeInt;
   id: string;
   tok: boolean;
 begin
   result := '';
   tok := false;
+  lcnt := -1;
   for ln in aSource do
   begin
     pos := 1;
     id := '';
+    lcnt += 1;
+    if lcnt > 100 then exit;
 
     while(true) do
     begin
@@ -377,8 +380,8 @@ end;
 
 function TCEProject.getAbsoluteSourceName(const aIndex: integer): string;
 begin
-  if aIndex < 0 then exit;
-  if aIndex > fSrcs.Count-1 then exit;
+  if aIndex < 0 then exit('');
+  if aIndex > fSrcs.Count-1 then exit('');
   result := expandFileNameEx(fBasePath, fSrcs.Strings[aIndex]);
 end;
 

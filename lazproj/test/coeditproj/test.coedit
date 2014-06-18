@@ -33,8 +33,8 @@ object TCEProject
       documentationOptions.generateDocumentation = True
       documentationOptions.generateJSON = False
       documentationOptions.DocumentationDirectory = '..\doc'
-      debugingOptions.debug = True
-      debugingOptions.debugIdentifier = '1'
+      debugingOptions.debug = False
+      debugingOptions.debugIdentifier = '3'
       debugingOptions.addDInformations = False
       debugingOptions.addCInformations = False
       debugingOptions.generateMapFile = False

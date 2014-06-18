@@ -5,10 +5,10 @@ unit ce_editor;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, Graphics,
-  SynEditKeyCmds, ComCtrls, SynEditHighlighter, SynEditHighlighterFoldBase,
-  SynMacroRecorder, SynPluginSyncroEdit, SynEdit, Dialogs, ExtCtrls, ce_widget,
-  ce_d2syn, ce_synmemo, ce_common;
+  Classes, SysUtils, eventlog, FileUtil, ExtendedNotebook, Forms, Controls,
+  Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
+  SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
+  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common;
 
 type
   { TCEEditorWidget }
@@ -99,6 +99,7 @@ begin
   fSyncEdit.Editor := curr;
   identifierToD2Syn(curr);
   md := getModuleName(curr.Lines);
+  if md = '' then md := extractFileName(curr.fileName);
   pageControl.ActivePage.Caption := md;
 end;
 

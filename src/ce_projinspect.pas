@@ -1,4 +1,4 @@
-unit ce_project;
+unit ce_projinspect;
 
 {$mode objfpc}{$H+}
 
@@ -9,8 +9,8 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_common, ce_widget;
 
 type
-  { TCEProjectWidget }
-  TCEProjectWidget = class(TCEWidget)
+  { TCEProjectInspectWidget }
+  TCEProjectInspectWidget = class(TCEWidget)
     imgList: TImageList;
     Panel1: TPanel;
     btnAddFile: TSpeedButton;
@@ -42,7 +42,7 @@ implementation
 uses
   ce_main;
 
-constructor TCEProjectWidget.create(aOwner: TComponent);
+constructor TCEProjectInspectWidget.create(aOwner: TComponent);
 begin
   inherited;
   fID := 'ID_PROJ';
@@ -51,25 +51,25 @@ begin
   fConfNode := Tree.Items[1];
 end;
 
-procedure TCEProjectWidget.projNew(const aProject: TCEProject);
+procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
 begin
   fProject := aProject;
   manualWidgetUpdate;
 end;
 
-procedure TCEProjectWidget.projChange(const aProject: TCEProject);
+procedure TCEProjectInspectWidget.projChange(const aProject: TCEProject);
 begin
   fProject := aProject;
   manualWidgetUpdate;
 end;
 
-procedure TCEProjectWidget.projClose(const aProject: TCEProject);
+procedure TCEProjectInspectWidget.projClose(const aProject: TCEProject);
 begin
   fProject := nil;
   manualWidgetUpdate;
 end;
 
-procedure TCEProjectWidget.TreeDblClick(sender: TObject);
+procedure TCEProjectInspectWidget.TreeDblClick(sender: TObject);
 var
   fname: string;
   i: NativeInt;
@@ -96,7 +96,7 @@ begin
   end;
 end;
 
-procedure TCEProjectWidget.btnAddFileClick(Sender: TObject);
+procedure TCEProjectInspectWidget.btnAddFileClick(Sender: TObject);
 begin
   if fProject = nil then exit;
   //
@@ -110,7 +110,7 @@ begin
   end;
 end;
 
-procedure TCEProjectWidget.btnAddFoldClick(Sender: TObject);
+procedure TCEProjectInspectWidget.btnAddFoldClick(Sender: TObject);
 var
   dir, ext, fname: string;
   sr: TSearchRec;
@@ -143,7 +143,7 @@ begin
   end;
 end;
 
-procedure TCEProjectWidget.btnRemFileClick(Sender: TObject);
+procedure TCEProjectInspectWidget.btnRemFileClick(Sender: TObject);
 var
   fname: string;
   i: NativeInt;
@@ -160,7 +160,7 @@ begin
     end
 end;
 
-procedure TCEProjectWidget.manualWidgetUpdate;
+procedure TCEProjectInspectWidget.manualWidgetUpdate;
 var
   src, conf: string;
   itm: TTreeNode;

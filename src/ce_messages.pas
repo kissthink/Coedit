@@ -170,6 +170,22 @@ function semanticMsgAna(const aMessg: string): TMessageKind;
 var
   pos: Nativeint;
   idt: string;
+function checkIdent: TMessageKind;
+begin
+  case idt of
+    'ERROR', 'error', 'Error', 'Invalid', 'invalid',
+    'illegal', 'Illegal', 'fatal', 'Fatal', 'Critical', 'critical':
+      exit(msgkError);
+    'Warning', 'warning':
+      exit(msgkWarn);
+    'Hint', 'hint', 'Tip', 'tip':
+      exit(msgkHint);
+    'Information', 'information':
+      exit(msgkInfo);
+    else
+      exit(msgkUnknown);
+  end;
+end;
 begin
   idt := '';
   pos := 1;
@@ -180,27 +196,20 @@ begin
     if aMessg[pos] in [#0..#32] then
     begin
       Inc(pos);
+      result := checkIdent;
+      if result <> msgkUnknown then exit;
       idt := '';
       continue;
     end;
     if not (aMessg[pos] in ['a'..'z', 'A'..'Z']) then
     begin
       Inc(pos);
+      result := checkIdent;
+      if result <> msgkUnknown then exit;
       idt := '';
       continue;
     end;
     idt += aMessg[pos];
-    case idt of
-      'ERROR', 'error', 'Error', 'Invalid', 'invalid',
-      'illegal', 'Illegal', 'fatal', 'Fatal', 'Critical', 'critical':
-        exit(msgkError);
-      'Warning', 'warning':
-        exit(msgkWarn);
-      'Hint', 'hint', 'Tip', 'tip':
-        exit(msgkHint);
-      'Information', 'information':
-        exit(msgkInfo);
-    end;
     Inc(pos);
   end;
 end;

@@ -1,4 +1,4 @@
-inherited CEProjectWidget: TCEProjectWidget
+inherited CEProjectInspectWidget: TCEProjectInspectWidget
   Left = 1670
   Height = 405
   Top = 89

@@ -5,9 +5,9 @@ unit ce_main;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, SynEditKeyCmds, Forms, Controls, Graphics,
-  Dialogs, Menus, ActnList, ce_common, ce_widget, ce_messages, ce_editor,
-  ce_project, ce_synmemo, ce_projconf, process, ce_dmdwrap;
+  Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
+  Controls, Graphics, Dialogs, Menus, ActnList, process, ce_common, ce_dmdwrap,
+  ce_synmemo, ce_widget, ce_messages, ce_editor, ce_projinspect, ce_projconf;
 
 type
 
@@ -23,6 +23,7 @@ type
     actFileSaveAs: TAction;
     actFileSave: TAction;
     actFileCompAndRunWithArgs: TAction;
+    actProjSource: TAction;
     actProjRun: TAction;
     actProjRunWithArgs: TAction;
     actProjCompile: TAction;
@@ -89,6 +90,7 @@ type
     MenuItem48: TMenuItem;
     MenuItem49: TMenuItem;
     MenuItem50: TMenuItem;
+    MenuItem51: TMenuItem;
     mnuItemWin: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -96,6 +98,7 @@ type
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
+    LfmSyn: TSynLFMSyn;
     procedure actFileAddToProjExecute(Sender: TObject);
     procedure actFileCloseExecute(Sender: TObject);
     procedure actFileCompAndRunExecute(Sender: TObject);
@@ -125,13 +128,14 @@ type
     procedure actProjSaveAsExecute(Sender: TObject);
     procedure actProjSaveExecute(Sender: TObject);
     procedure actEdUndoExecute(Sender: TObject);
+    procedure actProjSourceExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
     fProject: TCEProject;
     fWidgList: TCEWidgetList;
     fMesgWidg: TCEMessagesWidget;
     fEditWidg: TCEEditorWidget;
-    fProjWidg: TCEProjectWidget;
+    fProjWidg: TCEProjectInspectWidget;
     fPrjCfWidg: TCEProjectConfigurationWidget;
 
     // widget interfaces subroutines
@@ -151,6 +155,7 @@ type
     procedure saveFileAs(const edIndex: NativeInt; const aFilename: string);
 
     // project sub routines
+    procedure saveProjSource(const aEditor: TCESynMemo);
     procedure projChange(sender: TObject);
     procedure newProj;
     procedure saveProj;
@@ -168,7 +173,7 @@ type
     property WidgetList: TCEWidgetList read fWidgList;
     property MessageWidget: TCEMessagesWidget read fMesgWidg;
     property EditWidget: TCEEditorWidget read fEditWidg;
-    property ProjectWidget: TCEProjectWidget read fProjWidg;
+    property ProjectWidget: TCEProjectInspectWidget read fProjWidg;
   end;
 
 var
@@ -194,7 +199,7 @@ begin
   fWidgList := TCEWidgetList.Create;
   fMesgWidg := TCEMessagesWidget.create(nil);
   fEditWidg := TCEEditorWidget.create(nil);
-  fProjWidg := TCEProjectWidget.create(nil);
+  fProjWidg := TCEProjectInspectWidget.create(nil);
   fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
 
   fWidgList.addWidget(@fMesgWidg);
@@ -219,7 +224,6 @@ begin
   end;
 
   newProj;
-
 end;
 
 destructor TCEMainForm.destroy;
@@ -288,6 +292,7 @@ begin
   actProjCompAndRunWithArgs.Enabled := hasProj;
   actProjRun.Enabled := hasProj;
   actProjRunWithArgs.Enabled := hasProj;
+  actProjSource.Enabled := hasProj;
 
   actFileAddToProj.Enabled := hasEd and hasProj;
 
@@ -376,6 +381,12 @@ begin
   if fEditWidg = nil then exit;
   if edIndex >= fEditWidg.editorCount then exit;
   //
+  if fEditWidg.editor[edIndex].Highlighter = LfmSyn then
+  begin
+    saveProjSource(fEditWidg.editor[edIndex]);
+    exit;
+  end;
+  //
   str := fEditWidg.editor[edIndex].fileName;
   if str = '' then exit;
   try
@@ -405,6 +416,7 @@ begin
   //
   with TOpenDialog.Create(nil) do
   try
+    filter := 'D source|*.d|D interface|*.di|all files|*.*';
     if execute then
     begin
       openFile(filename);
@@ -469,6 +481,8 @@ var
 begin
   if fEditWidg = nil then exit;
   if fEditWidg.editorIndex < 0 then exit;
+  if fEditWidg.editor[fEditWidg.editorIndex].Highlighter = LfmSyn
+    then exit;
   //
   str := fEditWidg.editor[fEditWidg.editorIndex].fileName;
   fProject.addSource(str);
@@ -493,6 +507,7 @@ begin
   for fname in FileNames do
     openFile(fname);
 end;
+
 {$ENDREGION}
 
 {$REGION edit ******************************************************************}
@@ -804,8 +819,12 @@ end;
 
 {$REGION view ******************************************************************}
 procedure TCEMainForm.widgetShowFromAction(sender: TObject);
+var
+  widg: TCEWidget;
 begin
-  TCEWidget( TComponent(sender).tag ).Show;
+  widg := TCEWidget( TComponent(sender).tag );
+  if widg = nil then exit;
+  if widg.Visible then widg.Hide else widg.Show;
 end;
 
 {$ENDREGION}
@@ -817,6 +836,16 @@ var
 begin
   for widg in WidgetList do
     widg.projChange(fProject);
+end;
+
+procedure TCEMainForm.saveProjSource(const aEditor: TCESynMemo);
+begin
+  if fProject = nil then exit;
+  if fProject.fileName <> aEditor.fileName then exit;
+  //
+  aEditor.modified := false;
+  aEditor.Lines.SaveToFile(fProject.fileName);
+  self.openProj(fProject.fileName);
 end;
 
 procedure TCEMainForm.closeProj;
@@ -906,6 +935,15 @@ end;
 procedure TCEMainForm.actProjOptsExecute(Sender: TObject);
 begin
   fPrjCfWidg.Show;
+end;
+
+procedure TCEMainForm.actProjSourceExecute(Sender: TObject);
+begin
+  if fProject = nil then exit;
+  if not fileExists(fProject.fileName) then exit;
+  //
+  openFile(fProject.fileName);
+  EditWidget.currentEditor.Highlighter := LfmSyn;
 end;
 {$ENDREGION}
 end.

@@ -290,7 +290,7 @@ constructor TSynD2Syn.create(aOwner: TComponent);
 begin
 	inherited create(aOwner);
 
-  DefaultFilter:= '.d|.di';
+  DefaultFilter:= 'D source|*.d|D interface|*.di';
 
   fKeyWords.create;
 

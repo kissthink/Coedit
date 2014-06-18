@@ -1,26 +1,26 @@
 inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
   Left = 1098
   Height = 278
-  Width = 448
+  Width = 455
   BorderIcons = [biSystemMenu, biMinimize, biMaximize]
   Caption = 'Project configuration'
   ClientHeight = 278
-  ClientWidth = 448
+  ClientWidth = 455
   inherited Back: TPanel
     Height = 278
-    Width = 448
+    Width = 455
     ClientHeight = 278
-    ClientWidth = 448
+    ClientWidth = 455
     inherited Content: TPanel
       Height = 252
-      Width = 448
+      Width = 455
       ClientHeight = 252
-      ClientWidth = 448
+      ClientWidth = 455
       object Tree: TTreeView[0]
         Left = 5
         Height = 216
         Top = 31
-        Width = 190
+        Width = 150
         Align = alLeft
         AutoExpand = True
         BorderSpacing.Left = 4
@@ -48,46 +48,22 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           FF0000000000000000000E000000416C6C2063617465676F72696573
         }
       end
-      inline frameEditAll: TCEProjConfAll[1]
-        Left = 202
-        Height = 220
-        Top = 29
-        Width = 243
-        Align = alClient
-        BorderSpacing.Around = 2
-        ClientHeight = 220
-        ClientWidth = 243
-        TabOrder = 1
-        DesignLeft = 1406
-        DesignTop = 572
-        inherited Grid: TTIPropertyGrid
-          Left = 2
-          Height = 216
-          Top = 2
-          Width = 239
-          BackgroundColor = clDefault
-          BorderSpacing.Around = 2
-          DefaultItemHeight = 22
-          PreferredSplitterX = 150
-          SplitterX = 150
-        end
-      end
-      object Panel1: TPanel[2]
+      object Panel1: TPanel[1]
         Left = 3
         Height = 24
         Top = 3
-        Width = 442
+        Width = 449
         Align = alTop
         BorderSpacing.Around = 2
         BevelOuter = bvNone
         ClientHeight = 24
-        ClientWidth = 442
-        TabOrder = 2
+        ClientWidth = 449
+        TabOrder = 1
         object selConf: TComboBox
           Left = 0
           Height = 23
           Top = 1
-          Width = 351
+          Width = 358
           Align = alClient
           BorderSpacing.Top = 1
           BorderSpacing.Right = 1
@@ -97,7 +73,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           TabOrder = 0
         end
         object btnAddConf: TSpeedButton
-          Left = 352
+          Left = 359
           Height = 24
           Top = 0
           Width = 30
@@ -142,7 +118,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnDelConf: TSpeedButton
-          Left = 382
+          Left = 389
           Height = 24
           Top = 0
           Width = 30
@@ -187,7 +163,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnCloneConf: TSpeedButton
-          Left = 412
+          Left = 419
           Height = 24
           Top = 0
           Width = 30
@@ -232,15 +208,33 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
       end
-      object Splitter1: TSplitter[3]
-        Left = 195
+      object Splitter1: TSplitter[2]
+        Left = 155
         Height = 222
         Top = 29
         Width = 5
       end
+      object Grid: TTIPropertyGrid[3]
+        Left = 160
+        Height = 216
+        Top = 31
+        Width = 290
+        Align = alClient
+        BorderSpacing.Top = 4
+        BorderSpacing.Right = 4
+        BorderSpacing.Bottom = 4
+        DefaultValueFont.Color = clWindowText
+        Filter = [tkInteger, tkChar, tkEnumeration, tkFloat, tkSet, tkMethod, tkSString, tkLString, tkAString, tkWString, tkVariant, tkArray, tkRecord, tkInterface, tkClass, tkWChar, tkBool, tkInt64, tkQWord, tkDynArray, tkInterfaceRaw, tkProcVar, tkUString, tkUChar, tkHelper]
+        Indent = 16
+        NameFont.Color = clWindowText
+        OnEditorFilter = GridEditorFilter
+        PreferredSplitterX = 145
+        SplitterX = 145
+        ValueFont.Color = clMaroon
+      end
     end
     inherited Header: TPanel
-      Width = 448
+      Width = 455
     end
   end
   object imgList: TImageList[2]

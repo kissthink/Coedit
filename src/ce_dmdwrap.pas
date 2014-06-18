@@ -85,13 +85,13 @@ type
   end;
 
   (*****************************************************************************
-     * Describes the target registry size
-     *)
-    TTargetSystem = (auto, os32bit, os64bit);
-    (**
-     * Describes the output kind
-     *)
-    TBinaryKind = (executable, staticlib, sharedlib, obj);
+   * Describes the target registry size
+   *)
+  TTargetSystem = (auto, os32bit, os64bit);
+  (**
+   * Describes the output kind
+   *)
+  TBinaryKind = (executable, staticlib, sharedlib, obj);
 
 
   (*****************************************************************************
@@ -767,9 +767,6 @@ procedure TCompilerConfiguration.subOptsChanged(sender: TObject);
 begin
   Changed(true);
   doChanged;
-  {$IFDEF DEBUG}
-    writeln( #13#10 + getCmdLine);
-  {$ENDIF}
 end;
 
 procedure TCompilerConfiguration.doChanged;

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
-  ce_common, ActnList, Menus, syncobjs;
+  ActnList, Menus, syncobjs, ce_common;
 
 type
 
@@ -111,7 +111,6 @@ begin
   begin
     writeln('widget update count > 0');
     exit;
-
   end;
 
   fManuUpdating := true;
