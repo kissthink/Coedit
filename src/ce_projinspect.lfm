@@ -1,26 +1,28 @@
 inherited CEProjectInspectWidget: TCEProjectInspectWidget
-  Left = 1670
-  Height = 405
+  Left = 1641
+  Height = 384
   Top = 89
-  Width = 238
+  Width = 263
+  AllowDropFiles = True
   Caption = 'Project inspector'
-  ClientHeight = 405
-  ClientWidth = 238
+  ClientHeight = 384
+  ClientWidth = 263
+  OnDropFiles = FormDropFiles
   inherited Back: TPanel
-    Height = 405
-    Width = 238
-    ClientHeight = 405
-    ClientWidth = 238
+    Height = 384
+    Width = 263
+    ClientHeight = 384
+    ClientWidth = 263
     inherited Content: TPanel
-      Height = 379
-      Width = 238
-      ClientHeight = 379
-      ClientWidth = 238
+      Height = 384
+      Width = 263
+      ClientHeight = 384
+      ClientWidth = 263
       object Tree: TTreeView[0]
-        Left = 3
-        Height = 347
-        Top = 29
-        Width = 232
+        Left = 2
+        Height = 354
+        Top = 28
+        Width = 259
         Align = alClient
         AutoExpand = True
         BorderSpacing.Around = 2
@@ -38,15 +40,15 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         }
       end
       object Panel1: TPanel[1]
-        Left = 3
+        Left = 2
         Height = 24
-        Top = 3
-        Width = 232
+        Top = 2
+        Width = 259
         Align = alTop
         BorderSpacing.Around = 2
         BevelOuter = bvNone
         ClientHeight = 24
-        ClientWidth = 232
+        ClientWidth = 259
         TabOrder = 1
         object btnAddFile: TSpeedButton
           Left = 0
@@ -187,7 +189,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
           Left = 114
           Height = 20
           Top = 2
-          Width = 116
+          Width = 143
           ButtonWidth = 30
           NumGlyphs = 1
           Align = alClient
@@ -242,9 +244,6 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
           OnClick = btnRemFileClick
         end
       end
-    end
-    inherited Header: TPanel
-      Width = 238
     end
   end
   object imgList: TImageList[2]

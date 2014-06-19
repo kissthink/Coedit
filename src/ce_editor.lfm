@@ -1,39 +1,42 @@
 inherited CEEditorWidget: TCEEditorWidget
   Left = 1098
-  Height = 405
-  Top = 89
-  Width = 556
+  Height = 382
+  Top = 91
+  Width = 526
   BorderIcons = [biSystemMenu, biMinimize, biMaximize]
   Caption = 'Source editor'
-  ClientHeight = 405
-  ClientWidth = 556
+  ClientHeight = 382
+  ClientWidth = 526
   inherited Back: TPanel
-    Height = 405
-    Width = 556
-    ClientHeight = 405
-    ClientWidth = 556
+    Height = 382
+    Width = 526
+    ClientHeight = 382
+    ClientWidth = 526
     inherited Content: TPanel
-      Height = 379
-      Width = 556
-      ClientHeight = 379
-      ClientWidth = 556
+      Height = 382
+      Width = 526
+      BevelOuter = bvRaised
+      ClientHeight = 382
+      ClientWidth = 526
       object PageControl: TExtendedNotebook[0]
         Left = 3
-        Height = 350
+        Height = 351
         Top = 3
-        Width = 550
+        Width = 520
         Align = alClient
         BorderSpacing.Around = 2
         TabOrder = 0
         OnChange = PageControlChange
+        Options = [nboShowCloseButtons]
         TabDragMode = dmAutomatic
         TabDragAcceptMode = dmAutomatic
       end
       object editorStatus: TStatusBar[1]
-        Left = 1
+        Left = 3
         Height = 23
-        Top = 355
-        Width = 554
+        Top = 356
+        Width = 520
+        BorderSpacing.Around = 2
         Panels = <        
           item
             Width = 100
@@ -46,9 +49,6 @@ inherited CEEditorWidget: TCEEditorWidget
           end>
         SimplePanel = False
       end
-    end
-    inherited Header: TPanel
-      Width = 556
     end
   end
   object macRecorder: TSynMacroRecorder[2]

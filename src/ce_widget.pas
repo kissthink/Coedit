@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
-  ActnList, Menus, syncobjs, ce_common;
+  AnchorDocking, AnchorDockStorage, ActnList, Menus, syncobjs, ce_common;
 
 type
 
@@ -19,7 +19,6 @@ type
   TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor)
     Content: TPanel;
     Back: TPanel;
-    Header: TPanel;
     contextMenu: TPopupMenu;
   private
     fAutoUpdater: TTimer;
@@ -90,6 +89,8 @@ begin
   fAutoUpdater.Interval := 50;
   fAutoUpdater.OnTimer := @autoUpdaterEvent;
   fLocker := TCriticalSection.Create;
+  DockMaster.MakeDockable(Self, true, true, true);
+  DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
 end;
 
 destructor TCEWidget.destroy;

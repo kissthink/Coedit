@@ -29,3 +29,8 @@ Setup
 - both [dmd](http://dlang.org/download.html) and [Lazarus](http://www.lazarus.freepascal.org) must be setup.
 - open "coedit.lpr" in Lazarus.
 - press the Run button.
+
+Preview
+-------
+
+[Interface screen-cap., under Windows](lazproj/Gui.tease.png)

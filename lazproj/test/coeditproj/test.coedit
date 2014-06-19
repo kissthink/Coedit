@@ -57,8 +57,8 @@ object TCEProject
     end>
   Sources.Strings = (
     '..\src\main.d'
-    '..\src\foo.d'
     '..\src\bar.d'
+    '..\src\foo.d'
   )
   ConfigurationIndex = 1
 end

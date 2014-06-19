@@ -1,33 +1,33 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1098
-  Height = 152
-  Top = 531
+  Left = 1097
+  Height = 170
+  Top = 513
   Width = 807
   Caption = 'Messages'
-  ClientHeight = 152
+  ClientHeight = 170
   ClientWidth = 807
   inherited Back: TPanel
-    Height = 152
+    Height = 170
     Width = 807
-    ClientHeight = 152
+    ClientHeight = 170
     ClientWidth = 807
     inherited Content: TPanel
-      Height = 126
+      Height = 170
       Width = 807
-      ClientHeight = 126
+      ClientHeight = 170
       ClientWidth = 807
       object List: TListView[0]
-        Left = 3
-        Height = 120
-        Top = 3
-        Width = 801
+        Left = 2
+        Height = 166
+        Top = 2
+        Width = 803
         Align = alClient
         AutoSort = False
         AutoWidthLastColumn = True
         BorderSpacing.Around = 2
         Columns = <        
           item
-            Width = 797
+            Width = 799
           end>
         HideSelection = False
         ReadOnly = True
@@ -37,9 +37,6 @@ inherited CEMessagesWidget: TCEMessagesWidget
         TabOrder = 0
         ViewStyle = vsReport
       end
-    end
-    inherited Header: TPanel
-      Width = 807
     end
   end
   object imgList: TImageList[2]

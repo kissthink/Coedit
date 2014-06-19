@@ -22,6 +22,7 @@ type
     procedure btnAddFileClick(Sender: TObject);
     procedure btnAddFoldClick(Sender: TObject);
     procedure btnRemFileClick(Sender: TObject);
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   protected
     procedure manualWidgetUpdate; override;
   private
@@ -158,6 +159,15 @@ begin
       if i > -1 then fProject.Sources.Delete(i);
       manualWidgetUpdate;
     end
+end;
+
+procedure TCEProjectInspectWidget.FormDropFiles(Sender: TObject; const FileNames: array of String);
+var
+  fname: string;
+begin
+  mainForm.FormDropFiles(Sender, Filenames);
+  if fProject = nil then exit;
+  for fname in Filenames do fProject.addSource(fname);
 end;
 
 procedure TCEProjectInspectWidget.manualWidgetUpdate;

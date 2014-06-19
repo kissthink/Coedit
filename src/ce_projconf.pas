@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, RTTIGrids, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, ComCtrls, StdCtrls, Menus, Buttons, ce_widget, ce_common,
-  ce_projconfall, ce_dmdwrap, PropEdits, ObjectInspector;
+  ce_dmdwrap, PropEdits, ObjectInspector;
 
 type
 
@@ -25,8 +25,7 @@ type
     procedure btnAddConfClick(Sender: TObject);
     procedure btnDelConfClick(Sender: TObject);
     procedure btnCloneCurrClick(Sender: TObject);
-    procedure GridEditorFilter(Sender: TObject; aEditor: TPropertyEditor;
-      var aShow: boolean);
+    procedure GridEditorFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
     procedure selConfChange(Sender: TObject);
     procedure TreeChange(Sender: TObject; Node: TTreeNode);
   private

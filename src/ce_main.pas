@@ -6,8 +6,10 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
-  Controls, Graphics, Dialogs, Menus, ActnList, process, ce_common, ce_dmdwrap,
-  ce_synmemo, ce_widget, ce_messages, ce_editor, ce_projinspect, ce_projconf;
+  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg,
+  Controls, Graphics, Dialogs, Menus, ActnList, ExtCtrls, process, ce_common,
+  ce_dmdwrap, ce_synmemo, ce_widget, ce_messages, ce_editor, ce_projinspect,
+  ce_projconf;
 
 type
 
@@ -130,6 +132,7 @@ type
     procedure actEdUndoExecute(Sender: TObject);
     procedure actProjSourceExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+    procedure FormShow(Sender: TObject);
   private
     fProject: TCEProject;
     fWidgList: TCEWidgetList;
@@ -224,6 +227,17 @@ begin
   end;
 
   newProj;
+
+  Height := 0;
+  DockMaster.MakeDockSite(Self, [akBottom], admrpChild, false);
+  DockMaster.OnShowOptions := @ShowAnchorDockOptions;
+  DockMaster.HeaderStyle := adhsPoints;
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
+  width := width - fProjWidg.Width;
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
+
+  DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
 end;
 
 destructor TCEMainForm.destroy;
@@ -318,7 +332,10 @@ begin
     itm.Action := aWidget.contextAction(i);
     prt.Add(itm);
   end;
+end;
 
+procedure TCEMainForm.FormShow(Sender: TObject);
+begin
 end;
 {$ENDREGION}
 
@@ -655,7 +672,10 @@ begin
       runproc.Executable := fname;
       {$ENDIF}
       runproc.Execute;
-      ProcessOutputToMsg(runproc);
+      repeat
+        ProcessOutputToMsg(runproc);
+      until
+        not runproc.Active;
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');
@@ -729,7 +749,7 @@ begin
 
   runproc := TProcess.Create(nil);
   try
-    runproc.Options:= [poNewConsole];
+    runproc.Options := [poNewConsole, poStdErrToOutput];
 
     procname := aProject.currentConfiguration.pathsOptions.outputFilename;
     if procname <> '' then procname := aProject.getAbsoluteFilename(procname)

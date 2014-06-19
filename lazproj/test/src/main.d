@@ -23,4 +23,5 @@ void main(string args[])
         delete foo;
         delete bar;
     }
+    readln;
 }

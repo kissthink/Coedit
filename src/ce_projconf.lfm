@@ -12,14 +12,14 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
     ClientHeight = 278
     ClientWidth = 455
     inherited Content: TPanel
-      Height = 252
+      Height = 278
       Width = 455
-      ClientHeight = 252
+      ClientHeight = 278
       ClientWidth = 455
       object Tree: TTreeView[0]
-        Left = 5
-        Height = 216
-        Top = 31
+        Left = 4
+        Height = 244
+        Top = 30
         Width = 150
         Align = alLeft
         AutoExpand = True
@@ -49,21 +49,21 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
         }
       end
       object Panel1: TPanel[1]
-        Left = 3
+        Left = 2
         Height = 24
-        Top = 3
-        Width = 449
+        Top = 2
+        Width = 451
         Align = alTop
         BorderSpacing.Around = 2
         BevelOuter = bvNone
         ClientHeight = 24
-        ClientWidth = 449
+        ClientWidth = 451
         TabOrder = 1
         object selConf: TComboBox
           Left = 0
           Height = 23
           Top = 1
-          Width = 358
+          Width = 360
           Align = alClient
           BorderSpacing.Top = 1
           BorderSpacing.Right = 1
@@ -73,7 +73,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           TabOrder = 0
         end
         object btnAddConf: TSpeedButton
-          Left = 359
+          Left = 361
           Height = 24
           Top = 0
           Width = 30
@@ -118,7 +118,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnDelConf: TSpeedButton
-          Left = 389
+          Left = 391
           Height = 24
           Top = 0
           Width = 30
@@ -163,7 +163,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnCloneConf: TSpeedButton
-          Left = 419
+          Left = 421
           Height = 24
           Top = 0
           Width = 30
@@ -209,16 +209,16 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
         end
       end
       object Splitter1: TSplitter[2]
-        Left = 155
-        Height = 222
-        Top = 29
+        Left = 154
+        Height = 250
+        Top = 28
         Width = 5
       end
       object Grid: TTIPropertyGrid[3]
-        Left = 160
-        Height = 216
-        Top = 31
-        Width = 290
+        Left = 159
+        Height = 244
+        Top = 30
+        Width = 292
         Align = alClient
         BorderSpacing.Top = 4
         BorderSpacing.Right = 4
@@ -232,9 +232,6 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
         SplitterX = 145
         ValueFont.Color = clMaroon
       end
-    end
-    inherited Header: TPanel
-      Width = 455
     end
   end
   object imgList: TImageList[2]
