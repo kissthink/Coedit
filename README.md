@@ -33,4 +33,4 @@ Setup
 Preview
 -------
 
-[Interface screen-cap., under Windows](lazproj/Gui.tease.png)
+![Interface screen-cap, under Windows](lazproj/Gui.tease.png "Coedit GUI preview")
