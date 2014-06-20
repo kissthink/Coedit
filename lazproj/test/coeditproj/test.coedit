@@ -54,11 +54,12 @@ object TCEProject
       outputOptions.release = False
       outputOptions.unittest = True
       outputOptions.versionIdentifier = 'revision_1'
+	  pathsOptions.outputFilename = '..\output\main.exe'
     end>
   Sources.Strings = (
     '..\src\main.d'
     '..\src\bar.d'
     '..\src\foo.d'
   )
-  ConfigurationIndex = 1
+  ConfigurationIndex = 0
 end

@@ -303,7 +303,9 @@ begin
   Dec(fChangedCount);
   if fChangedCount > 0 then
   begin
+    {$IFDEF DEBUG}
     writeln('project update count > 0');
+    {$ENDIF}
     exit;
   end;
   fChangedCount := 0;

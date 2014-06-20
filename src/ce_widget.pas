@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
-  AnchorDocking, AnchorDockStorage, ActnList, Menus, syncobjs, ce_common;
+  AnchorDocking, AnchorDockStorage, ActnList, Menus, ce_common;
 
 type
 
@@ -29,7 +29,6 @@ type
   protected
     fID: string;
     fNeedAutoUpdate: boolean;
-    fLocker: TCriticalSection;
     procedure autoWidgetUpdate; virtual;
     procedure manualWidgetUpdate; virtual;
   published
@@ -88,15 +87,12 @@ begin
   fAutoUpdater := TTimer.Create(self);
   fAutoUpdater.Interval := 50;
   fAutoUpdater.OnTimer := @autoUpdaterEvent;
-  fLocker := TCriticalSection.Create;
   DockMaster.MakeDockable(Self, true, true, true);
   DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
 end;
 
 destructor TCEWidget.destroy;
 begin
-  fLocker.Leave;
-  fLocker.Free;
   inherited;
 end;
 
@@ -110,14 +106,14 @@ begin
   Dec(fWidgUpdateCount);
   if fWidgUpdateCount > 0 then
   begin
+    {$IFDEF DEBUG}
     writeln('widget update count > 0');
+    {$ENDIF}
     exit;
   end;
 
   fManuUpdating := true;
-  //fLocker.Enter;
   manualWidgetUpdate;
-  //fLocker.Leave;
   fManuUpdating := false;
   fWidgUpdateCount := 0;
 
@@ -126,9 +122,7 @@ end;
 procedure TCEWidget.forceManualWidgetUpdate;
 begin
   fManuUpdating := true;
-  //fLocker.Enter;
   manualWidgetUpdate;
-  //fLocker.Leave;
   fManuUpdating := false;
 end;
 
@@ -137,10 +131,8 @@ begin
   if not fNeedAutoUpdate then exit;
   fAutoUpdating := true;
   try
-    //fLocker.Enter;
     autoWidgetUpdate;
   finally
-    //fLocker.Leave;
     fAutoUpdating := false;
     fNeedAutoUpdate := false;
   end;

@@ -23,6 +23,7 @@ type
     procedure btnAddFoldClick(Sender: TObject);
     procedure btnRemFileClick(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+    procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   protected
     procedure manualWidgetUpdate; override;
   private
@@ -70,6 +71,11 @@ begin
   manualWidgetUpdate;
 end;
 
+procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
+begin
+  if Key = 13 then TreeDblClick(nil);
+end;
+
 procedure TCEProjectInspectWidget.TreeDblClick(sender: TObject);
 var
   fname: string;
@@ -113,9 +119,17 @@ end;
 
 procedure TCEProjectInspectWidget.btnAddFoldClick(Sender: TObject);
 var
-  dir, ext, fname: string;
+  dir, fname: string;
   sr: TSearchRec;
   lst: TStringList;
+procedure doFindFile;
+var
+  ext: string;
+begin
+  ext := ExtractFileExt(sr.Name);
+  if (ext = '.d') or (ext = '.di') then
+    lst.Add(dir + DirectorySeparator + sr.Name);
+end;
 begin
   if fProject = nil then exit;
   //
@@ -127,17 +141,9 @@ begin
     if FindFirst(dir + DirectorySeparator + '*.*', faAnyFile, sr ) = 0 then
     try
       lst := TStringList.Create;
-      ext := ExtractFileExt(sr.Name);
-      if (ext = '.d') or (ext = '.di') then
-        lst.Add(dir + DirectorySeparator + sr.Name);
-      while FindNext(sr) = 0 do
-      begin
-        ext := ExtractFileExt(sr.Name);
-        if (ext = '.d') or (ext = '.di') then
-          lst.Add(dir + DirectorySeparator + sr.Name);
-      end;
-      for fname in lst do
-        fProject.addSource(fname);
+      doFindFile;
+      while FindNext(sr) = 0 do doFindFile;
+      for fname in lst do fProject.addSource(fname);
     finally
       lst.Free;
     end;

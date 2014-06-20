@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus;
+  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus, clipbrd;
 
 type
 
@@ -17,8 +17,12 @@ type
   private
     fActClear: TAction;
     fActSaveMsg: TAction;
+    fActCopyMsg: TAction;
+    fActSelAll: TAction;
     procedure actClearExecute(Sender: TObject);
     procedure actSaveMsgExecute(Sender: TObject);
+    procedure actCopyMsgExecute(Sender: TObject);
+    procedure actSelAllExecute(Sender: TObject);
   public
     constructor create(aOwner: TComponent); override;
     //
@@ -57,6 +61,12 @@ begin
   fActClear := TAction.Create(self);
   fActClear.OnExecute := @actClearExecute;
   fActClear.caption := 'Clear messages';
+  fActCopyMsg := TAction.Create(self);
+  fActCopyMsg.OnExecute := @actCopyMsgExecute;
+  fActCopyMsg.Caption := 'Copy message(s)';
+  fActSelAll := TAction.Create(self);
+  fActSelAll.OnExecute := @actSelAllExecute;
+  fActSelAll.Caption := 'Select all';
   fActSaveMsg := TAction.Create(self);
   fActSaveMsg.OnExecute := @actSaveMsgExecute;
   fActSaveMsg.caption := 'Save messages to...';
@@ -64,6 +74,12 @@ begin
   List.PopupMenu := contextMenu;
   itm := TMenuItem.Create(self);
   itm.Action := fActClear;
+  contextMenu.Items.Add(itm);
+  itm := TMenuItem.Create(self);
+  itm.Action := fActCopyMsg;
+  contextMenu.Items.Add(itm);
+  itm := TMenuItem.Create(self);
+  itm.Action := fActSelAll;
   contextMenu.Items.Add(itm);
   itm := TMenuItem.Create(self);
   itm.Action := fActSaveMsg;
@@ -127,20 +143,39 @@ end;
 
 function TCEMessagesWidget.contextActionCount: integer;
 begin
-  result := 2;
+  result := 4;
 end;
 
 function TCEMessagesWidget.contextAction(index: integer): TAction;
 begin
   case index of
     0: result := fActClear;
-    1: result := fActSaveMsg;
+    1: result := fActCopyMsg;
+    2: result := fActSelAll;
+    3: result := fActSaveMsg;
+    else result := nil;
   end;
 end;
 
 procedure TCEMessagesWidget.actClearExecute(Sender: TObject);
 begin
   List.Clear;
+end;
+
+procedure TCEMessagesWidget.actCopyMsgExecute(Sender: TObject);
+var
+  i: NativeInt;
+  str: string;
+begin
+  str := '';
+  for i := 0 to List.Items.Count-1 do if List.Items[i].Selected then
+    str += List.Items[i].Caption + LineEnding;
+  Clipboard.AsText := str;
+end;
+
+procedure TCEMessagesWidget.actSelAllExecute(Sender: TObject);
+begin
+  List.SelectAll;
 end;
 
 procedure TCEMessagesWidget.actSaveMsgExecute(Sender: TObject);

@@ -5,7 +5,7 @@ unit ce_editor;
 interface
 
 uses
-  Classes, SysUtils, eventlog, FileUtil, ExtendedNotebook, Forms, Controls,
+  Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
   SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common;
@@ -18,6 +18,7 @@ type
     macRecorder: TSynMacroRecorder;
     editorStatus: TStatusBar;
     procedure PageControlChange(Sender: TObject);
+    procedure PageControlCloseTabClicked(Sender: TObject);
   protected
     procedure autoWidgetUpdate; override;
   private
@@ -27,6 +28,7 @@ type
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
+    procedure memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     function getCurrentEditor: TCESynMemo;
     function getEditor(index: NativeInt): TCESynMemo;
     function getEditorCount: NativeInt;
@@ -34,7 +36,6 @@ type
     procedure identifierToD2Syn(const aMemo: TCESynMemo);
   public
     constructor create(aOwner: TComponent); override;
-    destructor destroy; override;
     procedure addEditor;
     procedure removeEditor(const aIndex: NativeInt);
     //
@@ -46,6 +47,9 @@ type
 
 implementation
 {$R *.lfm}
+
+uses
+  ce_main;
 
 constructor TCEEditorWidget.create(aOwner: TComponent);
 var
@@ -63,11 +67,6 @@ begin
   end;
 end;
 
-destructor TCEEditorWidget.destroy;
-begin
-  inherited;
-end;
-
 function TCEEditorWidget.getEditorCount: NativeInt;
 begin
   result := pageControl.PageCount;
@@ -75,7 +74,9 @@ end;
 
 function TCEEditorWidget.getEditorIndex: NativeInt;
 begin
-  result := pageControl.PageIndex;
+  if pageControl.PageCount > 0 then
+    result := pageControl.PageIndex
+  else result := -1;
 end;
 
 function TCEEditorWidget.getCurrentEditor: TCESynMemo;
@@ -109,6 +110,12 @@ begin
   focusedEditorChanged;
 end;
 
+procedure TCEEditorWidget.PageControlCloseTabClicked(Sender: TObject);
+begin
+  // closeBtn not implemented
+  mainForm.actFileClose.Execute;
+end;
+
 procedure TCEEditorWidget.addEditor;
 var
   sheet: TTabSheet;
@@ -125,6 +132,7 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnMouseDown := @memoMouseDown;
   memo.OnChange := @memoChange;
+  memo.OnMouseMove := @memoMouseMove;
   //
   //http://bugs.freepascal.org/view.php?id=26320
   focusedEditorChanged;
@@ -153,6 +161,12 @@ begin
   fNeedAutoUpdate := true;
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
+end;
+
+procedure TCEEditorWidget.memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+  if ssLeft in Shift then
+    fNeedAutoUpdate := true;
 end;
 
 procedure TCEEditorWidget.memoChange(Sender: TObject);

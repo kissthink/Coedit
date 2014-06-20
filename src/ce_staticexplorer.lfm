@@ -1,0 +1,53 @@
+inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
+  Left = 1569
+  Height = 278
+  Caption = 'Static explorer'
+  ClientHeight = 278
+  inherited Back: TPanel
+    Height = 278
+    ClientHeight = 278
+    inherited Content: TPanel
+      Height = 278
+      ClientHeight = 278
+      object Tree: TTreeView[0]
+        Left = 4
+        Height = 242
+        Top = 32
+        Width = 324
+        Align = alClient
+        BorderSpacing.Around = 4
+        DefaultItemHeight = 18
+        HideSelection = False
+        ReadOnly = True
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+        Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+      end
+      object Panel1: TPanel[1]
+        Left = 2
+        Height = 26
+        Top = 2
+        Width = 328
+        Align = alTop
+        BorderSpacing.Around = 2
+        BevelOuter = bvNone
+        ClientHeight = 26
+        ClientWidth = 328
+        TabOrder = 1
+        object TreeFilterEdit1: TTreeFilterEdit
+          Left = 2
+          Height = 22
+          Top = 2
+          Width = 324
+          ButtonWidth = 23
+          NumGlyphs = 1
+          Align = alClient
+          BorderSpacing.Around = 2
+          MaxLength = 0
+          TabOrder = 0
+          FilteredTreeview = Tree
+        end
+      end
+    end
+  end
+end

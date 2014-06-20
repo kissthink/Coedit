@@ -1,8 +1,8 @@
 object CEMainForm: TCEMainForm
-  Left = 1098
+  Left = 1162
   Height = 53
   Top = 0
-  Width = 805
+  Width = 741
   AllowDropFiles = True
   Caption = 'Coedit'
   ChildSizing.Layout = cclLeftToRightThenTopToBottom
@@ -10,6 +10,7 @@ object CEMainForm: TCEMainForm
   OnDropFiles = FormDropFiles
   OnShow = FormShow
   Position = poMainFormCenter
+  ShowHint = True
   LCLVersion = '1.2.4.0'
   object mainMenu: TMainMenu
     Images = imgList
@@ -2565,8 +2566,9 @@ object CEMainForm: TCEMainForm
     }
   end
   object ApplicationProperties1: TApplicationProperties
-    HintPause = 2
-    HintShortPause = 2
+    HintHidePause = 1000
+    HintPause = 25
+    HintShortPause = 8
     left = 96
   end
   object LfmSyn: TSynLFMSyn

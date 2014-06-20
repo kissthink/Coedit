@@ -1,33 +1,34 @@
 inherited CEEditorWidget: TCEEditorWidget
-  Left = 1098
+  Left = 1163
   Height = 382
   Top = 91
-  Width = 526
-  BorderIcons = [biSystemMenu, biMinimize, biMaximize]
+  Width = 461
   Caption = 'Source editor'
   ClientHeight = 382
-  ClientWidth = 526
+  ClientWidth = 461
   inherited Back: TPanel
     Height = 382
-    Width = 526
+    Width = 461
     ClientHeight = 382
-    ClientWidth = 526
+    ClientWidth = 461
     inherited Content: TPanel
       Height = 382
-      Width = 526
+      Width = 461
       BevelOuter = bvRaised
       ClientHeight = 382
-      ClientWidth = 526
+      ClientWidth = 461
       object PageControl: TExtendedNotebook[0]
         Left = 3
         Height = 351
         Top = 3
-        Width = 520
+        Width = 455
         Align = alClient
         BorderSpacing.Around = 2
+        Images = imgList
         TabOrder = 0
         OnChange = PageControlChange
-        Options = [nboShowCloseButtons]
+        OnCloseTabClicked = PageControlCloseTabClicked
+        Options = [nboShowCloseButtons, nboShowAddTabButton]
         TabDragMode = dmAutomatic
         TabDragAcceptMode = dmAutomatic
       end
@@ -35,7 +36,7 @@ inherited CEEditorWidget: TCEEditorWidget
         Left = 3
         Height = 23
         Top = 356
-        Width = 520
+        Width = 455
         BorderSpacing.Around = 2
         Panels = <        
           item

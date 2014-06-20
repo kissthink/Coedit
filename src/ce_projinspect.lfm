@@ -32,6 +32,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         ScrollBars = ssAutoBoth
         ShowRoot = False
         TabOrder = 0
+        OnKeyDown = TreeKeyDown
         Options = [tvoAutoExpand, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF020002000000000000000000000000000000FFFFFFFF000000000000
@@ -53,6 +54,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         object btnAddFile: TSpeedButton
           Left = 0
           Height = 24
+          Hint = 'add a source file to the project'
           Top = 0
           Width = 28
           Align = alLeft
@@ -143,6 +145,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         object btnAddFold: TSpeedButton
           Left = 56
           Height = 24
+          Hint = 'add a folder of source  to the project'
           Top = 0
           Width = 28
           Align = alLeft
@@ -202,6 +205,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         object btnRemFile: TSpeedButton
           Left = 28
           Height = 24
+          Hint = 'remove a source file from the project'
           Top = 0
           Width = 28
           Align = alLeft
@@ -246,8 +250,13 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
       end
     end
   end
+  inherited contextMenu: TPopupMenu
+    left = 8
+    top = 352
+  end
   object imgList: TImageList[2]
-    left = 32
+    left = 40
+    top = 352
     Bitmap = {
       4C69040000001000000010000000B3B3B1EFB0B0ADFFAEAEACFFAEAEACFFAEAE
       ACFFAFAFACFFAFAFADFFB1B1AFD5B4B4B100B5B5B300B5B5B300B5B5B300B5B5

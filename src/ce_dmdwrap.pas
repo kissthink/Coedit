@@ -321,7 +321,7 @@ end;
 
 function TMsgOpts.getOpts: string;
 const
-  DepStr : array[TDepHandling] of string = ('-d ','-dw ', '-de ');
+  DepStr : array[TDepHandling] of string = ('-d ',''(*-dw*), '-de ');
 begin
   result := DepStr[fDepHandling];
   if fVerb then result += '-v ';
@@ -750,8 +750,8 @@ begin
   result :=
     fDocOpts.getOpts + fDebugOpts.getOpts + fMsgOpts.getOpts
     + fOutputOpts.getOpts + fPathsOpts.getOpts + fOthers.getOpts;
-    if result[length(result)] = ' ' then
-      setlength(result, length(result)-1);
+  if length(result) > 0 then if result[length(result)] = ' ' then
+    setlength(result, length(result)-1);
 end;
 
 procedure TCompilerConfiguration.setName(const aValue: string);

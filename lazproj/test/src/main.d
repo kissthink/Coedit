@@ -1,7 +1,7 @@
 /*
 Test:
 - prj save/load
-- prj compile
+- prj compile/run
 - multiples sources
 - relative paths
 - various switches

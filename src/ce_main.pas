@@ -7,9 +7,9 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg,
-  Controls, Graphics, Dialogs, Menus, ActnList, ExtCtrls, process, ce_common,
+  Controls, Graphics, Dialogs, Menus, ActnList, ExtCtrls, process, ce_jsoninfos, ce_common,
   ce_dmdwrap, ce_synmemo, ce_widget, ce_messages, ce_editor, ce_projinspect,
-  ce_projconf;
+  ce_projconf, ce_staticexplorer;
 
 type
 
@@ -140,6 +140,7 @@ type
     fEditWidg: TCEEditorWidget;
     fProjWidg: TCEProjectInspectWidget;
     fPrjCfWidg: TCEProjectConfigurationWidget;
+    fStExpWidg: TCEStaticExplorerWidget;
 
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
@@ -204,11 +205,13 @@ begin
   fEditWidg := TCEEditorWidget.create(nil);
   fProjWidg := TCEProjectInspectWidget.create(nil);
   fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
+  //fStExpWidg:= TCEStaticExplorerWidget.create(nil);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
   fWidgList.addWidget(@fProjWidg);
   fWidgList.addWidget(@fPrjCfWidg);
+  //fWidgList.addWidget(@fStExpWidg);
 
   for widg in fWidgList do widg.Show;
 
@@ -247,6 +250,7 @@ begin
   fEditWidg.Free;
   fProjWidg.Free;
   fPrjCfWidg.Free;
+  fStExpWidg.Free;
   fProject.Free;
   //
   inherited;
@@ -700,12 +704,19 @@ var
   dmdproc: TProcess;
   olddir, prjpath: string;
 const
-  // option -v causes an hang if poWaitOnExit is included
+  // option -v causes a hang if poWaitOnExit is included
   procopts: array[boolean] of TProcessOptions = (
     [poWaitOnExit, poStdErrToOutput, poUsePipes],
     [poStdErrToOutput, poUsePipes]
   );
 begin
+
+  if aProject.Sources.Count = 0 then
+  begin
+    fMesgWidg.addCeErr( aProject.fileName + ' has no source files' );
+    exit;
+  end;
+
   olddir := '';
   dmdproc := TProcess.Create(nil);
   getDir(0, olddir);
@@ -753,7 +764,7 @@ begin
 
     procname := aProject.currentConfiguration.pathsOptions.outputFilename;
     if procname <> '' then procname := aProject.getAbsoluteFilename(procname)
-    else
+    else if aProject.Sources.Count > 0 then
     begin
       procname := extractFilename(aProject.Sources.Strings[0]);
       procname := procname[1..length(procname)-2];
@@ -841,12 +852,15 @@ end;
 procedure TCEMainForm.widgetShowFromAction(sender: TObject);
 var
   widg: TCEWidget;
+  win: TControl;
 begin
   widg := TCEWidget( TComponent(sender).tag );
   if widg = nil then exit;
-  if widg.Visible then widg.Hide else widg.Show;
+  win := DockMaster.GetAnchorSite(widg);
+  if win = nil then exit;
+  win.Show;
+  win.BringToFront;
 end;
-
 {$ENDREGION}
 
 {$REGION project ***************************************************************}
@@ -953,8 +967,13 @@ begin
 end;
 
 procedure TCEMainForm.actProjOptsExecute(Sender: TObject);
+var
+  win: TControl;
 begin
-  fPrjCfWidg.Show;
+  win := DockMaster.GetAnchorSite(fPrjCfWidg);
+  if win = nil then exit;
+  win.Show;
+  win.BringToFront;
 end;
 
 procedure TCEMainForm.actProjSourceExecute(Sender: TObject);
