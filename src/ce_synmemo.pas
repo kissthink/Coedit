@@ -42,11 +42,11 @@ begin
   Options2 := [eoEnhanceEndKey, eoFoldedCopyPaste, eoOverwriteBlock];
   //
   Gutter.LineNumberPart.ShowOnlyLineNumbersMultiplesOf := 5;
-  Gutter.LineNumberPart.MarkupInfo.Foreground := clSilver;
+  Gutter.LineNumberPart.MarkupInfo.Foreground := clGray;
   Gutter.SeparatorPart.LineOffset:=1;
   Gutter.SeparatorPart.LineWidth:=1;
-  Gutter.SeparatorPart.MarkupInfo.Foreground := clSilver;
-  Gutter.CodeFoldPart.MarkupInfo.Foreground := clSilver;
+  Gutter.SeparatorPart.MarkupInfo.Foreground := clGray;
+  Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
 end;

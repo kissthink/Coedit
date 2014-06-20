@@ -26,6 +26,7 @@ type
     procedure btnDelConfClick(Sender: TObject);
     procedure btnCloneCurrClick(Sender: TObject);
     procedure GridEditorFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
+    procedure GridModified(Sender: TObject);
     procedure selConfChange(Sender: TObject);
     procedure TreeChange(Sender: TObject; Node: TTreeNode);
   private
@@ -92,6 +93,11 @@ procedure TCEProjectConfigurationWidget.GridEditorFilter(Sender: TObject;
   aEditor: TPropertyEditor; var aShow: boolean);
 begin
   if aEditor.ClassType = TCollectionPropertyEditor then aShow := false;
+end;
+
+procedure TCEProjectConfigurationWidget.GridModified(Sender: TObject);
+begin
+  setFocus;
 end;
 
 procedure TCEProjectConfigurationWidget.btnAddConfClick(Sender: TObject);

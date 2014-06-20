@@ -1,33 +1,33 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1163
+  Left = 1160
   Height = 172
   Top = 511
-  Width = 741
+  Width = 744
   Caption = 'Messages'
   ClientHeight = 172
-  ClientWidth = 741
+  ClientWidth = 744
   inherited Back: TPanel
     Height = 172
-    Width = 741
+    Width = 744
     ClientHeight = 172
-    ClientWidth = 741
+    ClientWidth = 744
     inherited Content: TPanel
       Height = 172
-      Width = 741
+      Width = 744
       ClientHeight = 172
-      ClientWidth = 741
+      ClientWidth = 744
       object List: TListView[0]
         Left = 2
         Height = 168
         Top = 2
-        Width = 737
+        Width = 740
         Align = alClient
         AutoSort = False
         AutoWidthLastColumn = True
         BorderSpacing.Around = 2
         Columns = <        
           item
-            Width = 733
+            Width = 736
           end>
         HideSelection = False
         IconOptions.WrapText = False

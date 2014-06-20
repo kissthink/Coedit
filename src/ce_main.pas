@@ -134,6 +134,7 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure FormShow(Sender: TObject);
   private
+    fUpdateCount: NativeInt;
     fProject: TCEProject;
     fWidgList: TCEWidgetList;
     fMesgWidg: TCEMessagesWidget;
@@ -263,57 +264,67 @@ var
   hasProj: boolean;
 begin
   if fEditWidg = nil then exit;
-  //
-  curr := fEditWidg.currentEditor;
-  hasEd := curr <> nil;
-  if hasEd then
-  begin
-    actEdCopy.Enabled := curr.SelAvail;
-    actEdCut.Enabled := curr.SelAvail;
-    actEdPaste.Enabled := curr.CanPaste;
-    actEdUndo.Enabled := curr.CanUndo;
-    actEdRedo.Enabled := curr.CanRedo;
-    actEdMacPlay.Enabled := true;
-    actEdMacStartStop.Enabled := true;
-    //
-    actFileCompAndRun.Enabled := true;
-    actFileCompAndRunWithArgs.Enabled := true;
-    actFileSave.Enabled := true;
-    actFileSaveAs.Enabled := true;
-    actFileClose.Enabled := true;
-    actFileSaveAll.Enabled := true;
-  end
-  else begin
-    actEdCopy.Enabled := false;
-    actEdCut.Enabled := false ;
-    actEdPaste.Enabled := false ;
-    actEdUndo.Enabled := false ;
-    actEdRedo.Enabled := false ;
-    actEdMacPlay.Enabled := false;
-    actEdMacStartStop.Enabled := false;
-    //
-    actFileCompAndRun.Enabled := false;
-    actFileCompAndRunWithArgs.Enabled := false;
-    actFileSave.Enabled := false;
-    actFileSaveAs.Enabled := false;
-    actFileClose.Enabled := false;
-    actFileSaveAll.Enabled := false;
+  if fUpdateCount > 0 then exit;
+  Inc(fUpdateCount);
+  try
+    curr := fEditWidg.currentEditor;
+    hasEd := curr <> nil;
+    if hasEd then
+    begin
+      actEdCopy.Enabled := curr.SelAvail;
+      actEdCut.Enabled := curr.SelAvail;
+      actEdPaste.Enabled := curr.CanPaste;
+      {$IFDEF MSWINDOWS}
+      // close file : raises a segfault on linux UndoStuff.>>fList<<.Count...
+      actEdUndo.Enabled := curr.CanUndo;
+      actEdRedo.Enabled := curr.CanRedo;
+      {$ENDIF}
+      actEdMacPlay.Enabled := true;
+      actEdMacStartStop.Enabled := true;
+      //
+      actFileCompAndRun.Enabled := true;
+      actFileCompAndRunWithArgs.Enabled := true;
+      actFileSave.Enabled := true;
+      actFileSaveAs.Enabled := true;
+      actFileClose.Enabled := true;
+      actFileSaveAll.Enabled := true;
+    end
+    else begin
+      actEdCopy.Enabled := false;
+      actEdCut.Enabled := false ;
+      actEdPaste.Enabled := false;
+      {$IFDEF MSWINDOWS}
+      actEdUndo.Enabled := false;
+      actEdRedo.Enabled := false;
+      {$ENDIF}
+      actEdMacPlay.Enabled := false;
+      actEdMacStartStop.Enabled := false;
+      //
+      actFileCompAndRun.Enabled := false;
+      actFileCompAndRunWithArgs.Enabled := false;
+      actFileSave.Enabled := false;
+      actFileSaveAs.Enabled := false;
+      actFileClose.Enabled := false;
+      actFileSaveAll.Enabled := false;
+    end;
+
+    hasProj := fProject <> nil;
+    actProjSave.Enabled := hasProj;
+    actProjSaveAs.Enabled := hasProj;
+    actProjOpts.Enabled := hasProj;
+    actProjClose.Enabled := hasProj;
+    actProjCompile.Enabled := hasProj;
+    actProjCompileAndRun.Enabled := hasProj;
+    actProjCompAndRunWithArgs.Enabled := hasProj;
+    actProjRun.Enabled := hasProj;
+    actProjRunWithArgs.Enabled := hasProj;
+    actProjSource.Enabled := hasProj;
+
+    actFileAddToProj.Enabled := hasEd and hasProj;
+
+  finally
+    Dec(fUpdateCount);
   end;
-
-  hasProj := fProject <> nil;
-  actProjSave.Enabled := hasProj;
-  actProjSaveAs.Enabled := hasProj;
-  actProjOpts.Enabled := hasProj;
-  actProjClose.Enabled := hasProj;
-  actProjCompile.Enabled := hasProj;
-  actProjCompileAndRun.Enabled := hasProj;
-  actProjCompAndRunWithArgs.Enabled := hasProj;
-  actProjRun.Enabled := hasProj;
-  actProjRunWithArgs.Enabled := hasProj;
-  actProjSource.Enabled := hasProj;
-
-  actFileAddToProj.Enabled := hasEd and hasProj;
-
 end;
 
 procedure TCEMainForm.checkWidgetActions(const aWidget: TCEWidget);
@@ -648,13 +659,13 @@ begin
     temppath := GetTempDir(false);
     chDir(temppath);
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + format('temp_%.8x', [LongWord(@dmdproc)]);
+    fname := temppath + format('temp_%.8x', [NativeInt(@dmdproc)]);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 
     dmdproc.Options:= [poWaitOnExit, poStdErrToOutput, poUsePipes];
     dmdproc.Executable:= 'dmd';
-    dmdproc.Parameters.Text := '"'+ fname +'.d"';
+    dmdproc.Parameters.Add(fname + '.d');
     try
       dmdproc.Execute;
       ProcessOutputToMsg(dmdproc);
@@ -731,7 +742,7 @@ begin
       procopts[aProject.currentConfiguration.messagesOptions.verbose];
 
     dmdproc.Executable := 'dmd';
-    dmdproc.Parameters.Text := aProject.getOpts;
+    aProject.getOpts(dmdproc.Parameters);
     try
       dmdproc.Execute;
       ProcessOutputToMsg(dmdproc);

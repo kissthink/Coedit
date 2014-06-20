@@ -73,7 +73,7 @@ type
     function getAbsoluteFilename(const aFilename: string): string;
     procedure addSource(const aFilename: string);
     function addConfiguration: TCompilerConfiguration;
-    function getOpts: string;
+    procedure getOpts(const aList: TStrings);
     //
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
     property currentConfiguration: TCompilerConfiguration read getCurrConf;
@@ -313,11 +313,23 @@ begin
 end;
 
 procedure TCEProject.doChanged;
+{$IFDEF DEBUG}
+var
+  lst: TStringList;
+{$ENDIF}
 begin
   fModified := true;
   if assigned(fOnChange) then fOnChange(Self);
   {$IFDEF DEBUG}
-  writeln(getOpts);
+  lst := TStringList.Create;
+  try
+    lst.Add('---------begin----------');
+    getOpts(lst);
+    lst.Add('---------end----------');
+    writeln(lst.Text);
+  finally
+    lst.Free;
+  end;
   {$ENDIF}
 end;
 
@@ -366,18 +378,17 @@ begin
   afterChanged;
 end;
 
-function TCEProject.getOpts: string;
+procedure TCEProject.getOpts(const aList: TStrings);
 var
   rel, abs: string;
 begin
-  result := '';
   if fConfIx = -1 then exit;
-  for rel in fSrcs do
+  for rel in fSrcs do if rel <> '' then
   begin
     abs := expandFilenameEx(fBasePath,rel);
-    result += '"' + abs + '" ' ;
+    aList.Add(abs); // process.inc ln 249. double quotes are added anyway if there's a space...
   end;
-  result += TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts;
+  TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts(aList);
 end;
 
 function TCEProject.getAbsoluteSourceName(const aIndex: integer): string;

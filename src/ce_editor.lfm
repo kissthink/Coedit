@@ -1,27 +1,27 @@
 inherited CEEditorWidget: TCEEditorWidget
-  Left = 1163
+  Left = 1159
   Height = 382
   Top = 91
-  Width = 461
+  Width = 465
   Caption = 'Source editor'
   ClientHeight = 382
-  ClientWidth = 461
+  ClientWidth = 465
   inherited Back: TPanel
     Height = 382
-    Width = 461
+    Width = 465
     ClientHeight = 382
-    ClientWidth = 461
+    ClientWidth = 465
     inherited Content: TPanel
       Height = 382
-      Width = 461
+      Width = 465
       BevelOuter = bvRaised
       ClientHeight = 382
-      ClientWidth = 461
+      ClientWidth = 465
       object PageControl: TExtendedNotebook[0]
         Left = 3
         Height = 351
         Top = 3
-        Width = 455
+        Width = 459
         Align = alClient
         BorderSpacing.Around = 2
         Images = imgList
@@ -36,7 +36,7 @@ inherited CEEditorWidget: TCEEditorWidget
         Left = 3
         Height = 23
         Top = 356
-        Width = 455
+        Width = 459
         BorderSpacing.Around = 2
         Panels = <        
           item

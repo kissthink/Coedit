@@ -22,7 +22,8 @@ type
   protected
     property onChange: TNotifyEvent read fOnChange write fOnChange;
   public
-    function getOpts: string; virtual; abstract;
+    //function getOpts: string; virtual; abstract;
+    procedure getOpts(const aList: TStrings); virtual; abstract;
   end;
 
   (*****************************************************************************
@@ -45,7 +46,7 @@ type
     property JSONFilename: string read fJsonFname write setJSONFile;
   public
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
 
@@ -81,7 +82,7 @@ type
   public
     constructor create;
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
   (*****************************************************************************
@@ -132,7 +133,7 @@ type
     property versionIdentifier: string read fVerId write setVerId;
   public
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
   (**
@@ -158,7 +159,7 @@ type
     property generateMapFile: boolean read fMap write setMap;
   public
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
   (*****************************************************************************
@@ -186,7 +187,7 @@ type
     constructor create;
     destructor destroy; override;
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
   (*****************************************************************************
@@ -202,7 +203,7 @@ type
     constructor create;
     destructor destroy; override;
     procedure assign(aValue: TPersistent); override;
-    function getOpts: string; override;
+    procedure getOpts(const aList: TStrings); override;
   end;
 
   (*****************************************************************************
@@ -229,7 +230,6 @@ type
     procedure setOthers(const aValue: TOtherOpts);
   protected
     function nameFromID: string;
-    function getCmdLine: string;
   published
     property name: string read fName write setName;
     property documentationOptions: TDocOpts read fDocOpts write setDocOpts;
@@ -242,7 +242,7 @@ type
     constructor create(aCollection: TCollection); override;
     destructor destroy; override;
     procedure assign(aValue: TPersistent); override;
-    property getOpts: string read getCmdLine;
+    procedure getOpts(const aList: TStrings);
     property onChanged: TNotifyEvent read fOnChanged write fOnChanged;
   end;
 
@@ -259,13 +259,12 @@ end;
 (*******************************************************************************
  * TDocOpts
  *)
-function TDocOpts.getOpts: string;
+procedure TDocOpts.getOpts(const aList: TStrings);
 begin
-  result := '';
-  if fGenDoc then result += '-D ';
-  if fGenJson then result += '-X ';
-  if fDocDir <> '' then result += '-Dd' + '"' + fDocDir + '" ';
-  if fJsonFname <> '' then result += '-Xf' + '"'+ fJsonFname + '" ';
+  if fGenDoc then aList.Add('-D');
+  if fGenJson then aList.Add('-X');
+  if fDocDir <> '' then aList.Add('-Dd' + fDocDir);
+  if fJsonFname <> '' then aList.Add('-Xf' + fJsonFname);
 end;
 
 procedure TDocOpts.assign(aValue: TPersistent);
@@ -319,16 +318,19 @@ begin
   fDepHandling := TDepHandling.warning;
 end;
 
-function TMsgOpts.getOpts: string;
+procedure TMsgOpts.getOpts(const aList: TStrings);
+var
+  opt : string;
 const
-  DepStr : array[TDepHandling] of string = ('-d ',''(*-dw*), '-de ');
+  DepStr : array[TDepHandling] of string = ('-d', '', '-de');
 begin
-  result := DepStr[fDepHandling];
-  if fVerb then result += '-v ';
-  if fWarn then result += '-w ';
-  if fWarnEx then result += '-wi ';
-  if fVtls then result += '-vtls ';
-  if fQuiet then result += '-quiet ';
+  opt := DepStr[fDepHandling];
+  if opt <> '' then aList.Add(opt);
+  if fVerb then aList.Add('-v');
+  if fWarn then aList.Add('-w');
+  if fWarnEx then aList.Add('-wi');
+  if fVtls then aList.Add('-vtls');
+  if fQuiet then aList.Add('-quiet');
 end;
 
 procedure TMsgOpts.assign(aValue: TPersistent);
@@ -393,21 +395,25 @@ end;
 (*******************************************************************************
  * TOutputOpts
  *)
-function TOutputOpts.getOpts: string;
+procedure TOutputOpts.getOpts(const aList: TStrings);
+var
+  opt: string;
 const
-  trgKindStr: array[TTargetSystem] of string = ('', '-m32 ','-m64 ');
-  binKindStr: array[TBinaryKind] of string = ('', '-lib ', '-shared ', '-c ');
+  trgKindStr: array[TTargetSystem] of string = ('', '-m32','-m64');
+  binKindStr: array[TBinaryKind] of string = ('', '-lib', '-shared', '-c');
 begin
-  result := binKindStr[fBinKind];
-  result += trgKindStr[fTrgKind];
-  if fUt then result += '-unittest ';
-  if fVerId <> '' then result += '-version=' + fVerId + ' ';;
-  if fInline then result += '-inline ';
-  if fNoBounds then result += '-noboundscheck ';
-  if fOptimz then result += '-O ';
-  if fGenStack then result += '-gs ';
-  if fMain then result += '-main ';
-  if fRelease then result += '-release ';
+  opt := binKindStr[fBinKind];
+  if opt <> '' then aList.Add(opt);
+  opt := trgKindStr[fTrgKind];
+  if opt <> '' then aList.Add(opt);
+  if fUt then aList.Add('-unittest');
+  if fVerId <> '' then aList.Add('-version=' + fVerId);
+  if fInline then aList.Add('-inline');
+  if fNoBounds then aList.Add('-noboundscheck');
+  if fOptimz then aList.Add('-O');
+  if fGenStack then aList.Add('-gs');
+  if fMain then aList.Add('-main');
+  if fRelease then aList.Add('-release');
 end;
 
 procedure TOutputOpts.assign(aValue: TPersistent);
@@ -504,14 +510,13 @@ end;
 (*******************************************************************************
  * TDebugOpts
  *)
-function TDebugOpts.getOpts: string;
+procedure TDebugOpts.getOpts(const aList: TStrings);
 begin
-  result := '';
-  if fDbg then result += '-debug ';
-  if fDbgIdent <> '' then result += '-debug=' + fDbgIdent + ' ';
-  if fDbgD then result += '-g ';
-  if fDbgC then result += '-gc ';
-  if fMap then result += '-map ';
+  if fDbg then aList.Add('-debug');
+  if fDbgIdent <> '' then aList.Add('-debug=' + fDbgIdent);
+  if fDbgD then aList.Add('-g');
+  if fDbgC then aList.Add('-gc');
+  if fMap then aList.Add('-map');
 end;
 
 procedure TDebugOpts.assign(aValue: TPersistent);
@@ -568,19 +573,18 @@ end;
 (*******************************************************************************
  * TPathsOpts
  *)
-function TPathsOpts.getOpts: string;
+procedure TPathsOpts.getOpts(const aList: TStrings);
 var
   str: string;
 begin
-  result := '';
-  for str in fSrcs do
-    result += '"'+ str +'" ';
-  for str in fIncl do
-    result += '-I"'+ str +'" ';
-  for str in fImpt do
-    result += '-J"'+ str +'" ';
-  if fFname <> '' then result += '-of"' + fFname + '" ';
-  if fObjDir <> '' then result += '-od"' + fObjDir + '" ';
+  for str in fSrcs do if str <> '' then
+    aList.Add(str);
+  for str in fIncl do if str <> '' then
+    aList.Add('-I'+ str);
+  for str in fImpt do if str <> '' then
+    aList.Add('-J'+ str);
+  if fFname <> '' then aList.Add('-of' + fFname);
+  if fObjDir <> '' then aList.Add('-od' + fObjDir);
 end;
 
 constructor TPathsOpts.create;
@@ -672,13 +676,12 @@ begin
   inherited;
 end;
 
-function TOtherOpts.getOpts: string;
+procedure TOtherOpts.getOpts(const aList: TStrings);
 var
   str: string;
 begin
-  result := '';
-  for str in fCustom do
-    result += str + ' ';
+  for str in fCustom do if str <> '' then
+    aList.Add(str);
 end;
 
 procedure TOtherOpts.setCustom(const aValue: TStringList);
@@ -745,13 +748,14 @@ begin
   result := format('<configuration %d>',[ID]);
 end;
 
-function TCompilerConfiguration.getCmdLine: string;
+procedure TCompilerConfiguration.getOpts(const aList: TStrings);
 begin
-  result :=
-    fDocOpts.getOpts + fDebugOpts.getOpts + fMsgOpts.getOpts
-    + fOutputOpts.getOpts + fPathsOpts.getOpts + fOthers.getOpts;
-  if length(result) > 0 then if result[length(result)] = ' ' then
-    setlength(result, length(result)-1);
+  fDocOpts.getOpts(aList);
+  fDebugOpts.getOpts(aList);
+  fMsgOpts.getOpts(aList);
+  fOutputOpts.getOpts(aList);
+  fPathsOpts.getOpts(aList);
+  fOthers.getOpts(aList);
 end;
 
 procedure TCompilerConfiguration.setName(const aValue: string);
