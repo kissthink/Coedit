@@ -5,8 +5,8 @@ unit ce_synmemo;
 interface
 
 uses
-  Classes, SysUtils, SynEdit, SynMemo, ce_common, ce_d2syn,
-  SynPluginSyncroEdit, SynEditKeyCmds;
+  Classes, SysUtils, SynEdit, SynMemo, ce_d2syn,
+  SynPluginSyncroEdit, SynEditKeyCmds, ce_project;
 
 type
 
@@ -43,8 +43,8 @@ begin
   //
   Gutter.LineNumberPart.ShowOnlyLineNumbersMultiplesOf := 5;
   Gutter.LineNumberPart.MarkupInfo.Foreground := clGray;
-  Gutter.SeparatorPart.LineOffset:=1;
-  Gutter.SeparatorPart.LineWidth:=1;
+  Gutter.SeparatorPart.LineOffset := 1;
+  Gutter.SeparatorPart.LineWidth := 1;
   Gutter.SeparatorPart.MarkupInfo.Foreground := clGray;
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //

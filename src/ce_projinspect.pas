@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
-  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_common, ce_widget;
+  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_widget;
 
 type
   { TCEProjectInspectWidget }

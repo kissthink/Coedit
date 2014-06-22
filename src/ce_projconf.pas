@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, RTTIGrids, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, StdCtrls, Menus, Buttons, ce_widget, ce_common,
-  ce_dmdwrap, PropEdits, ObjectInspector;
+  ExtCtrls, ComCtrls, StdCtrls, Menus, Buttons, PropEdits, ObjectInspector,
+  ce_dmdwrap, ce_project, ce_widget;
 
 type
 
@@ -26,7 +26,6 @@ type
     procedure btnDelConfClick(Sender: TObject);
     procedure btnCloneCurrClick(Sender: TObject);
     procedure GridEditorFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
-    procedure GridModified(Sender: TObject);
     procedure selConfChange(Sender: TObject);
     procedure TreeChange(Sender: TObject; Node: TTreeNode);
   private
@@ -93,11 +92,6 @@ procedure TCEProjectConfigurationWidget.GridEditorFilter(Sender: TObject;
   aEditor: TPropertyEditor; var aShow: boolean);
 begin
   if aEditor.ClassType = TCollectionPropertyEditor then aShow := false;
-end;
-
-procedure TCEProjectConfigurationWidget.GridModified(Sender: TObject);
-begin
-  setFocus;
 end;
 
 procedure TCEProjectConfigurationWidget.btnAddConfClick(Sender: TObject);

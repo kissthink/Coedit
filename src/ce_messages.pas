@@ -89,7 +89,7 @@ end;
 procedure TCEMessagesWidget.scrollToBack;
 begin
   if not Visible then exit;
-  List.ViewOrigin := Point(0,List.Items.Count * 25);
+  List.ViewOrigin := Point(0, List.Items.Count * 25);
 end;
 
 procedure TCEMessagesWidget.addCeInf(const aMsg: string);

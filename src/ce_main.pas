@@ -6,10 +6,10 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
-  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg,
-  Controls, Graphics, Dialogs, Menus, ActnList, ExtCtrls, process, ce_jsoninfos, ce_common,
-  ce_dmdwrap, ce_synmemo, ce_widget, ce_messages, ce_editor, ce_projinspect,
-  ce_projconf, ce_staticexplorer;
+  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
+  Dialogs, Menus, ActnList, ExtCtrls, process,
+  ce_jsoninfos, ce_common, ce_dmdwrap, ce_project, ce_synmemo,
+  ce_widget, ce_messages, ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer;
 
 type
 
@@ -659,7 +659,7 @@ begin
     temppath := GetTempDir(false);
     chDir(temppath);
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + format('temp_%.8x', [NativeInt(@dmdproc)]);
+    fname := temppath + format('temp_%.8x', [NativeUInt(@dmdproc)]);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 
@@ -931,6 +931,7 @@ begin
   fProject.beforeChanged;
   fProject.fileName := aFilename;
   loadCompFromTxtFile(fProject, aFilename);
+  fProject.afterLoad;
   fProject.afterChanged;
 end;
 

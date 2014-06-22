@@ -180,7 +180,7 @@ end;
 
 procedure TCEEditorWidget.autoWidgetUpdate;
 const
-  modstr: array[boolean] of string = ('...','MODIFIED');
+  modstr: array[boolean] of string = ('...', 'MODIFIED');
 var
   ed: TCESynMemo;
 begin

@@ -3,34 +3,42 @@ Coedit
 
 Coedit is a simple IDE for the [D2](http://dlang.org) lang. (**Co** mpile & **Edit**).
 
-Initial features (planed)
--------------------------
-- targets Win/Macos/Linux
+Current features
+----------------
+- multi platform (Win/Linux/Macos).
 - projects.
 - multiple project configurations (set of switches and options).
-- project configurations templates (release, debug, etc.).
-- D syntax highlighter, folding.
-- compile, run directly from UI.
+- compile, run directly from the UI.
 - instant run (without saving, script-like).
-- basic auto completion (brackets, key-words, ...)
 - synchronized edition in a block.
+- D syntax highlighter, folding, identifier markup.
+
+Planed in version 1
+-------------------
+- project configurations templates (release, debug, etc.).
+- basic auto completion (brackets, key-words, ...).
+- console input handling.
+- static library explorer (using JSON infos).
 
 Project information
 -------------------
-- draft
-- programmed in Object pascal.
-- [Lazarus](http://www.lazarus.freepascal.org) is used as IDE.
-- based on dmd (gdc or lmd characteristics are not hanlded).
-- no other third party dependencies (so far...)
+- state: alpha 1.
+- programmed in Object pascal with [Lazarus](http://www.lazarus.freepascal.org).
+- based on *dmd* (*gdc* or *lmd* characteristics are not handled).
+- no other third party dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)
 
-Setup
------
-- clone this repo.
+Setup & test
+------------
+Coedit must be build from the sources:
+- clone this repository (even if not mandatory, preferably from the latest tag, as tagged versions are more tested then the others.)
 - both [dmd](http://dlang.org/download.html) and [Lazarus](http://www.lazarus.freepascal.org) must be setup.
-- open "coedit.lpr" in Lazarus.
-- press the Run button.
+- open "coedit.lpr" in *Lazarus*, set the build mode to *Release*
+- press the Run button (or build)
+- in coedit open *"lazproj\test\coeditproj\test.coedit"* from the project menu.
 
 Preview
 -------
-
-![Interface screen-cap, under Windows](lazproj/Gui.tease.png "Coedit GUI preview")
+Windows version:
+![Win screen-cap](lazproj/Gui.tease.png "Coedit GUI preview")
+Linux version:
+![Nux screen-cap](lazproj/Gui.tease.kde.png "Coedit GUI preview")

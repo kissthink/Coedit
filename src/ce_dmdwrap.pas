@@ -22,7 +22,6 @@ type
   protected
     property onChange: TNotifyEvent read fOnChange write fOnChange;
   public
-    //function getOpts: string; virtual; abstract;
     procedure getOpts(const aList: TStrings); virtual; abstract;
   end;
 
@@ -60,7 +59,7 @@ type
    *)
   TMsgOpts = class(TOptsGroup)
   private
-    fDepHandling : TDepHandling; // could be also related to analysis
+    fDepHandling : TDepHandling;
     fVerb: boolean;
     fWarn: boolean;
     fWarnEx: boolean;
@@ -136,7 +135,7 @@ type
     procedure getOpts(const aList: TStrings); override;
   end;
 
-  (**
+  (*****************************************************************************
    * Encapsulates the options/args related to the debuging
    *)
   TDebugOpts = class(TOptsGroup)
@@ -248,6 +247,9 @@ type
 
 implementation
 
+uses
+  ce_common;
+
 (*******************************************************************************
  * TOptsGroup
  *)
@@ -276,8 +278,8 @@ begin
     src       := TDocOpts(aValue);
     fGenDoc   := src.fGenDoc;
     fGenJson  := src.fGenJson;
-    fDocDir   := src.fDocDir;
-    fJsonFname:= src.fJsonFname;
+    fDocDir   := patchPlateformPath(src.fDocDir);
+    fJsonFname:= patchPlateformPath(src.fJsonFname);
   end
   else inherited;
 end;
@@ -299,14 +301,14 @@ end;
 procedure TDocOpts.setDocDir(const aValue: string);
 begin
   if fDocDir = aValue then exit;
-  fDocDir := aValue;
+  fDocDir := patchPlateformPath(aValue);
   doChanged;
 end;
 
 procedure TDocOpts.setJSONFile(const aValue: string);
 begin
   if fJsonFname = aValue then exit;
-  fJsonFname := aValue;
+  fJsonFname := patchPlateformPath(aValue);
   doChanged;
 end;
 
@@ -573,6 +575,13 @@ end;
 (*******************************************************************************
  * TPathsOpts
  *)
+constructor TPathsOpts.create;
+begin
+  fSrcs := TStringList.Create;
+  fIncl := TStringList.Create;
+  fImpt := TStringList.Create;
+end;
+
 procedure TPathsOpts.getOpts(const aList: TStrings);
 var
   str: string;
@@ -587,13 +596,6 @@ begin
   if fObjDir <> '' then aList.Add('-od' + fObjDir);
 end;
 
-constructor TPathsOpts.create;
-begin
-  fSrcs := TStringList.Create;
-  fIncl := TStringList.Create;
-  fImpt := TStringList.Create;
-end;
-
 procedure TPathsOpts.assign(aValue: TPersistent);
 var
   src: TPathsOpts;
@@ -604,8 +606,8 @@ begin
     fSrcs.Assign(src.fSrcs);
     fIncl.Assign(src.fIncl);
     fImpt.Assign(src.fImpt);
-    fFName := src.fFname;
-    fObjDir := src.fObjDir;
+    fFName := patchPlateformPath(src.fFname);
+    fObjDir := patchPlateformPath(src.fObjDir);
   end
   else inherited;
 end;
@@ -621,32 +623,35 @@ end;
 procedure TPathsOpts.setFname(const aValue: string);
 begin
   if fFname = aValue then exit;
-  fFname := aValue;
+  fFname := patchPlateformPath(aValue);
   doChanged;
 end;
 
 procedure TPathsOpts.setObjDir(const aValue: string);
 begin
   if fObjDir = aValue then exit;
-  fObjDir := aValue;
+  fObjDir := patchPlateformPath(aValue);
   doChanged;
 end;
 
 procedure TPathsOpts.setSrcs(const aValue: TStringList);
 begin
   fSrcs.Assign(aValue);
+  patchPlateformPaths(fSrcs);
   doChanged;
 end;
 
 procedure TPathsOpts.setIncl(const aValue: TStringList);
 begin
   fIncl.Assign(aValue);
+  patchPlateformPaths(fIncl);
   doChanged;
 end;
 
 procedure TPathsOpts.setImpt(const aValue: TStringList);
 begin
   fImpt.Assign(aValue);
+  patchPlateformPaths(fImpt);
   doChanged;
 end;
 
@@ -808,4 +813,7 @@ begin
   fOthers.Assign(aValue);
 end;
 
+initialization
+  RegisterClasses([TCompilerConfiguration, TOtherOpts, TPathsOpts,
+    TDebugOpts, TOutputOpts, TMsgOpts, TDocOpts]);
 end.

@@ -47,7 +47,7 @@ type
   TD2Dictionary = object
   private
     fLongest: NativeInt;
-    fEntries: array[0..1024] of TD2DictionaryEntry;
+    fEntries: array[0..1023] of TD2DictionaryEntry;
     function toHash(const aValue: string): word;
     procedure addEntry(const aValue: string);
   public
@@ -80,6 +80,7 @@ type
     fRange: TRangeKind;
     fFoldKinds: TFoldKinds;
     fAttribLut: array[TTokenKind] of TSynHighlighterAttributes;
+    // readNext is mostly used to advanced the reader head.
     function readNext: Char;
     function readCurr: Char;
     function readPrev: Char;
@@ -96,6 +97,7 @@ type
     procedure setCurrIdent(const aValue: string);
     procedure doChanged;
 	published
+    // Defines which kind of ranges can be folded, among curly brackets, block comments and nested comments
     property FoldKinds: TFoldKinds read fFoldKinds write setFoldKinds;
     property WhiteAttrib: TSynHighlighterAttributes read fWhiteAttrib write setWhiteAttrib;
     property NumbrAttrib: TSynHighlighterAttributes read fNumbrAttrib write setNumbrAttrib;
@@ -122,7 +124,7 @@ type
     function GetRange: Pointer; override;
     property CurrentIdentifier: string read fCurrIdent write setCurrIdent;
 	end;
-	
+
 implementation
 
 function isWhite(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
@@ -437,6 +439,7 @@ begin
   result := fLineBuf[fTokStop];
 end;
 
+// unlike readNext, readPrev doesn't change the reader head position.
 function TSynD2Syn.readPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
 begin
   result := fLineBuf[fTokStop-1];
@@ -444,14 +447,15 @@ end;
 
 {
 TODO:
-- binary literals.
 - alternative attributes for ddoc comments.
-- asm range.
-- stricter number literals.
-- string literals: custom token, escape "\" not handled.
-- correct nested comments handling.
+- range: asm range.
+- number literals: stricter.
+- number literals: binary.
+- string literals: delimited strings.
+- string literals: token strings.
+- string literals: escape bug: std.path/std.regex: "\\"
+- comments: correct nested comments handling.
 }
-
 procedure TSynD2Syn.next;
 begin
 
@@ -581,7 +585,7 @@ begin
   // string 1
   if fRange = rkString1 then
   begin
-    if (readCurr <> '"') then while ((readNext <> '"') and (not (readCurr = #10))) do (*!*);
+    if (readCurr <> '"') then while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
     if (readCurr = #10) then
     begin
       fRange := rkString1;
@@ -593,16 +597,35 @@ begin
       fTokKind := tkStrng;
       fRange := rkNone;
       readNext;
+      // check postfix
+      if readCurr in ['c','w','d'] then
+        readNext;
       exit;
     end;
   end;
-  if fRange <> rkString2 then if (readCurr = '"') then
+  if fRange <> rkString2 then if (readCurr in ['r','x','"']) then
   begin
     if fRange = rkNone then
     begin
-      while ((readNext <> '"') and (not (readCurr = #10))) do (*!*);
+      // check hex/WYSIWYG prefix
+      if readCurr in ['r','x'] then
+      begin
+        if not (readNext = '"') then
+        begin
+          fTokKind := tkIdent;
+          exit; // warning: a goto is avoided but any other r/x is not detectable since it's truncated as tkIdent
+        end;
+      end;
+      // go to end of string/eol
+      while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
       if (readCurr = #10) then fRange := rkString1
-      else readNext;
+      else
+      begin
+        readNext;
+        // check postfix
+        if readCurr in ['c','w','d'] then
+          readNext;
+      end;
       fTokKind := tkStrng;
       exit;
     end;
@@ -623,6 +646,9 @@ begin
       fTokKind := tkStrng;
       fRange := rkNone;
       readNext;
+      // check postfix
+      if readCurr in ['c','w','d'] then
+        readNext;
       exit;
     end;
   end;
@@ -630,9 +656,16 @@ begin
   begin
     if fRange = rkNone then
     begin
+      // go to end of string/eol
       while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
       if (readCurr = #10) then fRange := rkString2
-      else readNext;
+      else
+      begin
+        readNext;
+        // check postfix
+        if readCurr in ['c','w','d'] then
+          readNext;
+      end;
       fTokKind := tkStrng;
       exit;
     end;
@@ -641,7 +674,7 @@ begin
   // char literals
   if fRange = rkNone then if (readCurr = #39) then
   begin
-    while ((readNext <> #39) and (not (readCurr = #10))) do (*!*);
+    while (((readNext <> #39) or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
     if (readCurr = #39) then
     begin
       fTokKind := tkStrng;

@@ -233,7 +233,6 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
         Indent = 16
         NameFont.Color = clWindowText
         OnEditorFilter = GridEditorFilter
-        OnModified = GridModified
         PreferredSplitterX = 145
         SplitterX = 145
         ValueFont.Color = clMaroon
