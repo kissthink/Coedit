@@ -7,9 +7,9 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, process,
-  ce_jsoninfos, ce_common, ce_dmdwrap, ce_project, ce_synmemo,
-  ce_widget, ce_messages, ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer;
+  Dialogs, Menus, ActnList, ExtCtrls, ComCtrls, process,
+  ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
+  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer;
 
 type
 
@@ -174,6 +174,8 @@ type
     destructor destroy; override;
     //
     procedure openFile(const aFilename: string);
+    procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
+    procedure docFocusedNotify(Sender: TObject; const aIndex: Integer);
     //
     property WidgetList: TCEWidgetList read fWidgList;
     property MessageWidget: TCEMessagesWidget read fMesgWidg;
@@ -190,8 +192,6 @@ implementation
 uses
   SynMacroRecorder;
 
-// TODO: warnings, OkCancel dialogs
-
 {$REGION std comp methods ******************************************************}
 constructor TCEMainForm.create(aOwner: TComponent);
 var
@@ -206,13 +206,13 @@ begin
   fEditWidg := TCEEditorWidget.create(nil);
   fProjWidg := TCEProjectInspectWidget.create(nil);
   fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
-  //fStExpWidg:= TCEStaticExplorerWidget.create(nil);
+  fStExpWidg:= TCEStaticExplorerWidget.create(nil);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
   fWidgList.addWidget(@fProjWidg);
   fWidgList.addWidget(@fPrjCfWidg);
-  //fWidgList.addWidget(@fStExpWidg);
+  fWidgList.addWidget(@fStExpWidg);
 
   for widg in fWidgList do widg.Show;
 
@@ -373,8 +373,8 @@ begin
     j += 1;
   end;
   fEditWidg.editor[i].fileName := str;
-  fEditWidg.editor[i].modified := true;
-  fEditWidg.PageControl.PageIndex := i;
+  fEditWidg.editor[i].modified := false;
+  fEditWidg.focusedEditorChanged;
 end;
 
 function TCEMainForm.findFile(const aFilename: string): NativeInt;
@@ -403,12 +403,13 @@ begin
   fEditWidg.addEditor;
   fEditWidg.editor[i].Lines.LoadFromFile(aFilename);
   fEditWidg.editor[i].fileName := aFilename;
-  fEditWidg.PageControl.PageIndex := i;
+  fEditWidg.focusedEditorChanged;
 end;
 
 procedure TCEMainForm.saveFile(const edIndex: NativeInt);
 var
   str: string;
+  i: NativeInt;
 begin
   if fEditWidg = nil then exit;
   if edIndex >= fEditWidg.editorCount then exit;
@@ -426,6 +427,9 @@ begin
   finally
     fEditWidg.editor[edIndex].modified := false;
   end;
+  //
+  for i := 0 to fWidgList.Count-1 do
+    fWidgList.widget[i].docChanged(fEditWidg.editor[edIndex]);
 end;
 
 procedure TCEMainForm.saveFileAs(const edIndex: NativeInt; const aFilename: string);
@@ -440,6 +444,24 @@ begin
     fEditWidg.editor[edIndex].fileName := aFilename;
     fEditWidg.editor[edIndex].modified := false;
   end;
+end;
+
+procedure TCEMainForm.docChangeNotify(Sender: TObject; const aIndex: Integer);
+var
+  i: NativeInt;
+begin
+  for i := 0 to fWidgList.Count-1 do
+    if fWidgList.widget[i] <> Sender then
+      fWidgList.widget[i].docChanged(fEditWidg.editor[aIndex]);
+end;
+
+procedure TCEMainForm.docFocusedNotify(Sender: TObject; const aIndex: Integer);
+var
+  i: NativeInt;
+begin
+  for i := 0 to fWidgList.Count-1 do
+    if fWidgList.widget[i] <> Sender then
+      fWidgList.widget[i].docFocused(fEditWidg.editor[aIndex]);
 end;
 
 procedure TCEMainForm.actFileOpenExecute(Sender: TObject);
@@ -521,7 +543,18 @@ begin
 end;
 
 procedure TCEMainForm.actFileCloseExecute(Sender: TObject);
+var
+  curr: TCESynMemo;
+  i: NativeInt;
 begin
+  curr := fEditWidg.currentEditor;
+  if curr.modified then if dlgOkCancel(
+      'The latest mdofifications are not saved, continue ?') = mrCancel
+      then exit;
+  //
+  for i := 0 to fWidgList.Count-1 do
+    fWidgList.widget[i].docClose(fEditWidg.editor[fEditWidg.editorIndex]);
+  //
   fEditWidg.removeEditor(fEditWidg.editorIndex);
 end;
 
@@ -539,7 +572,6 @@ begin
   for fname in FileNames do
     openFile(fname);
 end;
-
 {$ENDREGION}
 
 {$REGION edit ******************************************************************}
@@ -663,6 +695,9 @@ begin
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 
+    {$IFDEF RELEASE}
+    dmdProc.ShowWindow := swoHIDE;
+    {$ENDIF}
     dmdproc.Options:= [poWaitOnExit, poStdErrToOutput, poUsePipes];
     dmdproc.Executable:= 'dmd';
     dmdproc.Parameters.Add(fname + '.d');
@@ -738,6 +773,9 @@ begin
     prjpath := extractFilePath(aProject.fileName);
     if directoryExists(prjpath) then chDir(prjpath);
 
+    {$IFDEF RELEASE}
+    dmdProc.ShowWindow := swoHIDE;
+    {$ENDIF}
     dmdproc.Options :=
       procopts[aProject.currentConfiguration.messagesOptions.verbose];
 
@@ -909,40 +947,43 @@ begin
   fProject := TCEProject.Create(self);
   for widg in WidgetList do widg.projNew(fProject);
   fProject.onChange := @projChange;
-  fProject.beforeChanged;
-  fProject.afterChanged;
 end;
 
 procedure TCEMainForm.saveProj;
 begin
-  saveCompToTxtFile(fProject, fProject.fileName);
+  fProject.saveToFile(fProject.fileName);
 end;
 
 procedure TCEMainForm.saveProjAs(const aFilename: string);
 begin
   fProject.fileName := aFilename;
-  saveCompToTxtFile(fProject, aFilename);
+  fProject.saveToFile(fProject.fileName);
 end;
 
 procedure TCEMainForm.openProj(const aFilename: string);
 begin
   closeProj;
   newProj;
-  fProject.beforeChanged;
-  fProject.fileName := aFilename;
-  loadCompFromTxtFile(fProject, aFilename);
-  fProject.afterLoad;
-  fProject.afterChanged;
+  fProject.loadFromFile(aFilename);
 end;
 
 procedure TCEMainForm.actProjNewExecute(Sender: TObject);
 begin
+  if fProject <> nil then if fProject.modified then if dlgOkCancel(
+    'The latest mdofifications are not saved, continue ?')
+      = mrCancel then exit;
+
   closeProj;
   newProj;
 end;
 
 procedure TCEMainForm.actProjCloseExecute(Sender: TObject);
 begin
+  if fProject = nil then exit;
+  if fProject.modified then if dlgOkCancel(
+    'The latest mdofifications are not saved, continue ?')
+      = mrCancel then exit;
+
   closeProj;
 end;
 
@@ -970,6 +1011,10 @@ end;
 
 procedure TCEMainForm.actProjOpenExecute(Sender: TObject);
 begin
+  if fProject <> nil then if fProject.modified then if dlgOkCancel(
+    'The latest mdofifications are not saved, continue ?')
+      = mrCancel then exit;
+
   with TOpenDialog.Create(nil) do
   try
     if execute then openProj(filename);

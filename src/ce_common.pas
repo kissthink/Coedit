@@ -5,7 +5,7 @@ unit ce_common;
 interface
 
 uses
-  Classes, SysUtils, ActnList;
+  Classes, SysUtils, ActnList, dialogs, forms;
 
   (**
    * Save a component with a readable aspect.
@@ -29,11 +29,16 @@ uses
 
   (**
    * Patches the directory separators from a string.
-   * This is used to ensure a that project saved on a plateform can be loaded
+   * This is used to ensure that a project saved on a plateform can be loaded
    * on another one.
    *)
    function patchPlateformPath(const aPath: string): string;
    procedure patchPlateformPaths(const sPaths: TStrings);
+
+   (**
+    * Ok/Cancel modal dialog
+    *)
+   function dlgOkCancel(const aMsg: string): TModalResult;
 
 
 implementation
@@ -223,6 +228,13 @@ begin
 
     end;
   end;
+end;
+
+function dlgOkCancel(const aMsg: string): TModalResult;
+const
+  Btns = [mbOK,mbCancel];
+begin
+  exit( MessageDlg('Coedit', aMsg, mtConfirmation, Btns, ''));
 end;
 
 end.

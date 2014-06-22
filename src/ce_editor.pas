@@ -20,11 +20,11 @@ type
     procedure PageControlChange(Sender: TObject);
     procedure PageControlCloseTabClicked(Sender: TObject);
   protected
-    procedure autoWidgetUpdate; override;
+    procedure UpdateByDelay; override;
   private
     // http://bugs.freepascal.org/view.php?id=26329
+    fKeyChanged: boolean;
     fSyncEdit: TSynPluginSyncroEdit;
-    procedure focusedEditorChanged;
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
@@ -38,6 +38,7 @@ type
     constructor create(aOwner: TComponent); override;
     procedure addEditor;
     procedure removeEditor(const aIndex: NativeInt);
+    procedure focusedEditorChanged;
     //
     property currentEditor: TCESynMemo read getCurrentEditor;
     property editor[index: NativeInt]: TCESynMemo read getEditor;
@@ -102,6 +103,9 @@ begin
   md := getModuleName(curr.Lines);
   if md = '' then md := extractFileName(curr.fileName);
   pageControl.ActivePage.Caption := md;
+  //
+  if pageControl.ActivePageIndex <> -1 then
+    mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
@@ -121,7 +125,6 @@ var
   sheet: TTabSheet;
   memo: TCESynMemo;
 begin
-  fNeedAutoUpdate := true;
   sheet := pageControl.AddTabSheet;
   memo  := TCESynMemo.Create(sheet);
   //
@@ -134,6 +137,7 @@ begin
   memo.OnChange := @memoChange;
   memo.OnMouseMove := @memoMouseMove;
   //
+  pageControl.ActivePage := sheet;
   //http://bugs.freepascal.org/view.php?id=26320
   focusedEditorChanged;
 end;
@@ -151,34 +155,35 @@ end;
 
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  fNeedAutoUpdate := true;
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
+  fKeyChanged := true;
+  beginUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  fNeedAutoUpdate := true;
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
+  beginUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
   if ssLeft in Shift then
-    fNeedAutoUpdate := true;
+    beginUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.memoChange(Sender: TObject);
 var
   ed: TCESynMemo;
 begin
-  fNeedAutoUpdate := true;
   ed := TCESynMemo(sender);
   ed.modified := true;
+  beginUpdateByDelay;
 end;
 
-procedure TCEEditorWidget.autoWidgetUpdate;
+procedure TCEEditorWidget.UpdateByDelay;
 const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
 var
@@ -191,6 +196,10 @@ begin
     editorStatus.Panels[1].Text := modstr[ed.modified];
     editorStatus.Panels[2].Text := ed.fileName;
   end;
+  //
+  if fKeyChanged then if editorIndex <> -1 then
+    mainForm.docChangeNotify(Self, editorIndex);
+  fKeyChanged := false;
 end;
 
 end.
