@@ -201,22 +201,19 @@
         <UnitName Value="ce_projinspect"/>
       </Unit10>
       <Unit11>
+        <Filename Value="..\src\ce_jsoninfos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_jsoninfos"/>
+      </Unit11>
+      <Unit12>
         <Filename Value="..\src\ce_project.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ce_project"/>
-      </Unit11>
-      <Unit12>
+      </Unit12>
+      <Unit13>
         <Filename Value="..\src\ce_widgettypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ce_widgettypes"/>
-      </Unit12>
-      <Unit13>
-        <Filename Value="..\src\ce_staticexplorer.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="CEStaticExplorerWidget"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="ce_staticexplorer"/>
       </Unit13>
     </Units>
   </ProjectOptions>

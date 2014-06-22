@@ -315,9 +315,8 @@ begin
   fKeywdAttrib.Foreground := clNavy;
 
   fCurrIAttrib.Foreground := clBlack;
-  fCurrIAttrib.FrameEdges := sfeAround;
-  fCurrIAttrib.FrameColor := clGray;
-  fCurrIAttrib.Background := cl3dlight;
+  fCurrIAttrib.FrameEdges:= sfeAround;
+  fCurrIAttrib.FrameColor:= clGray;
 
   fCommtAttrib.Style := [fsItalic];
   fKeywdAttrib.Style := [fsBold];

@@ -1,28 +1,28 @@
 inherited CEProjectInspectWidget: TCEProjectInspectWidget
-  Left = 1640
-  Height = 383
-  Top = 90
-  Width = 264
+  Left = 1641
+  Height = 384
+  Top = 89
+  Width = 263
   AllowDropFiles = True
   Caption = 'Project inspector'
-  ClientHeight = 383
-  ClientWidth = 264
+  ClientHeight = 384
+  ClientWidth = 263
   OnDropFiles = FormDropFiles
   inherited Back: TPanel
-    Height = 383
-    Width = 264
-    ClientHeight = 383
-    ClientWidth = 264
+    Height = 384
+    Width = 263
+    ClientHeight = 384
+    ClientWidth = 263
     inherited Content: TPanel
-      Height = 383
-      Width = 264
-      ClientHeight = 383
-      ClientWidth = 264
+      Height = 384
+      Width = 263
+      ClientHeight = 384
+      ClientWidth = 263
       object Tree: TTreeView[0]
         Left = 2
-        Height = 353
+        Height = 354
         Top = 28
-        Width = 260
+        Width = 259
         Align = alClient
         AutoExpand = True
         BorderSpacing.Around = 2
@@ -44,12 +44,12 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         Left = 2
         Height = 24
         Top = 2
-        Width = 260
+        Width = 259
         Align = alTop
         BorderSpacing.Around = 2
         BevelOuter = bvNone
         ClientHeight = 24
-        ClientWidth = 260
+        ClientWidth = 259
         TabOrder = 1
         object btnAddFile: TSpeedButton
           Left = 0
@@ -190,13 +190,12 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         end
         object TreeFilterEdit1: TTreeFilterEdit
           Left = 114
-          Height = 23
-          Top = 0
-          Width = 114
-          ButtonWidth = 28
+          Height = 20
+          Top = 2
+          Width = 143
+          ButtonWidth = 30
           NumGlyphs = 1
-          Align = alCustom
-          Anchors = [akTop, akLeft, akRight]
+          Align = alClient
           BorderSpacing.Around = 2
           MaxLength = 0
           TabOrder = 0

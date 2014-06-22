@@ -5,7 +5,7 @@ unit ce_widgettypes;
 interface
 
 uses
-  Classes, SysUtils, actnList, ce_synmemo, ce_project;
+  Classes, SysUtils, actnList, ce_project;
 
 type
 
@@ -13,10 +13,8 @@ type
    * An implementer is informed when a new document is added, focused or closed.
    *)
   ICEMultiDocMonitor = interface
-    procedure docNew(const aDoc: TCESynMemo);
-    procedure docFocused(const aDoc: TCESynMemo);
-    procedure docChanged(const aDoc: TCESynMemo);
-    procedure docClose(const aDoc: TCESynMemo);
+    procedure docChange(const aNewIndex: integer);
+    procedure docClose(const aNewIndex: integer);
   end;
 
   (**

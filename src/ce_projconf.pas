@@ -32,7 +32,7 @@ type
     fProj: TCEProject;
     function getGridTarget: TPersistent;
   protected
-    procedure UpdateByEvent; override;
+    procedure manualWidgetUpdate; override;
   public
     constructor create(aOwner: TComponent); override;
     procedure projNew(const aProject: TCEProject); override;
@@ -52,16 +52,16 @@ end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
 begin
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   fProj := aProject;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.projChange(const aProject: TCEProject);
 begin
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   fProj := aProject;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.projClose(const aProject: TCEProject);
@@ -74,12 +74,12 @@ end;
 procedure TCEProjectConfigurationWidget.selConfChange(Sender: TObject);
 begin
   if fProj = nil then exit;
-  if Updating then exit;
+  if isManualUpdating then exit;
   if selConf.ItemIndex = -1 then exit;
   //
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   fProj.ConfigurationIndex := selConf.ItemIndex;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.TreeChange(Sender: TObject;
@@ -102,11 +102,11 @@ begin
   if fProj = nil then exit;
   //
   nme := '';
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   cfg := fProj.addConfiguration;
   if InputQuery('Configuration name', '', nme) then cfg.name := nme;
   fProj.ConfigurationIndex := cfg.Index;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.btnDelConfClick(Sender: TObject);
@@ -114,13 +114,13 @@ begin
   if fProj = nil then exit;
   if fProj.OptionsCollection.Count = 1 then exit;
   //
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   Grid.TIObject := nil;
   Grid.Clear;
   Invalidate;
   fProj.OptionsCollection.Delete(selConf.ItemIndex);
   fProj.ConfigurationIndex := 0;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 procedure TCEProjectConfigurationWidget.btnCloneCurrClick(Sender: TObject);
@@ -131,13 +131,13 @@ begin
   if fProj = nil then exit;
   //
   nme := '';
-  beginUpdateByEvent;
+  beginManualWidgetUpdate;
   src := fProj.currentConfiguration;
   trg := fProj.addConfiguration;
   trg.assign(src);
   if InputQuery('Configuration name', '', nme) then trg.name := nme;
   fProj.ConfigurationIndex := trg.Index;
-  endUpdateByEvent;
+  endManualWidgetUpdate;
 end;
 
 function TCEProjectConfigurationWidget.getGridTarget: TPersistent;
@@ -159,7 +159,7 @@ begin
   end;
 end;
 
-procedure TCEProjectConfigurationWidget.UpdateByEvent;
+procedure TCEProjectConfigurationWidget.manualWidgetUpdate;
 var
   i: NativeInt;
 begin

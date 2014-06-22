@@ -5,8 +5,7 @@ object CEMainForm: TCEMainForm
   Width = 745
   AllowDropFiles = True
   Caption = 'Coedit'
-  ChildSizing.Layout = cclTopToBottomThenLeftToRight
-  DockSite = True
+  ChildSizing.Layout = cclLeftToRightThenTopToBottom
   Menu = mainMenu
   OnDropFiles = FormDropFiles
   OnShow = FormShow

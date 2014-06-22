@@ -1,5 +1,7 @@
 inherited CEEditorWidget: TCEEditorWidget
+  Left = 1159
   Height = 382
+  Top = 91
   Width = 465
   Caption = 'Source editor'
   ClientHeight = 382
