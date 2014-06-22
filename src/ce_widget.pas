@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
   AnchorDocking, AnchorDockStorage, ActnList, Menus,
-  ce_widgettypes, ce_project;
+  ce_synmemo, ce_widgettypes, ce_project;
 
 type
 
@@ -17,30 +17,52 @@ type
   PTCEWidget = ^TCEWidget;
 
   { TCEWidget }
-  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor)
+  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocMonitor)
     Content: TPanel;
     Back: TPanel;
     contextMenu: TPopupMenu;
   private
-    fAutoUpdater: TTimer;
-    fAutoUpdating: boolean;
-    fManuUpdating: boolean;
+    fUpdating: boolean;
+    fDelayDur: Integer;
+    fLoopInter: Integer;
+    fUpdaterAuto: TTimer;
+    fUpdaterDelay: TTimer;
     fWidgUpdateCount: NativeInt;
-    procedure autoUpdaterEvent(Sender: TObject);
+    procedure setDelayDur(aValue: Integer);
+    procedure setLoopInt(aValue: Integer);
+    procedure updaterAutoProc(Sender: TObject);
+    procedure updaterLatchProc(Sender: TObject);
   protected
     fID: string;
-    fNeedAutoUpdate: boolean;
-    procedure autoWidgetUpdate; virtual;
-    procedure manualWidgetUpdate; virtual;
+    // a descendant overrides to implementi a periodic update.
+    procedure UpdateByLoop; virtual;
+    // a descendant overrides to implement an event driven update.
+    procedure UpdateByEvent; virtual;
+    // a descendant overrides to implement a delayed update event.
+    procedure UpdateByDelay; virtual;
   published
     property ID: string read fID write fID;
+    property updaterByLoopInterval: Integer read fLoopInter write setLoopInt;
+    property updaterByDelayDuration: Integer read fDelayDur write setDelayDur;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    // restarts the wait period to the delayed update event.
+    // if not re-called during 'updaterByDelayDuration' ms then
+    // 'UpdateByDelay' is called once.
+    procedure beginUpdateByDelay;
+    // increments the updates count.
+    procedure beginUpdateByEvent;
+    // decrements the update count and call 'UpdateByEvent' if the
+    // counter value is null.
+    procedure endUpdateByEvent;
+    // immediate call the 'UpdateByEvent'
+    procedure forceUpdateByEvent;
     //
-    procedure beginManualWidgetUpdate;
-    procedure endManualWidgetUpdate;
-    procedure forceManualWidgetUpdate;
+    procedure docNew(const aDoc: TCESynMemo); virtual;
+    procedure docFocused(const aDoc: TCESynMemo); virtual;
+    procedure docChanged(const aDoc: TCESynMemo); virtual;
+    procedure docClose(const aDoc: TCESynMemo); virtual;
     //
     procedure projNew(const aProject: TCEProject); virtual;
     procedure projChange(const aProject: TCEProject); virtual;
@@ -49,9 +71,8 @@ type
     function contextName: string; virtual;
     function contextActionCount: integer; virtual;
     function contextAction(index: integer): TAction; virtual;
-    //
-    property isAutoUpdating: boolean read fAutoUpdating;
-    property isManualUpdating: boolean read fManuUpdating;
+    // returns true if one of the three updater is processing.
+    property updating: boolean read fUpdating;
   end;
 
   (**
@@ -85,9 +106,15 @@ constructor TCEWidget.create(aOwner: TComponent);
 begin
   inherited;
   fID := 'ID_XXXX';
-  fAutoUpdater := TTimer.Create(self);
-  fAutoUpdater.Interval := 50;
-  fAutoUpdater.OnTimer := @autoUpdaterEvent;
+
+  fUpdaterAuto := TTimer.Create(self);
+  fUpdaterAuto.Interval := 70;
+  fUpdaterAuto.OnTimer := @updaterAutoProc;
+  fUpdaterDelay := TTimer.Create(self);
+
+  updaterByLoopInterval := 50;
+  updaterByDelayDuration := 1000;
+
   DockMaster.MakeDockable(Self, true, true, true);
   DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
 end;
@@ -97,53 +124,76 @@ begin
   inherited;
 end;
 
-procedure TCEWidget.beginManualWidgetUpdate;
+procedure TCEWidget.setDelayDur(aValue: Integer);
+begin
+  if aValue < 100 then aValue := 100;
+  if fDelayDur = aValue then exit;
+  fDelayDur := aValue;
+  fUpdaterDelay.Interval := fDelayDur;
+end;
+
+procedure TCEWidget.setLoopInt(aValue: Integer);
+begin
+  if aValue < 30 then aValue := 30;
+  if fLoopInter = aValue then exit;
+  fLoopInter := aValue;
+  fUpdaterAuto.Interval := fLoopInter;
+end;
+
+procedure TCEWidget.beginUpdateByEvent;
 begin
   Inc(fWidgUpdateCount);
 end;
 
-procedure TCEWidget.endManualWidgetUpdate;
+procedure TCEWidget.endUpdateByEvent;
 begin
   Dec(fWidgUpdateCount);
-  if fWidgUpdateCount > 0 then
-  begin
-    {$IFDEF DEBUG}
-    writeln('widget update count > 0');
-    {$ENDIF}
-    exit;
-  end;
-
-  fManuUpdating := true;
-  manualWidgetUpdate;
-  fManuUpdating := false;
+  if fWidgUpdateCount > 0 then exit;
+  fUpdating := true;
+  UpdateByEvent;
+  fUpdating := false;
   fWidgUpdateCount := 0;
-
 end;
 
-procedure TCEWidget.forceManualWidgetUpdate;
+procedure TCEWidget.forceUpdateByEvent;
 begin
-  fManuUpdating := true;
-  manualWidgetUpdate;
-  fManuUpdating := false;
+  fUpdating := true;
+  UpdateByEvent;
+  fUpdating := false;
+  fWidgUpdateCount := 0;
 end;
 
-procedure TCEWidget.autoUpdaterEvent(Sender: TObject);
+procedure TCEWidget.beginUpdateByDelay;
 begin
-  if not fNeedAutoUpdate then exit;
-  fAutoUpdating := true;
-  try
-    autoWidgetUpdate;
-  finally
-    fAutoUpdating := false;
-    fNeedAutoUpdate := false;
-  end;
+  fUpdaterDelay.Enabled := false;
+  fUpdaterDelay.Enabled := true;
+  fUpdaterDelay.OnTimer := @updaterLatchProc;
 end;
 
-procedure TCEWidget.autoWidgetUpdate;
+procedure TCEWidget.updaterAutoProc(Sender: TObject);
+begin
+  fUpdating := true;
+  UpdateByLoop;
+  fUpdating := false;
+end;
+
+procedure TCEWidget.updaterLatchProc(Sender: TObject);
+begin
+  fUpdating := true;
+  UpdateByDelay;
+  fUpdating := false;
+  fUpdaterDelay.OnTimer := nil;
+end;
+
+procedure TCEWidget.UpdateByLoop;
 begin
 end;
 
-procedure TCEWidget.manualWidgetUpdate;
+procedure TCEWidget.UpdateByEvent;
+begin
+end;
+
+procedure TCEWidget.UpdateByDelay;
 begin
 end;
 
@@ -172,6 +222,22 @@ end;
 function TCEWidget.contextAction(index: integer): TAction;
 begin
   result := nil;
+end;
+
+procedure TCEWidget.docNew(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docClose(const aDoc: TCESynMemo);
+begin
 end;
 
 (*******************************************************************************

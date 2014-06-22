@@ -50,12 +50,14 @@ type
     procedure addSource(const aFilename: string);
     function addConfiguration: TCompilerConfiguration;
     procedure getOpts(const aList: TStrings);
-    procedure afterLoad;
+    procedure saveToFile(const aFilename: string);
+    procedure loadFromFile(const aFilename: string);
     //
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
     property currentConfiguration: TCompilerConfiguration read getCurrConf;
     property fileName: string read fFilename write setFname;
     property onChange: TNotifyEvent read fOnChange write fOnChange;
+    property modified: boolean read fModified;
   end;
 
 implementation
@@ -71,6 +73,7 @@ begin
   fSrcsCop := TStringList.Create;
   fOptsColl := TCollection.create(TCompilerConfiguration);
   reset;
+  fModified := false;
 end;
 
 destructor TCEProject.destroy;
@@ -138,11 +141,6 @@ begin
   fSrcs.Assign(aValue);
   patchPlateformPaths(fSrcs);
   afterChanged;
-end;
-
-procedure TCEProject.afterLoad;
-begin
-  patchPlateformPaths(fSrcs);
 end;
 
 procedure TCEProject.setConfIx(aValue: Integer);
@@ -225,6 +223,7 @@ begin
   fSrcs.Clear;
   fFilename := '';
   afterChanged;
+  fModified := false;
 end;
 
 procedure TCEProject.getOpts(const aList: TStrings);
@@ -250,6 +249,21 @@ end;
 function TCEProject.getAbsoluteFilename(const aFilename: string): string;
 begin
   result := expandFileNameEx(fBasePath, aFilename);
+end;
+
+procedure TCEProject.saveToFile(const aFilename: string);
+begin
+  saveCompToTxtFile(self, aFilename);
+  fModified := false;
+end;
+
+procedure TCEProject.loadFromFile(const aFilename: string);
+begin
+  Filename := aFilename;
+  loadCompFromTxtFile(self, aFilename);
+  patchPlateformPaths(fSrcs);
+  doChanged;
+  fModified := false;
 end;
 
 initialization

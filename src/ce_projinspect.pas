@@ -25,7 +25,7 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   protected
-    procedure manualWidgetUpdate; override;
+    procedure UpdateByEvent; override;
   private
     fProject: TCEProject;
     fFileNode, fConfNode: TTreeNode;
@@ -56,19 +56,19 @@ end;
 procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
 begin
   fProject := aProject;
-  manualWidgetUpdate;
+  UpdateByEvent;
 end;
 
 procedure TCEProjectInspectWidget.projChange(const aProject: TCEProject);
 begin
   fProject := aProject;
-  manualWidgetUpdate;
+  UpdateByEvent;
 end;
 
 procedure TCEProjectInspectWidget.projClose(const aProject: TCEProject);
 begin
   fProject := nil;
-  manualWidgetUpdate;
+  UpdateByEvent;
 end;
 
 procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
@@ -99,7 +99,7 @@ begin
   begin
     i := Tree.Selected.Index;
     fProject.ConfigurationIndex := i;
-    manualWidgetUpdate;
+    UpdateByEvent;
   end;
 end;
 
@@ -163,7 +163,7 @@ begin
       fname := Tree.Selected.Text;
       i := fProject.Sources.IndexOf(fname);
       if i > -1 then fProject.Sources.Delete(i);
-      manualWidgetUpdate;
+      UpdateByEvent;
     end
 end;
 
@@ -176,7 +176,7 @@ begin
   for fname in Filenames do fProject.addSource(fname);
 end;
 
-procedure TCEProjectInspectWidget.manualWidgetUpdate;
+procedure TCEProjectInspectWidget.UpdateByEvent;
 var
   src, conf: string;
   itm: TTreeNode;
