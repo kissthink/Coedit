@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
-  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_widget;
+  actnlist, Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_widget;
 
 type
   { TCEProjectInspectWidget }
@@ -24,18 +24,27 @@ type
     procedure btnRemFileClick(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure TreeSelectionChanged(Sender: TObject);
   protected
     procedure UpdateByEvent; override;
   private
+    fActOpenFile: TAction;
+    fActSelConf: TAction;
     fProject: TCEProject;
     fFileNode, fConfNode: TTreeNode;
+    procedure actUpdate(sender: TObject);
     procedure TreeDblClick(sender: TObject);
+    procedure actOpenFileExecute(sender: TObject);
   public
     constructor create(aOwner: TComponent); override;
     //
     procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
     procedure projClose(const aProject: TCEProject); override;
+    //
+    function contextName: string; override;
+    function contextActionCount: integer; override;
+    function contextAction(index: integer): TAction; override;
   end;
 
 implementation
@@ -46,11 +55,40 @@ uses
 
 constructor TCEProjectInspectWidget.create(aOwner: TComponent);
 begin
+  fActOpenFile := TAction.Create(self);
+  fActOpenFile.Caption := 'Open file in editor';
+  fActOpenFile.OnExecute := @actOpenFileExecute;
+  fActSelConf := TAction.Create(self);
+  fActSelConf.Caption := 'Select configuration';
+  fActSelConf.OnExecute := @actOpenFileExecute;
+  fActSelConf.OnUpdate := @actUpdate;
+  //
   inherited;
   fID := 'ID_PROJ';
   Tree.OnDblClick := @TreeDblClick;
   fFileNode := Tree.Items[0];
   fConfNode := Tree.Items[1];
+  //
+  Tree.PopupMenu := contextMenu;
+end;
+
+function TCEProjectInspectWidget.contextName: string;
+begin
+  exit('Inspector');
+end;
+
+function TCEProjectInspectWidget.contextActionCount: integer;
+begin
+  exit(2);
+end;
+
+function TCEProjectInspectWidget.contextAction(index: integer): TAction;
+begin
+  case index of
+    0: exit(fActOpenFile);
+    1: exit(fActSelConf);
+    else exit(nil);
+  end;
 end;
 
 procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
@@ -74,6 +112,11 @@ end;
 procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
 begin
   if Key = 13 then TreeDblClick(nil);
+end;
+
+procedure TCEProjectInspectWidget.TreeSelectionChanged(Sender: TObject);
+begin
+  actUpdate(sender);
 end;
 
 procedure TCEProjectInspectWidget.TreeDblClick(sender: TObject);
@@ -101,6 +144,20 @@ begin
     fProject.ConfigurationIndex := i;
     UpdateByEvent;
   end;
+end;
+
+procedure TCEProjectInspectWidget.actOpenFileExecute(sender: TObject);
+begin
+  TreeDblClick(sender);
+end;
+
+procedure TCEProjectInspectWidget.actUpdate(sender: TObject);
+begin
+  fActSelConf.Enabled := false;
+  fActOpenFile.Enabled := false;
+  if Tree.Selected = nil then exit;
+  fActSelConf.Enabled := Tree.Selected.Parent = fConfNode;
+  fActOpenFile.Enabled := Tree.Selected.Parent = fFileNode;
 end;
 
 procedure TCEProjectInspectWidget.btnAddFileClick(Sender: TObject);

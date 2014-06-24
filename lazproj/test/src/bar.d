@@ -1,4 +1,4 @@
-module barclass;
+module bar;
 
 import std.stdio;
 

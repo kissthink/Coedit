@@ -52,12 +52,7 @@ uses
   ce_main;
 
 constructor TCEMessagesWidget.create(aOwner: TComponent);
-var
-  itm: TMenuItem;
 begin
-  inherited;
-  fID := 'ID_MSGS';
-  //
   fActClear := TAction.Create(self);
   fActClear.OnExecute := @actClearExecute;
   fActClear.caption := 'Clear messages';
@@ -71,19 +66,10 @@ begin
   fActSaveMsg.OnExecute := @actSaveMsgExecute;
   fActSaveMsg.caption := 'Save messages to...';
   //
+  inherited;
+  fID := 'ID_MSGS';
+  //
   List.PopupMenu := contextMenu;
-  itm := TMenuItem.Create(self);
-  itm.Action := fActClear;
-  contextMenu.Items.Add(itm);
-  itm := TMenuItem.Create(self);
-  itm.Action := fActCopyMsg;
-  contextMenu.Items.Add(itm);
-  itm := TMenuItem.Create(self);
-  itm.Action := fActSelAll;
-  contextMenu.Items.Add(itm);
-  itm := TMenuItem.Create(self);
-  itm.Action := fActSaveMsg;
-  contextMenu.Items.Add(itm);
 end;
 
 procedure TCEMessagesWidget.scrollToBack;

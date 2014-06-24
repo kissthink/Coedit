@@ -238,9 +238,9 @@ begin
   DockMaster.HeaderStyle := adhsPoints;
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), Self, alLeft);
   width := width - fProjWidg.Width;
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
-
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
 end;
 
@@ -691,7 +691,7 @@ begin
     temppath := GetTempDir(false);
     chDir(temppath);
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + format('temp_%.8x', [NativeUInt(@dmdproc)]);
+    fname := temppath + 'temp_' + uniqueObjStr(dmdProc);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
 

@@ -16,6 +16,7 @@ inherited CEMessagesWidget: TCEMessagesWidget
       Width = 744
       ClientHeight = 172
       ClientWidth = 744
+      PopupMenu = nil
       object List: TListView[0]
         Left = 2
         Height = 168

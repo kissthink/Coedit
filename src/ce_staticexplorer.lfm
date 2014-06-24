@@ -16,6 +16,7 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
       Width = 261
       ClientHeight = 276
       ClientWidth = 261
+      PopupMenu = nil
       object Tree: TTreeView[0]
         Left = 4
         Height = 240
@@ -28,11 +29,12 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
         HideSelection = False
         Images = imgList
         ReadOnly = True
+        RowSelect = True
         ScrollBars = ssAutoBoth
         SelectionColor = clActiveBorder
         TabOrder = 0
         OnDeletion = TreeDeletion
-        Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+        Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF020009000000000000000000000000000000FFFFFFFF000000000000
           00000005000000416C6961730100000001000000FFFFFFFFFFFFFFFF00000000
@@ -59,6 +61,7 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
         BevelOuter = bvNone
         ClientHeight = 26
         ClientWidth = 257
+        PopupMenu = contextMenu
         TabOrder = 1
         object TreeFilterEdit1: TTreeFilterEdit
           Left = 2

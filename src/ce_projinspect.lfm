@@ -18,6 +18,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
       Width = 264
       ClientHeight = 383
       ClientWidth = 264
+      PopupMenu = nil
       object Tree: TTreeView[0]
         Left = 2
         Height = 353
@@ -29,11 +30,13 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         DefaultItemHeight = 18
         Images = imgList
         ReadOnly = True
+        RightClickSelect = True
         ScrollBars = ssAutoBoth
         ShowRoot = False
         TabOrder = 0
         OnKeyDown = TreeKeyDown
-        Options = [tvoAutoExpand, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
+        OnSelectionChanged = TreeSelectionChanged
+        Options = [tvoAutoExpand, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF020002000000000000000000000000000000FFFFFFFF000000000000
           0000000C000000536F757263652066696C6573010000000100000001000000FF

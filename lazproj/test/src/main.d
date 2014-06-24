@@ -10,18 +10,18 @@ Test:
 module main;
 
 import std.stdio;
-import fooclass;
-import barclass;
+import foo;
+import bar;
 
 void main(string args[])
 {
-    auto foo = new Foo;
-    auto bar = new Bar;
+    auto ffoo = new Foo;
+    auto bbar = new Bar;
 
     scope(exit)
     {
-        delete foo;
-        delete bar;
+        delete ffoo;
+        delete bbar;
     }
     readln;
 }

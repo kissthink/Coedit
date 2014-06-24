@@ -28,6 +28,7 @@ object CEWidget: TCEWidget
       Width = 332
       Align = alClient
       BevelOuter = bvNone
+      PopupMenu = contextMenu
       TabOrder = 0
     end
   end

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, Menus, ComCtrls, ce_widget, jsonparser, fpjson,
-  ce_synmemo, process;
+  ce_synmemo, process, actnlist, ce_common, ce_project;
 
 type
 
@@ -19,13 +19,22 @@ type
     TreeFilterEdit1: TTreeFilterEdit;
     procedure TreeDeletion(Sender: TObject; Node: TTreeNode);
   private
+    fActRefresh: TAction;
+    fActAutoRefresh: TAction;
+    fActSelectInSource: TAction;
     fDoc: TCESynMemo;
+    fProj: TCEProject;
+    fAutoRefresh: boolean;
     ndAlias, ndClass, ndEnum, ndFunc: TTreeNode;
     ndImp, ndMix, ndStruct, ndTmp, ndVar: TTreeNode;
     procedure Rescan;
     procedure TreeDblClick(Sender: TObject);
+    procedure actRefreshExecute(Sender: TObject);
+    procedure actAutoRefreshExecute(Sender: TObject);
   protected
     procedure UpdateByDelay; override;
+  published
+    property autoRefresh: boolean read fAutoRefresh write fAutoRefresh;
   public
     constructor create(aOwner: TComponent); override;
     //
@@ -33,6 +42,14 @@ type
     procedure docFocused(const aDoc: TCESynMemo); override;
     procedure docChanged(const aDoc: TCESynMemo); override;
     procedure docClose(const aDoc: TCESynMemo); override;
+    //
+    function contextName: string; override;
+    function contextActionCount: integer; override;
+    function contextAction(index: integer): TAction; override;
+    //
+    procedure projNew(const aProject: TCEProject); override;
+    procedure projChange(const aProject: TCEProject); override;
+    procedure projClose(const aProject: TCEProject); override;
   end;
 
 implementation
@@ -40,6 +57,19 @@ implementation
 
 constructor TCEStaticExplorerWidget.create(aOwner: TComponent);
 begin
+  fAutoRefresh := true;
+  fActRefresh := TAction.Create(self);
+  fActRefresh.OnExecute := @actRefreshExecute;
+  fActRefresh.Caption := 'Refresh';
+  fActAutoRefresh := TAction.Create(self);
+  fActAutoRefresh.OnExecute := @actAutoRefreshExecute;
+  fActAutoRefresh.Caption := 'Auto-refresh';
+  fActAutoRefresh.AutoCheck := true;
+  fActAutoRefresh.Checked := fAutoRefresh;
+  fActSelectInSource := TAction.Create(self);
+  fActSelectInSource.OnExecute := @TreeDblClick;
+  fActSelectInSource.Caption := 'Select in source';
+  //
   inherited;
   fID := 'ID_SEXPL';
   //
@@ -54,6 +84,53 @@ begin
   ndVar     := Tree.Items[8];
   //
   Tree.OnDblClick := @TreeDblClick;
+  Tree.PopupMenu := contextMenu;
+end;
+
+function TCEStaticExplorerWidget.contextName: string;
+begin
+  result := 'Static explorer';
+end;
+
+function TCEStaticExplorerWidget.contextActionCount: integer;
+begin
+  result := 3;
+end;
+
+function TCEStaticExplorerWidget.contextAction(index: integer): TAction;
+begin
+  case index of
+    0: result := fActSelectInSource;
+    1: result := fActRefresh;
+    2: result := fActAutoRefresh;
+    else result := nil;
+  end;
+end;
+
+procedure TCEStaticExplorerWidget.actRefreshExecute(Sender: TObject);
+begin
+  if Updating then exit;
+  Rescan;
+end;
+
+procedure TCEStaticExplorerWidget.actAutoRefreshExecute(Sender: TObject);
+begin
+  AutoRefresh := not AutoRefresh;
+end;
+
+procedure TCEStaticExplorerWidget.projNew(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEStaticExplorerWidget.projChange(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEStaticExplorerWidget.projClose(const aProject: TCEProject);
+begin
+  fProj := nil;
 end;
 
 procedure TCEStaticExplorerWidget.docNew(const aDoc: TCESynMemo);
@@ -81,6 +158,7 @@ end;
 
 procedure TCEStaticExplorerWidget.UpdateByDelay;
 begin
+  if not fAutoRefresh then exit;
   Rescan;
 end;
 
@@ -136,13 +214,16 @@ begin
   memb := nil;
 
   // generate json
+  // note: only if
+  //  - the imports can be found (either using the project infos or sc.conf)
+  //  - the source is error-less
   dmdproc := TProcess.Create(nil);
   lines := TStringList.Create;
   try
     jsf := GetTempDir(false);
-    jsf += format('%.8X.json',[NativeUint(@dmdproc)]);
+    jsf += uniqueObjStr(dmdProc) + '.json';
     scf := GetTempDir(false);
-    scf += format('%.8X.d',[NativeUint(@dmdproc)]);
+    scf += uniqueObjStr(dmdProc) + '.d';
     //
     lines.Assign(fDoc.Lines);
     lines.SaveToFile(scf);
@@ -154,7 +235,17 @@ begin
     dmdproc.Parameters.Add('-c');
     dmdproc.Parameters.Add('-o-');
     dmdproc.Parameters.Add('-X');
-    dmdproc.Parameters.Add('-Xf' + jsf );
+    dmdproc.Parameters.Add('-Xf' + jsf);
+    if fProj <> nil then
+    begin
+      dmdProc.CurrentDirectory := extractFilePath(fProj.fileName);
+      if fProj <> nil then for i := 0 to fProj.Sources.Count-1 do
+        dmdproc.Parameters.Add('-I' + fProj.getAbsoluteSourceName(i));
+      for nme in fProj.Sources do
+        dmdproc.Parameters.Add('-I' + extractFilePath(nme));
+      for nme in fProj.currentConfiguration.pathsOptions.Includes do
+        dmdproc.Parameters.Add('-I' + nme);
+    end;
     dmdproc.Execute;
     while dmdproc.Running do;
   finally
@@ -184,44 +275,45 @@ begin
   end;
 
   // update tree
-  memb := dat.items[0].FindPath('members');
-  if memb <> nil then for i := 0 to memb.Count-1 do
-  begin
-
-    // category
-    ln  := new(PInt64);
-    ln^ := memb.Items[i].GetPath('line').AsInt64;
-    nme := memb.Items[i].GetPath('name').AsString;
-
-    case memb.Items[i].GetPath('kind').AsString of
-      'alias'   :ndCat := Tree.Items.AddChildObject(ndAlias, nme, ln);
-      'class'   :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
-      'enum'    :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
-      'function':ndCat := Tree.Items.AddChildObject(ndFunc, nme, ln);
-      'import'  :ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
-      'mixin'   :ndCat := Tree.Items.AddChildObject(ndMix, nme, ln);
-      'struct'  :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
-      'template':ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
-      'variable':ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
-    end;
-
-    // optional item members
-    submemb := memb.Items[i].FindPath('members');
-    if subMemb <> nil then for j := 0 to submemb.Count-1 do
+  try
+    memb := dat.items[0].FindPath('members');
+    if memb <> nil then for i := 0 to memb.Count-1 do
     begin
+
+      // category
       ln  := new(PInt64);
-      ln^ := submemb.Items[j].GetPath('line').AsInt64;
-      nme := submemb.Items[j].GetPath('name').AsString;
-      Tree.Items.AddChildObject(ndCat, nme, ln);
+      ln^ := memb.Items[i].GetPath('line').AsInt64;
+      nme := memb.Items[i].GetPath('name').AsString;
+
+      case memb.Items[i].GetPath('kind').AsString of
+        'alias'   :ndCat := Tree.Items.AddChildObject(ndAlias, nme, ln);
+        'class'   :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
+        'enum'    :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
+        'function':ndCat := Tree.Items.AddChildObject(ndFunc, nme, ln);
+        'import'  :ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
+        'mixin'   :ndCat := Tree.Items.AddChildObject(ndMix, nme, ln);
+        'struct'  :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
+        'template':ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
+        'variable':ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
+      end;
+
+      // optional item members
+      submemb := memb.Items[i].FindPath('members');
+      if subMemb <> nil then for j := 0 to submemb.Count-1 do
+      begin
+        ln  := new(PInt64);
+        ln^ := submemb.Items[j].GetPath('line').AsInt64;
+        nme := submemb.Items[j].GetPath('name').AsString;
+        Tree.Items.AddChildObject(ndCat, nme, ln);
+      end;
+
     end;
-
-  end;
-
-
-  if dat <> nil then
-  begin
-    dat.Clear;
-    dat.Free;
+  finally
+    if dat <> nil then
+    begin
+      dat.Clear;
+      dat.Free;
+    end;
   end;
 end;
 

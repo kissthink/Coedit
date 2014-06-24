@@ -20,7 +20,7 @@ type
   end;
 
   (**
-   * An implementer adds some menu actions when its context is valid.
+   * An implementer declares some actions on demand.
    *)
   ICEContextualActions = interface
     function contextName: string;

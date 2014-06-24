@@ -56,7 +56,7 @@ type
     // decrements the update count and call 'UpdateByEvent' if the
     // counter value is null.
     procedure endUpdateByEvent;
-    // immediate call the 'UpdateByEvent'
+    // immediate call 'UpdateByEvent'
     procedure forceUpdateByEvent;
     //
     procedure docNew(const aDoc: TCESynMemo); virtual;
@@ -103,6 +103,9 @@ implementation
  * TCEWidget
  *)
 constructor TCEWidget.create(aOwner: TComponent);
+var
+  i: NativeInt;
+  itm: TmenuItem;
 begin
   inherited;
   fID := 'ID_XXXX';
@@ -117,6 +120,15 @@ begin
 
   DockMaster.MakeDockable(Self, true, true, true);
   DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
+
+  for i := 0 to contextActionCount-1 do
+  begin
+    itm := TMenuItem.Create(self);
+    itm.Action := contextAction(i);
+    contextMenu.Items.Add(itm);
+  end;
+
+  PopupMenu := contextMenu;
 end;
 
 destructor TCEWidget.destroy;

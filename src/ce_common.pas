@@ -29,7 +29,7 @@ uses
 
   (**
    * Patches the directory separators from a string.
-   * This is used to ensure that a project saved on a plateform can be loaded
+   * This is used to ensure that a project saved on a platform can be loaded
    * on another one.
    *)
    function patchPlateformPath(const aPath: string): string;
@@ -39,6 +39,11 @@ uses
     * Ok/Cancel modal dialog
     *)
    function dlgOkCancel(const aMsg: string): TModalResult;
+
+   (**
+    * Returns an unique object identifier, based on its heap address.
+    *)
+   function uniqueObjStr(const aObject: Tobject): string;
 
 
 implementation
@@ -235,6 +240,13 @@ const
   Btns = [mbOK,mbCancel];
 begin
   exit( MessageDlg('Coedit', aMsg, mtConfirmation, Btns, ''));
+end;
+
+function uniqueObjStr(const aObject: Tobject): string;
+begin
+  {$HINTS OFF}{$WARNINGS OFF}
+  exit( format('%.8X',[NativeUint(@aObject)]));
+  {$HINTS ON}{$WARNINGS ON}
 end;
 
 end.
