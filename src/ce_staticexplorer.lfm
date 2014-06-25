@@ -34,6 +34,7 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
         SelectionColor = clActiveBorder
         TabOrder = 0
         OnDeletion = TreeDeletion
+        OnKeyPress = TreeKeyPress
         Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF020009000000000000000000000000000000FFFFFFFF000000000000

@@ -7,9 +7,9 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, ComCtrls, process,
+  Dialogs, Menus, ActnList, ExtCtrls, process,
   ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
-  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer;
+  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search;
 
 type
 
@@ -142,6 +142,7 @@ type
     fProjWidg: TCEProjectInspectWidget;
     fPrjCfWidg: TCEProjectConfigurationWidget;
     fStExpWidg: TCEStaticExplorerWidget;
+    fFindWidg:  TCESearchWidget;
 
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
@@ -207,12 +208,14 @@ begin
   fProjWidg := TCEProjectInspectWidget.create(nil);
   fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
   fStExpWidg:= TCEStaticExplorerWidget.create(nil);
+  fFindWidg := TCESearchWidget.create(nil);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
   fWidgList.addWidget(@fProjWidg);
   fWidgList.addWidget(@fPrjCfWidg);
   fWidgList.addWidget(@fStExpWidg);
+  fWidgList.addWidget(@fFindWidg);
 
   for widg in fWidgList do widg.Show;
 
@@ -252,6 +255,7 @@ begin
   fProjWidg.Free;
   fPrjCfWidg.Free;
   fStExpWidg.Free;
+  fFindWidg.Free;
   fProject.Free;
   //
   inherited;
@@ -698,23 +702,28 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options:= [poWaitOnExit, poStdErrToOutput, poUsePipes];
+    dmdproc.Options:= [poStdErrToOutput, poUsePipes];
     dmdproc.Executable:= 'dmd';
     dmdproc.Parameters.Add(fname + '.d');
     try
       dmdproc.Execute;
+      while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
       ProcessOutputToMsg(dmdproc);
     finally
       DeleteFile(fname + '.d');
     end;
 
+    {$IFDEF MSWINDOWS}
+    if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
+    {$ELSE}
     if dmdProc.ExitStatus = 0 then
+    {$ENDIF}
     begin
 
       fMesgWidg.addCeInf( fEditWidg.editor[edIndex].fileName
         + ' successfully compiled' );
 
-      runproc.Options:= [poWaitOnExit, poStderrToOutPut, poUsePipes];
+      runproc.Options:= [poStderrToOutPut, poUsePipes];
       {$IFDEF MSWINDOWS}
       runproc.Executable := fname + '.exe';
       runproc.Parameters.Text := runArgs;
@@ -722,10 +731,8 @@ begin
       runproc.Executable := fname;
       {$ENDIF}
       runproc.Execute;
-      repeat
-        ProcessOutputToMsg(runproc);
-      until
-        not runproc.Active;
+      while runproc.Running do if runproc.ExitStatus <> 0 then break;
+      ProcessOutputToMsg(runproc);
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');
@@ -749,12 +756,6 @@ procedure TCEMainForm.compileProject(const aProject: TCEProject);
 var
   dmdproc: TProcess;
   olddir, prjpath: string;
-const
-  // option -v causes a hang if poWaitOnExit is included
-  procopts: array[boolean] of TProcessOptions = (
-    [poWaitOnExit, poStdErrToOutput, poUsePipes],
-    [poStdErrToOutput, poUsePipes]
-  );
 begin
 
   if aProject.Sources.Count = 0 then
@@ -776,16 +777,20 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options :=
-      procopts[aProject.currentConfiguration.messagesOptions.verbose];
+    dmdproc.Options := [poStdErrToOutput, poUsePipes];
 
     dmdproc.Executable := 'dmd';
     aProject.getOpts(dmdproc.Parameters);
     try
       dmdproc.Execute;
+      while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
       ProcessOutputToMsg(dmdproc);
     finally
+      {$IFDEF MSWINDOWS} //  STILL_ACTIVE ambiguity
+      if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
+      {$ELSE}
       if dmdProc.ExitStatus = 0 then
+      {$ENDIF}
         fMesgWidg.addCeInf( aProject.fileName
           + ' successfully compiled' )
       else
@@ -833,6 +838,7 @@ begin
     runproc.Executable := procname;
     runproc.Parameters.Text := runArgs;
     runproc.Execute;
+    while runproc.Running do if runproc.ExitStatus <> 0 then break;
 
   finally
     runproc.Free;
@@ -856,8 +862,8 @@ begin
   if fEditWidg.editorIndex < 0 then exit;
   //
   runargs := '';
-  if InputQuery('Execution arguments', 'enter switches and arguments',
-    runargs) then compileAndRunFile(fEditWidg.editorIndex, runargs);
+  if InputQuery('Execution arguments', '', runargs) then
+    compileAndRunFile(fEditWidg.editorIndex, runargs);
 end;
 
 procedure TCEMainForm.actProjCompileExecute(Sender: TObject);
@@ -878,8 +884,8 @@ begin
   compileProject(fProject);
   //
   runargs := '';
-  if InputQuery('Execution arguments', 'enter switches and arguments',
-    runargs) then runProject(fProject, runargs);
+  if InputQuery('Execution arguments', '', runargs) then
+    runProject(fProject, runargs);
 end;
 
 procedure TCEMainForm.actProjRunExecute(Sender: TObject);
@@ -892,8 +898,8 @@ var
   runargs: string;
 begin
   runargs := '';
-  if InputQuery('Execution arguments', 'enter switches and arguments',
-    runargs) then runProject(fProject, runargs);
+  if InputQuery('Execution arguments', '', runargs) then
+    runProject(fProject, runargs);
 end;
 {$ENDREGION}
 

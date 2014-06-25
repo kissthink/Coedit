@@ -126,7 +126,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="14">
+    <Units Count="15">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -218,6 +218,14 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="ce_staticexplorer"/>
       </Unit13>
+      <Unit14>
+        <Filename Value="..\src\ce_search.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="CESearchWidget"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="ce_search"/>
+      </Unit14>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

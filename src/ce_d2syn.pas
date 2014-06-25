@@ -44,11 +44,12 @@ type
     values: array of string;
   end;
 
+  // TODO: rather gperf ?
   TD2Dictionary = object
   private
     fLongest: NativeInt;
-    fEntries: array[0..1023] of TD2DictionaryEntry;
-    function toHash(const aValue: string): word;
+    fEntries: array[0..255] of TD2DictionaryEntry;
+    function toHash(const aValue: string): Byte;
     procedure addEntry(const aValue: string);
   public
     constructor create;
@@ -227,20 +228,14 @@ begin
 end;
 
 {$IFDEF DEBUG}{$R-}{$ENDIF}
-function TD2Dictionary.toHash(const aValue: string): word;
+function TD2Dictionary.toHash(const aValue: string): Byte;
 var
   i, len: Integer;
-  prev: word;
 begin
   result := 0;
-  prev := 0;
   len := length(aValue);
 	for i := 1 to len do
-  begin
-	  result += ((Byte(aValue[i]) + 64) shl i) xor prev;
-		prev := Byte(aValue[i]);
-	end;
-  result := result and 1023;
+	  result += (Byte(aValue[i]) shl i) xor 63;
 end;
 {$IFDEF DEBUG}{$R+}{$ENDIF}
 
@@ -458,6 +453,8 @@ TODO:
 - comments: correct nested comments handling.
 }
 procedure TSynD2Syn.next;
+label
+  _postString1;
 begin
 
   fTokStart := fTokStop;
@@ -613,8 +610,8 @@ begin
       begin
         if not (readNext = '"') then
         begin
-          fTokKind := tkIdent;
-          exit; // warning: a goto is avoided but any other r/x is not detectable since it's truncated as tkIdent
+          Dec(fTokStop);
+          goto _postString1;
         end;
       end;
       // go to end of string/eol
@@ -631,6 +628,7 @@ begin
       exit;
     end;
   end;
+  _postString1:
 
   // string 2
   if fRange = rkString2 then

@@ -18,6 +18,7 @@ type
     Tree: TTreeView;
     TreeFilterEdit1: TTreeFilterEdit;
     procedure TreeDeletion(Sender: TObject; Node: TTreeNode);
+    procedure TreeKeyPress(Sender: TObject; var Key: char);
   private
     fActRefresh: TAction;
     fActAutoRefresh: TAction;
@@ -168,6 +169,11 @@ begin
     FreeMem(node.Data)
 end;
 
+procedure TCEStaticExplorerWidget.TreeKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then TreeDblClick(nil);
+end;
+
 procedure TCEStaticExplorerWidget.TreeDblClick(Sender: TObject);
 var
   line: Int64;
@@ -178,7 +184,7 @@ begin
   //
   line := PInt64(Tree.Selected.Data)^;
   fDoc.CaretY := line;
-  fDoc.SelectLine();
+  fDoc.SelectLine;
 end;
 
 procedure TCEStaticExplorerWidget.Rescan;

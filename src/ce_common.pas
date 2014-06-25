@@ -7,6 +7,33 @@ interface
 uses
   Classes, SysUtils, ActnList, dialogs, forms;
 
+type
+
+  (**
+   * MRU list for strings
+   *)
+  TMRUList = class(TStringList)
+  private
+    fMaxCount: Integer;
+  protected
+    procedure setMaxCount(aValue: Integer);
+    function checkItem(const S: string): boolean; virtual;
+    procedure Put(Index: Integer; const S: string); override;
+  published
+    property maxCount: Integer read fMaxCount write setMaxCount;
+  public
+    constructor Create;
+    procedure Insert(Index: Integer; const S: string); override;
+  end;
+
+  (**
+   * MRU list for filenames
+   *)
+  TMRUFileList = class(TMRUList)
+  protected
+    function checkItem(const S: string): boolean; override;
+  end;
+
   (**
    * Save a component with a readable aspect.
    *)
@@ -45,8 +72,44 @@ uses
     *)
    function uniqueObjStr(const aObject: Tobject): string;
 
-
 implementation
+
+constructor TMRUList.Create;
+begin
+  fMaxCount := 10;
+end;
+
+procedure TMRUList.setMaxCount(aValue: Integer);
+begin
+  if aValue < 0 then aValue := 0;
+  if fMaxCount = aValue then exit;
+  while Count > fMaxCount do delete(Count-1);
+end;
+
+function TMRUList.checkItem(const S: string): boolean;
+begin
+  exit( indexOf(S) = -1 );
+end;
+
+procedure TMRUList.Put(Index: Integer; const S: string);
+begin
+  if not (checkItem(S)) then exit;
+  inherited;
+  while Count > fMaxCount do delete(Count-1);
+end;
+
+procedure TMRUList.Insert(Index: Integer; const S: string);
+begin
+  if not (checkItem(S)) then exit;
+  inherited;
+  while Count > fMaxCount do delete(Count-1);
+end;
+
+function TMRUFileList.checkItem(const S: string): boolean;
+begin
+  exit( inherited checkItem(S) and fileExists(S));
+end;
+
 
 procedure saveCompToTxtFile(const aComp: TComponent; const aFilename: string);
 var
@@ -102,71 +165,34 @@ begin
 end;
 
 function patchPlateformPath(const aPath: string): string;
+function patchProc(const src: string; const invalid: char): string;
 var
   i: Integer;
 begin
+  result := src;
+  i := pos(invalid, result);
+  if i <> 0 then
+  begin
+    repeat
+      result[i] := directorySeparator;
+      i := pos(invalid,result);
+    until
+      i = 0;
+  end;
+end;
+begin
   result := aPath;
   {$IFDEF MSWINDOWS}
-  i := pos('/',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos('/',result);
-    until
-      i = 0;
-  end;
-  i := pos(':',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos(':',result);
-    until
-      i = 0;
-  end;
+  result := patchProc(result,'/');
+  result := patchProc(result,':');
   {$ENDIF}
-
   {$IFDEF LINUX}
-  i := pos('\',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos('\',result);
-    until
-      i = 0;
-  end;
-  i := pos(':',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos(':',result);
-    until
-      i = 0;
-  end;
+  result := patchProc(result,'\');
+  result := patchProc(result,':');
   {$ENDIF}
-
   {$IFDEF MACOS}
-  i := pos('\',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos('\',result);
-    until
-      i = 0;
-  end;
-  i := pos('/',result);
-  if i <> 0 then
-  begin
-    repeat
-      result[i] := directorySeparator;
-      i := pos('/',result);
-    until
-      i = 0;
-  end;
+  result := patchProc(result,'\');
+  result := patchProc(result,'/');
   {$ENDIF}
 end;
 
@@ -247,6 +273,11 @@ begin
   {$HINTS OFF}{$WARNINGS OFF}
   exit( format('%.8X',[NativeUint(@aObject)]));
   {$HINTS ON}{$WARNINGS ON}
+end;
+
+operator =(lhs,rhs: TPoint): boolean;
+begin
+  exit( (lhs.x = rhs.x) and (lhs.y = rhs.y) );
 end;
 
 end.
