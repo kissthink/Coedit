@@ -4,6 +4,10 @@ unit ce_project;
 
 interface
 
+// TODO: pre/post compilation shell-script / process
+// TODO: run opts, newConsole, catch output, etc
+// TODO: configuration templates
+
 uses
   Classes, SysUtils, ce_dmdwrap;
 

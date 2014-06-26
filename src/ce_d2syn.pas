@@ -39,22 +39,46 @@ const
 
 type
 
+
+  {$IFDEF USE_DICT_LINKEDCHARMAP}
+  PCharMap = ^TCharMap;
+  TCharMap = record
+    chars: array [Byte] of PCharMap;
+  end;
+
+  // slightly fatest then a hash-based-dictionary but huge memory use.
+  TD2Dictionary = object
+  private
+    fRoot: TCharMap;
+    fTerm: NativeInt;
+    fFreeList: array of pointer;
+    fLongest, fShortest: NativeInt;
+    procedure addEntry(const aValue: string);
+  public
+    constructor create;
+    destructor destroy;
+    function find(const aValue: string): boolean;
+  end;
+  {$ELSE} {$IFDEF USE_DICT_GPERF}
+  // TODO: a perfect hash dictionnary based on gperf
+  {$ELSE}
   TD2DictionaryEntry = record
     filled: Boolean;
     values: array of string;
   end;
-
-  // TODO: rather gperf ?
   TD2Dictionary = object
   private
-    fLongest: NativeInt;
-    fEntries: array[0..255] of TD2DictionaryEntry;
+    fLongest, fShortest: NativeInt;
+    fEntries: array[Byte] of TD2DictionaryEntry;
     function toHash(const aValue: string): Byte;
     procedure addEntry(const aValue: string);
   public
     constructor create;
+    destructor destroy;
     function find(const aValue: string): boolean;
   end;
+  {$ENDIF}
+  {$ENDIF}
 
   TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI);
 
@@ -98,7 +122,7 @@ type
     procedure setCurrIdent(const aValue: string);
     procedure doChanged;
 	published
-    // Defines which kind of ranges can be folded, among curly brackets, block comments and nested comments
+    // Defines which kind of range can be folded, among curly brackets, block comments and nested comments
     property FoldKinds: TFoldKinds read fFoldKinds write setFoldKinds;
     property WhiteAttrib: TSynHighlighterAttributes read fWhiteAttrib write setWhiteAttrib;
     property NumbrAttrib: TSynHighlighterAttributes read fNumbrAttrib write setNumbrAttrib;
@@ -217,70 +241,120 @@ begin
   result := (s = '>>>=') or (s = '!<>=');
 end;
 
+{$IFDEF USE_DICT_LINKEDCHARMAP}
+constructor TD2Dictionary.create;
+var
+  value: string;
+  i: NativeInt;
+begin
+  fTerm := 1;
+  for i := 0 to 255 do fRoot.chars[i] := nil;
+  for value in D2Kw do
+    addEntry(value);
+end;
+
+destructor TD2Dictionary.destroy;
+var
+  i: NativeInt;
+begin
+  for i := 0 to high(fFreeList) do
+    FreeMem(fFreeList[i]);
+end;
+
+procedure TD2Dictionary.addEntry(const aValue: string);
+var
+  len, i, j: NativeInt;
+  currMap: PCharMap;
+  newMap: PCharMap;
+begin
+  len := length(aValue);
+  if len > fLongest then fLongest := len;
+  if len < fShortest then fShortest := len;
+  currMap := @fRoot;
+  for i := 1 to len do
+  begin
+    if (currMap^.chars[Byte(aValue[i])] = nil) then
+    begin
+      newMap := new(PCharMap);
+      for j := 0 to 255 do newMap^.chars[j] := nil;
+      setLength(fFreeList, length(fFreeList) + 1);
+      fFreeList[high(fFreeList)] := newMap;
+      currMap^.chars[Byte(aValue[i])] := newMap;
+    end;
+    if i < len then currMap := currMap^.chars[Byte(aValue[i])];
+  end;
+  currMap^.chars[0] := @fTerm;
+end;
+
+function TD2Dictionary.find(const aValue: string): boolean;
+var
+  len, i: NativeInt;
+  currMap: PCharMap;
+begin
+  len := length(aValue);
+  if len > fLongest then exit(false);
+  if len < fShortest then exit(false);
+  currMap := @fRoot;
+  for i := 1 to len do
+  begin
+    if currMap^.chars[Byte(aValue[i])] = nil then exit(false);
+    if i < len then currMap := currMap^.chars[Byte(aValue[i])];
+  end;
+  exit( currMap^.chars[0] = @fTerm );
+end;
+{$ELSE}
 constructor TD2Dictionary.create;
 var
   value: string;
 begin
   for value in D2Kw do
-  begin
     addEntry(value);
-  end;
+end;
+
+destructor TD2Dictionary.destroy;
+begin
 end;
 
 {$IFDEF DEBUG}{$R-}{$ENDIF}
 function TD2Dictionary.toHash(const aValue: string): Byte;
 var
-  i, len: Integer;
+  i: Integer;
 begin
   result := 0;
-  len := length(aValue);
-	for i := 1 to len do
-	  result += (Byte(aValue[i]) shl i) xor 63;
+	for i := 1 to length(aValue) do
+	  result += (Byte(aValue[i]) shl (4 and (1-i))) xor 25;
 end;
 {$IFDEF DEBUG}{$R+}{$ENDIF}
 
 procedure TD2Dictionary.addEntry(const aValue: string);
 var
-  hash: word;
+  hash: Byte;
 begin
-  if find(aValue) then
-    exit;
-
+  if find(aValue) then exit;
   hash := toHash(aValue);
-  assert(hash < 1024);
-
   fEntries[hash].filled := true;
   setLength(fEntries[hash].values, length(fEntries[hash].values) + 1);
   fEntries[hash].values[high(fEntries[hash].values)] := aValue;
   if fLongest <= length(aValue) then
     fLongest := length(aValue);
+  if fShortest >= length(aValue) then
+    fShortest := length(aValue);
 end;
 
 function TD2Dictionary.find(const aValue: string): boolean;
 var
-  hash: word;
+  hash: Byte;
   i: NativeInt;
 begin
-  if length(aValue) > fLongest then
-    result := false
-  else
-  begin
-    hash := toHash(aValue);
-    if (not fEntries[hash].filled) then
-      result := false else
-    begin
-      for i:= 0 to high(fEntries[hash].values) do
-      begin
-        if fEntries[hash].values[i] = aValue then
-        begin
-          result := true;
-          exit;
-        end;
-        result := false;
-      end
-    end;
-  end;
+  result := false;
+  if length(aValue) > fLongest then exit;
+  if length(aValue) < fShortest then exit;
+  hash := toHash(aValue);
+  if (not fEntries[hash].filled) then exit(false);
+  for i:= 0 to high(fEntries[hash].values) do
+    if fEntries[hash].values[i] = aValue then exit(true);
 end;
+{$ENDIF}
 
 
 constructor TSynD2Syn.create(aOwner: TComponent);
@@ -342,6 +416,7 @@ end;
 
 destructor TSynD2Syn.destroy;
 begin
+  fKeyWords.destroy;
   inherited;
 end;
 

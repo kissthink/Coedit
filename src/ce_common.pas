@@ -7,6 +7,10 @@ interface
 uses
   Classes, SysUtils, ActnList, dialogs, forms;
 
+const
+
+  DdiagFilter = 'D source|*.d|D interface|*.di|All files|*.*';
+
 type
 
   (**
@@ -273,11 +277,6 @@ begin
   {$HINTS OFF}{$WARNINGS OFF}
   exit( format('%.8X',[NativeUint(@aObject)]));
   {$HINTS ON}{$WARNINGS ON}
-end;
-
-operator =(lhs,rhs: TPoint): boolean;
-begin
-  exit( (lhs.x = rhs.x) and (lhs.y = rhs.y) );
 end;
 
 end.

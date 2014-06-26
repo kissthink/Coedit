@@ -38,7 +38,8 @@ begin
   TabWidth := 4;
   Options :=
     [ eoAutoIndent, eoBracketHighlight, eoGroupUndo, eoTabsToSpaces,
-      eoTrimTrailingSpaces, eoDragDropEditing, eoShowCtrlMouseLinks];
+      eoTrimTrailingSpaces, eoDragDropEditing, eoShowCtrlMouseLinks,
+      eoEnhanceHomeKey, eoTabIndent];
   Options2 := [eoEnhanceEndKey, eoFoldedCopyPaste, eoOverwriteBlock];
   //
   Gutter.LineNumberPart.ShowOnlyLineNumbersMultiplesOf := 5;

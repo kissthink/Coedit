@@ -620,6 +620,15 @@ object CEMainForm: TCEMainForm
       object MenuItem21: TMenuItem
         Caption = '-'
       end
+      object MenuItem54: TMenuItem
+        Action = actEdIndent
+      end
+      object MenuItem53: TMenuItem
+        Action = actEdUnIndent
+      end
+      object MenuItem52: TMenuItem
+        Caption = '-'
+      end
       object MenuItem22: TMenuItem
         Action = actEdMacStartStop
         Bitmap.Data = {
@@ -1662,6 +1671,20 @@ object CEMainForm: TCEMainForm
       Caption = 'Run project...'
       ImageIndex = 21
       OnExecute = actProjRunWithArgsExecute
+    end
+    object actEdIndent: TAction
+      Category = 'Edit'
+      Caption = 'Indent'
+      ImageIndex = 16
+      OnExecute = actEdIndentExecute
+      ShortCut = 24649
+    end
+    object actEdUnIndent: TAction
+      Category = 'Edit'
+      Caption = 'Unindent'
+      ImageIndex = 17
+      OnExecute = actEdUnIndentExecute
+      ShortCut = 24661
     end
   end
   object imgList: TImageList

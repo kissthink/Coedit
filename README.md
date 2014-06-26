@@ -5,7 +5,7 @@ Coedit is a simple IDE for the [D2](http://dlang.org) lang. (**Co** mpile & **Ed
 
 Current features
 ----------------
-- multi platform (Win/Linux/Macos).
+- multi platform (Win/Linux).
 - projects.
 - multiple project configurations (set of switches and options).
 - compile, run directly from the UI.
@@ -34,7 +34,7 @@ Coedit must be build from the sources:
 - both [dmd](http://dlang.org/download.html) and [Lazarus](http://www.lazarus.freepascal.org) must be setup.
 - open "coedit.lpr" in *Lazarus*, set the build mode to *Release*
 - press the Run button (or build)
-- in coedit open *"lazproj\test\coeditproj\test.coedit"* from the project menu.
+- run coedit and project, open *"lazproj\test\coeditproj\test.coedit"* from the project menu to give a brief try.
 
 Preview
 -------

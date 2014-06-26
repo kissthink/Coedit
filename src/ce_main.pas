@@ -44,6 +44,8 @@ type
     actEdUndo: TAction;
     actEdPaste: TAction;
     actEdCopy: TAction;
+    actEdIndent: TAction;
+    actEdUnIndent: TAction;
     Actions: TActionList;
     ApplicationProperties1: TApplicationProperties;
     imgList: TImageList;
@@ -93,6 +95,9 @@ type
     MenuItem49: TMenuItem;
     MenuItem50: TMenuItem;
     MenuItem51: TMenuItem;
+    MenuItem52: TMenuItem;
+    MenuItem53: TMenuItem;
+    MenuItem54: TMenuItem;
     mnuItemWin: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -106,6 +111,7 @@ type
     procedure actFileCompAndRunExecute(Sender: TObject);
     procedure actFileCompAndRunWithArgsExecute(Sender: TObject);
     procedure actFileSaveAllExecute(Sender: TObject);
+    procedure actEdIndentExecute(Sender: TObject);
     procedure actProjCompAndRunWithArgsExecute(Sender: TObject);
     procedure actProjCompileAndRunExecute(Sender: TObject);
     procedure actProjCompileExecute(Sender: TObject);
@@ -131,6 +137,7 @@ type
     procedure actProjSaveExecute(Sender: TObject);
     procedure actEdUndoExecute(Sender: TObject);
     procedure actProjSourceExecute(Sender: TObject);
+    procedure actEdUnIndentExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure FormShow(Sender: TObject);
   private
@@ -285,6 +292,8 @@ begin
       {$ENDIF}
       actEdMacPlay.Enabled := true;
       actEdMacStartStop.Enabled := true;
+      actEdIndent.Enabled := true;
+      actEdUnIndent.Enabled := true;
       //
       actFileCompAndRun.Enabled := true;
       actFileCompAndRunWithArgs.Enabled := true;
@@ -303,6 +312,8 @@ begin
       {$ENDIF}
       actEdMacPlay.Enabled := false;
       actEdMacStartStop.Enabled := false;
+      actEdIndent.Enabled := false;
+      actEdUnIndent.Enabled := false;
       //
       actFileCompAndRun.Enabled := false;
       actFileCompAndRunWithArgs.Enabled := false;
@@ -474,7 +485,7 @@ begin
   //
   with TOpenDialog.Create(nil) do
   try
-    filter := 'D source|*.d|D interface|*.di|all files|*.*';
+    filter := DdiagFilter;
     if execute then
     begin
       openFile(filename);
@@ -512,10 +523,9 @@ begin
   //
   with TSaveDialog.Create(nil) do
   try
+    Filter := DdiagFilter;
     if execute then
-    begin
       saveFileAs(fEditWidg.editorIndex, filename);
-    end;
   finally
     free;
   end;
@@ -640,7 +650,21 @@ begin
   end;
 end;
 
+procedure TCEMainForm.actEdIndentExecute(Sender: TObject);
+var
+  curr: TCESynMemo;
+begin
+  curr := fEditWidg.currentEditor;
+  if assigned(curr) then curr.ExecuteCommand(ecBlockIndent, '', nil);
+end;
 
+procedure TCEMainForm.actEdUnIndentExecute(Sender: TObject);
+var
+  curr: TCESynMemo;
+begin
+  curr := fEditWidg.currentEditor;
+  if assigned(curr) then curr.ExecuteCommand(ecBlockUnIndent, '', nil);
+end;
 {$ENDREGION}
 
 {$REGION run  ******************************************************************}

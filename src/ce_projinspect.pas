@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
-  actnlist, Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_widget;
+  actnlist, Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project,
+  ce_common, ce_widget;
 
 type
   { TCEProjectInspectWidget }
@@ -166,7 +167,7 @@ begin
   //
   with TOpenDialog.Create(nil) do
   try
-    filter := 'D source|*.d|D interface|*.di|all files|*.*';
+    filter := DdiagFilter;
     if execute then
       fProject.addSource(filename);
   finally

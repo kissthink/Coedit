@@ -19,6 +19,7 @@ type
     btnReplaceAll: TBitBtn;
     cbToFind: TComboBox;
     cbReplaceWth: TComboBox;
+    chkEnableRep: TCheckBox;
     chkPrompt: TCheckBox;
     chkWWord: TCheckBox;
     chkBack: TCheckBox;
@@ -26,8 +27,10 @@ type
     chkCaseSens: TCheckBox;
     grpOpts: TGroupBox;
     imgList: TImageList;
+    Panel1: TPanel;
     procedure cbReplaceWthChange(Sender: TObject);
     procedure cbToFindChange(Sender: TObject);
+    procedure chkEnableRepChange(Sender: TObject);
   private
     fEditor: TCESynMemo;
     fToFind: string;
@@ -35,6 +38,7 @@ type
     fActFindNext, fActReplaceNext: TAction;
     fActReplaceAll: TAction;
     fSearchMru, fReplaceMru: TMruList;
+    fCancelAll: boolean;
     function getOptions: TSynSearchOptions;
     procedure actFindNextExecute(sender: TObject);
     procedure actReplaceAllExecute(sender: TObject);
@@ -56,24 +60,24 @@ implementation
 
 constructor TCESearchWidget.Create(aOwner: TComponent);
 begin
-  inherited;
-  fID := 'ID_FIND';
-  //
-  fSearchMru := TMruList.Create;
-  fReplaceMru:= TMruList.Create;
-  //
   fActFindNext := TAction.Create(self);
   fActFindNext.Caption := 'Find';
   fActFindNext.OnExecute := @actFindNextExecute;
-  btnFind.Action := fActFindNext;
   fActReplaceNext := TAction.Create(self);
   fActReplaceNext.Caption := 'Replace';
   fActReplaceNext.OnExecute := @actReplaceNextExecute;
-  btnReplace.Action := fActReplaceNext;
   fActReplaceAll := TAction.Create(self);
   fActReplaceAll.Caption := 'Replace all';
   fActReplaceAll.OnExecute := @actReplaceAllExecute;
+  inherited;
+  fID := 'ID_FIND';
+  //
+  btnFind.Action := fActFindNext;
+  btnReplace.Action := fActReplaceNext;
   btnReplaceAll.Action := fActReplaceAll;
+  //
+  fSearchMru := TMruList.Create;
+  fReplaceMru:= TMruList.Create;
 end;
 
 destructor TCESearchWidget.Destroy;
@@ -101,6 +105,12 @@ begin
   fToFind := cbToFind.Text;
 end;
 
+procedure TCESearchWidget.chkEnableRepChange(Sender: TObject);
+begin
+  if Updating then exit;
+  UpdateByEvent;
+end;
+
 procedure TCESearchWidget.cbReplaceWthChange(Sender: TObject);
 begin
   if Updating then exit;
@@ -109,7 +119,7 @@ end;
 
 function TCESearchWidget.getOptions: TSynSearchOptions;
 begin
-  result := [];
+  result := [ssoRegExpr];
   if chkWWord.Checked then result += [ssoWholeWord];
   if chkBack.Checked then result += [ssoBackwards];
   if chkCaseSens.Checked then result += [ssoMatchCase];
@@ -160,23 +170,45 @@ begin
   begin
     if fEditor.SearchReplace(fToFind, fReplaceWth, opts) = 0
       then break;
+    if fCancelAll then
+    begin
+      fCancelAll := false;
+      break;
+    end;
   end;
   fEditor.OnReplaceText := nil;
   UpdateByEvent;
 end;
 
+function dlgReplaceAll: TModalResult;
+const
+  Btns = [mbYes, mbNo, mbYesToAll, mbNoToAll];
+begin
+  exit( MessageDlg('Coedit', 'Replace this match ?', mtConfirmation, Btns, ''));
+end;
+
 procedure TCESearchWidget.replaceEvent(Sender: TObject; const ASearch, AReplace:
       string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
 begin
-  ReplaceAction := raSkip;
-  if dlgOkCancel('Replace this match ?') = mrOK then
-    ReplaceAction := raReplace;
+  case dlgReplaceAll of
+    mrYes: ReplaceAction := raReplace;
+    mrNo: ReplaceAction := raSkip;
+    mrYesToAll: ReplaceAction := raReplaceAll;
+    mrCancel, mrClose, mrNoToAll:
+      begin
+        ReplaceAction := raCancel;
+        fCancelAll := true;
+      end;
+  end;
 end;
 
 procedure TCESearchWidget.UpdateByEvent;
 begin
   fActFindNext.Enabled := fEditor <> nil;
-  fActReplaceNext.Enabled := fEditor <> nil;
+  fActReplaceNext.Enabled := (fEditor <> nil) and (chkEnableRep.Checked);
+  fActReplaceAll.Enabled := (fEditor <> nil) and (chkEnableRep.Checked);
+  cbReplaceWth.Enabled := (fEditor <> nil) and (chkEnableRep.Checked);
+  cbToFind.Enabled := fEditor <> nil;
   //
   cbToFind.Items.Assign(fSearchMru);
   cbReplaceWth.Items.Assign(fReplaceMru);

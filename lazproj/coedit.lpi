@@ -54,7 +54,8 @@
             <CompilerMessages>
               <MsgFileName Value=""/>
             </CompilerMessages>
-            <CustomOptions Value="-dDEBUG"/>
+            <CustomOptions Value="-dDEBUG
+-dUSE_DICT_LINKEDCHARMAP"/>
             <CompilerPath Value="$(CompPath)"/>
           </Other>
         </CompilerOptions>
@@ -74,7 +75,7 @@
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
             <Optimizations>
-              <OptimizationLevel Value="2"/>
+              <OptimizationLevel Value="3"/>
             </Optimizations>
           </CodeGeneration>
           <Linking>
@@ -95,7 +96,8 @@
             <CompilerMessages>
               <MsgFileName Value=""/>
             </CompilerMessages>
-            <CustomOptions Value="-dRELEASE"/>
+            <CustomOptions Value="-dRELEASE
+-dUSE_DICT_LINKEDCHARMAP"/>
             <CompilerPath Value="$(CompPath)"/>
           </Other>
         </CompilerOptions>
@@ -250,6 +252,7 @@
       <CompilerMessages>
         <MsgFileName Value=""/>
       </CompilerMessages>
+      <CustomOptions Value="-dUSE_DICT_LINKEDCHARMAP"/>
       <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>

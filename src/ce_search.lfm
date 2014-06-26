@@ -1,48 +1,37 @@
 inherited CESearchWidget: TCESearchWidget
-  Left = 1338
-  Height = 276
-  Top = 697
-  Width = 405
+  Left = 1468
+  Height = 237
+  Top = 516
+  Width = 394
   Caption = 'Search & replace'
-  ClientHeight = 276
-  ClientWidth = 405
+  ClientHeight = 237
+  ClientWidth = 394
   inherited Back: TPanel
-    Height = 276
-    Width = 405
-    ClientHeight = 276
-    ClientWidth = 405
+    Height = 237
+    Width = 394
+    ClientHeight = 237
+    ClientWidth = 394
     inherited Content: TPanel
-      Height = 276
-      Width = 405
-      ClientHeight = 276
-      ClientWidth = 405
+      Height = 237
+      Width = 394
+      ClientHeight = 237
+      ClientWidth = 394
       object cbToFind: TComboBox[0]
         Left = 4
         Height = 23
         Top = 4
-        Width = 397
+        Width = 386
         Align = alTop
         BorderSpacing.Around = 4
         ItemHeight = 15
         OnChange = cbToFindChange
         TabOrder = 0
       end
-      object cbReplaceWth: TComboBox[1]
-        Left = 4
-        Height = 23
-        Top = 31
-        Width = 397
-        Align = alTop
-        BorderSpacing.Around = 4
-        ItemHeight = 15
-        OnChange = cbReplaceWthChange
-        TabOrder = 1
-      end
-      object btnFind: TBitBtn[2]
+      object btnFind: TBitBtn[1]
         Left = 4
         Height = 24
-        Top = 192
-        Width = 397
+        Top = 153
+        Width = 386
         Align = alBottom
         BorderSpacing.Around = 4
         Caption = 'btnFind'
@@ -82,13 +71,13 @@ inherited CESearchWidget: TCESearchWidget
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
         }
-        TabOrder = 2
+        TabOrder = 1
       end
-      object btnReplace: TBitBtn[3]
+      object btnReplace: TBitBtn[2]
         Left = 4
         Height = 24
-        Top = 220
-        Width = 397
+        Top = 181
+        Width = 386
         Align = alBottom
         BorderSpacing.Around = 4
         Caption = 'btnReplace'
@@ -128,19 +117,19 @@ inherited CESearchWidget: TCESearchWidget
           4766E69547FFE69A4EFFE2904122FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
         }
-        TabOrder = 3
+        TabOrder = 2
       end
-      object grpOpts: TGroupBox[4]
+      object grpOpts: TGroupBox[3]
         Left = 4
-        Height = 130
-        Top = 58
-        Width = 397
+        Height = 88
+        Top = 61
+        Width = 386
         Align = alClient
         BorderSpacing.Around = 4
         Caption = 'Options'
-        ClientHeight = 112
-        ClientWidth = 393
-        TabOrder = 4
+        ClientHeight = 70
+        ClientWidth = 382
+        TabOrder = 3
         object chkWWord: TCheckBox
           Left = 8
           Height = 19
@@ -184,11 +173,11 @@ inherited CESearchWidget: TCESearchWidget
           TabOrder = 4
         end
       end
-      object btnReplaceAll: TBitBtn[5]
+      object btnReplaceAll: TBitBtn[4]
         Left = 4
         Height = 24
-        Top = 248
-        Width = 397
+        Top = 209
+        Width = 386
         Align = alBottom
         BorderSpacing.Around = 4
         Caption = 'btnReplaceAll'
@@ -228,12 +217,49 @@ inherited CESearchWidget: TCESearchWidget
           4766E69547FFE69A4EFFE2904122FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
         }
+        TabOrder = 4
+      end
+      object Panel1: TPanel[5]
+        Left = 4
+        Height = 26
+        Top = 31
+        Width = 386
+        Align = alTop
+        BorderSpacing.Around = 4
+        BevelOuter = bvNone
+        ClientHeight = 26
+        ClientWidth = 386
         TabOrder = 5
+        object cbReplaceWth: TComboBox
+          Left = 90
+          Height = 23
+          Top = 0
+          Width = 296
+          Align = alClient
+          ItemHeight = 15
+          OnChange = cbReplaceWthChange
+          TabOrder = 0
+        end
+        object chkEnableRep: TCheckBox
+          Left = 0
+          Height = 26
+          Top = 0
+          Width = 90
+          Align = alLeft
+          Caption = 'Replace with '
+          OnChange = chkEnableRepChange
+          TabOrder = 1
+        end
       end
     end
   end
+  inherited contextMenu: TPopupMenu
+    left = 216
+    top = 16
+  end
   object imgList: TImageList[2]
-    left = 32
+    left = 248
+    top = 16
     Bitmap = {
       4C690200000010000000100000007B7977007B7977007B7977FF73716FFF6D6B
       69FF696665FF625F5EFF615E5D007E7C7A007B7977FF73716FFF6D6B69FF6966
