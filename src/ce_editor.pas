@@ -5,7 +5,7 @@ unit ce_editor;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls,
+  Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
   SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common;
@@ -26,6 +26,7 @@ type
     fKeyChanged: boolean;
     fSyncEdit: TSynPluginSyncroEdit;
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure memoKeyPress(Sender: TObject; var Key: Char);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
     procedure memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -136,6 +137,7 @@ begin
   memo.OnMouseDown := @memoMouseDown;
   memo.OnChange := @memoChange;
   memo.OnMouseMove := @memoMouseMove;
+  memo.OnKeyPress := @memoKeyPress;
   //
   pageControl.ActivePage := sheet;
   //http://bugs.freepascal.org/view.php?id=26320
@@ -155,8 +157,17 @@ end;
 
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
+end;
+
+procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: Char);
+begin
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
+  case Byte(Key) of
+    VK_UNKNOWN..VK_BACK: exit;
+    VK_PRIOR..VK_HELP: exit;
+    VK_F1..$91: exit;
+  end;
   fKeyChanged := true;
   beginUpdateByDelay;
 end;

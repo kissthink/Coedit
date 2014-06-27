@@ -72,6 +72,11 @@ type
    function dlgOkCancel(const aMsg: string): TModalResult;
 
    (**
+    * Info dialog
+    *)
+   function dlgOkInfo(const aMsg: string): TModalResult;
+
+   (**
     * Returns an unique object identifier, based on its heap address.
     *)
    function uniqueObjStr(const aObject: Tobject): string;
@@ -270,6 +275,13 @@ const
   Btns = [mbOK,mbCancel];
 begin
   exit( MessageDlg('Coedit', aMsg, mtConfirmation, Btns, ''));
+end;
+
+function dlgOkInfo(const aMsg: string): TModalResult;
+const
+  Btns = [mbOK];
+begin
+  exit( MessageDlg('Coedit', aMsg, mtInformation, Btns, ''));
 end;
 
 function uniqueObjStr(const aObject: Tobject): string;

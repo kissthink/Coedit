@@ -27,7 +27,7 @@ type
     fProj: TCEProject;
     fAutoRefresh: boolean;
     ndAlias, ndClass, ndEnum, ndFunc: TTreeNode;
-    ndImp, ndMix, ndStruct, ndTmp, ndVar: TTreeNode;
+    ndImp, ndIntf, ndMix, ndStruct, ndTmp, ndVar: TTreeNode;
     procedure Rescan;
     procedure TreeDblClick(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
@@ -39,7 +39,6 @@ type
   public
     constructor create(aOwner: TComponent); override;
     //
-    procedure docNew(const aDoc: TCESynMemo); override;
     procedure docFocused(const aDoc: TCESynMemo); override;
     procedure docChanged(const aDoc: TCESynMemo); override;
     procedure docClose(const aDoc: TCESynMemo); override;
@@ -79,10 +78,11 @@ begin
   ndEnum    := Tree.Items[2];
   ndFunc    := Tree.Items[3];
   ndImp     := Tree.Items[4];
-  ndMix     := Tree.Items[5];
-  ndStruct  := Tree.Items[6];
-  ndTmp     := Tree.Items[7];
-  ndVar     := Tree.Items[8];
+  ndIntf    := Tree.Items[5];
+  ndMix     := Tree.Items[6];
+  ndStruct  := Tree.Items[7];
+  ndTmp     := Tree.Items[8];
+  ndVar     := Tree.Items[9];
   //
   Tree.OnDblClick := @TreeDblClick;
   Tree.PopupMenu := contextMenu;
@@ -132,10 +132,6 @@ end;
 procedure TCEStaticExplorerWidget.projClose(const aProject: TCEProject);
 begin
   fProj := nil;
-end;
-
-procedure TCEStaticExplorerWidget.docNew(const aDoc: TCESynMemo);
-begin
 end;
 
 procedure TCEStaticExplorerWidget.docFocused(const aDoc: TCESynMemo);
@@ -209,10 +205,22 @@ begin
   ndEnum.DeleteChildren;
   ndFunc.DeleteChildren;
   ndImp.DeleteChildren;
+  ndIntf.DeleteChildren;
   ndMix.DeleteChildren;
   ndStruct.DeleteChildren;
   ndTmp.DeleteChildren;
   ndVar.DeleteChildren;
+
+  ndAlias.Visible := false;
+  ndClass.Visible := false;
+  ndEnum.Visible := false;
+  ndFunc.Visible := false;
+  ndImp.Visible := false;
+  ndIntf.Visible := false;
+  ndMix.Visible := false;
+  ndStruct.Visible := false;
+  ndTmp.Visible := false;
+  ndVar.Visible := false;
 
   if fDoc = nil then exit;
   if fDoc.Lines.Count = 0 then exit;
@@ -292,16 +300,19 @@ begin
       nme := memb.Items[i].GetPath('name').AsString;
 
       case memb.Items[i].GetPath('kind').AsString of
-        'alias'   :ndCat := Tree.Items.AddChildObject(ndAlias, nme, ln);
-        'class'   :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
-        'enum'    :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
-        'function':ndCat := Tree.Items.AddChildObject(ndFunc, nme, ln);
-        'import'  :ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
-        'mixin'   :ndCat := Tree.Items.AddChildObject(ndMix, nme, ln);
-        'struct'  :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
-        'template':ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
-        'variable':ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
+        'alias'     :ndCat := Tree.Items.AddChildObject(ndAlias, nme, ln);
+        'class'     :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
+        'enum'      :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
+        'function'  :ndCat := Tree.Items.AddChildObject(ndFunc, nme, ln);
+        'import'    :ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
+        'interface' :ndCat := Tree.Items.AddChildObject(ndIntf, nme, ln);
+        'mixin'     :ndCat := Tree.Items.AddChildObject(ndMix, nme, ln);
+        'struct'    :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
+        'template'  :ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
+        'variable'  :ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
       end;
+
+      ndCat.Parent.Visible := true;
 
       // optional item members
       submemb := memb.Items[i].FindPath('members');

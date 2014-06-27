@@ -53,6 +53,10 @@ type
     //
     procedure docFocused(const aDoc: TCESynMemo); override;
     procedure docClose(const aDoc: TCESynMemo); override;
+    //
+    function contextName: string; override;
+    function contextActionCount: integer; override;
+    function contextAction(index: integer): TAction; override;
   end;
 
 implementation
@@ -99,6 +103,26 @@ begin
   UpdateByEvent;
 end;
 
+function TCESearchWidget.contextName: string;
+begin
+  exit('Seach');
+end;
+
+function TCESearchWidget.contextActionCount: integer;
+begin
+  exit(3);
+end;
+
+function TCESearchWidget.contextAction(index: integer): TAction;
+begin
+  case index of
+    0: exit(fActFindNext);
+    1: exit(fActReplaceNext);
+    2: exit(fActReplaceAll);
+    else exit(nil);
+  end;
+end;
+
 procedure TCESearchWidget.cbToFindChange(Sender: TObject);
 begin
   if Updating then exit;
@@ -134,7 +158,8 @@ begin
   if not chkFromCur.Checked then if chkBack.Checked then
     fEditor.CaretXY := Point(high(Integer), high(Integer)) else
       fEditor.CaretXY := Point(0,0);
-  fEditor.SearchReplace(fToFind, '', getOptions);
+  if fEditor.SearchReplace(fToFind, '', getOptions) = 0 then
+    dlgOkInfo('the expression cannot be found');
   UpdateByEvent;
 end;
 

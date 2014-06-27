@@ -40,8 +40,8 @@ type
     procedure UpdateByEvent; virtual;
     // a descendant overrides to implement a delayed update event.
     procedure UpdateByDelay; virtual;
+  // May be used for appplication options
   published
-    property ID: string read fID write fID;
     property updaterByLoopInterval: Integer read fLoopInter write setLoopInt;
     property updaterByDelayDuration: Integer read fDelayDur write setDelayDur;
   public
@@ -73,10 +73,11 @@ type
     function contextAction(index: integer): TAction; virtual;
     // returns true if one of the three updater is processing.
     property updating: boolean read fUpdating;
+    property ID: string read fID write fID;
   end;
 
   (**
-   * Holds a list of TCEWidget.
+   * TCEWidget list.
    *)
   TCEWidgetList = class(TList)
   private

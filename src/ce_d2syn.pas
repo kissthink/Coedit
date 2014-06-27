@@ -70,11 +70,11 @@ type
   private
     fLongest, fShortest: NativeInt;
     fEntries: array[Byte] of TD2DictionaryEntry;
-    function toHash(const aValue: string): Byte;
+    function toHash(const aValue: string): Byte; {$IFNDEF DEBUG}inline;{$ENDIF}
     procedure addEntry(const aValue: string);
   public
     constructor create;
-    destructor destroy;
+    destructor destroy; // do not remove even if empty (compat with char-map version)
     function find(const aValue: string): boolean;
   end;
   {$ENDIF}
@@ -355,7 +355,6 @@ begin
     if fEntries[hash].values[i] = aValue then exit(true);
 end;
 {$ENDIF}
-
 
 constructor TSynD2Syn.create(aOwner: TComponent);
 begin

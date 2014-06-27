@@ -1,5 +1,5 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1160
+  Left = 1143
   Height = 172
   Top = 511
   Width = 744
@@ -30,9 +30,15 @@ inherited CEMessagesWidget: TCEMessagesWidget
           item
             Width = 736
           end>
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -12
+        Font.Name = 'Lucida Console'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
         HideSelection = False
         IconOptions.WrapText = False
         MultiSelect = True
+        ParentFont = False
         ReadOnly = True
         ShowColumnHeaders = False
         SmallImages = imgList

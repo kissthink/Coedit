@@ -139,6 +139,7 @@ type
     procedure actProjSourceExecute(Sender: TObject);
     procedure actEdUnIndentExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+    procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
     fUpdateCount: NativeInt;
@@ -240,18 +241,23 @@ begin
     mnuItemWin.Add(itm);
   end;
 
-  newProj;
-
   Height := 0;
-  DockMaster.MakeDockSite(Self, [akBottom], admrpChild, false);
+  DockMaster.MakeDockSite(Self, [akBottom], admrpChild, true);
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), Self, alLeft);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fFindWidg),
+    DockMaster.GetAnchorSite(fStExpWidg), alBottom, fStExpWidg);
   width := width - fProjWidg.Width;
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fPrjCfWidg),
+    DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
+
+  newProj;
+
 end;
 
 destructor TCEMainForm.destroy;
@@ -365,6 +371,10 @@ begin
 end;
 
 procedure TCEMainForm.FormShow(Sender: TObject);
+begin
+end;
+
+procedure TCEMainForm.FormResize(Sender: TObject);
 begin
 end;
 {$ENDREGION}
@@ -504,16 +514,16 @@ procedure TCEMainForm.actFileNewRunExecute(Sender: TObject);
 begin
   newFile;
   fEditWidg.currentEditor.Text :=
-  'module runnable;' + #13#10 +
-  '' + #13#10 +
-  'import std.stdio;' + #13#10 +
-  '' + #13#10 +
-  'void main(string args[])' + #13#10 +
-  '{' + #13#10 +
-  '    writeln("runnable module is just a `toy feature`");' + #13#10 +
-  '    writeln;' + #13#10 +
-  '    writeln("coedit just saves a temporary d module before compiling it and running it...");' + #13#10 +
-  '}' + #13#10;
+  'module runnable;' + LineEnding +
+  '' + LineEnding +
+  'import std.stdio;' + LineEnding +
+  '' + LineEnding +
+  'void main(string args[])' + LineEnding +
+  '{' + LineEnding +
+  '    writeln("this is just a `toy feature`");' + LineEnding +
+  '    writeln;' + LineEnding +
+  '    writeln("coedit saves a temp d module before compiling it and running it...");' + LineEnding +
+  '}' + LineEnding;
 end;
 
 procedure TCEMainForm.actFileSaveAsExecute(Sender: TObject);
@@ -553,7 +563,8 @@ begin
     then exit;
   //
   str := fEditWidg.editor[fEditWidg.editorIndex].fileName;
-  fProject.addSource(str);
+  if fileExists(str) then fProject.addSource(str)
+  else dlgOkInfo('the file has not been added to the project because it does not exist');
 end;
 
 procedure TCEMainForm.actFileCloseExecute(Sender: TObject);
