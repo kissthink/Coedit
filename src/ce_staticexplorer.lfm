@@ -1,7 +1,7 @@
 inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
-  Left = 999
+  Left = 1592
   Height = 276
-  Top = 284
+  Top = 609
   Width = 261
   Caption = 'Static explorer'
   ClientHeight = 276
@@ -29,13 +29,14 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
         HideSelection = False
         Images = imgList
         ReadOnly = True
+        RightClickSelect = True
         RowSelect = True
         ScrollBars = ssAutoBoth
         SelectionColor = clActiveBorder
         TabOrder = 0
         OnDeletion = TreeDeletion
         OnKeyPress = TreeKeyPress
-        Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+        Options = [tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoRowSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF02000A000000000000000000000000000000FFFFFFFF000000000000
           00000005000000416C6961730100000001000000FFFFFFFFFFFFFFFF00000000

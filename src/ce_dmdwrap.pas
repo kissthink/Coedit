@@ -97,7 +97,7 @@ type
   (*****************************************************************************
    * Encapsulates the options/args related to the analysis & the code gen.
    *)
-  TOutputOpts= class(TOptsGroup)
+  TOutputOpts = class(TOptsGroup)
   private
     fTrgKind: TTargetSystem;
     fBinKind: TBinaryKind;

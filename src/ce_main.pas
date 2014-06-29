@@ -98,6 +98,8 @@ type
     MenuItem52: TMenuItem;
     MenuItem53: TMenuItem;
     MenuItem54: TMenuItem;
+    mnuItemMruFile: TMenuItem;
+    mnuItemMruProj: TMenuItem;
     mnuItemWin: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -151,6 +153,8 @@ type
     fPrjCfWidg: TCEProjectConfigurationWidget;
     fStExpWidg: TCEStaticExplorerWidget;
     fFindWidg:  TCESearchWidget;
+    fProjMru: TMruFileList;
+    fFileMru: TMruFileList;
 
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
@@ -177,6 +181,12 @@ type
     procedure openProj(const aFilename: string);
     procedure closeProj;
     procedure addSource(const aFilename: string);
+
+    // mru
+    procedure mruChange(Sender: TObject);
+    procedure mruFileItemClick(Sender: TObject);
+    procedure mruProjItemClick(Sender: TObject);
+    procedure mruClearClick(Sender: TObject);
 
   public
     constructor create(aOwner: TComponent); override;
@@ -209,6 +219,13 @@ var
   widg: TCEWidget;
 begin
   inherited create(aOwner);
+  //
+  fProjMru := TMruFileList.Create;
+  fFileMru := TMruFileList.Create;
+  fProjMru.objectTag := mnuItemMruProj;
+  fFileMru.objectTag := mnuItemMruFile;
+  fProjMru.OnChange := @mruChange;
+  fFileMru.OnChange := @mruChange;
   //
   fWidgList := TCEWidgetList.Create;
   fMesgWidg := TCEMessagesWidget.create(nil);
@@ -270,6 +287,8 @@ begin
   fStExpWidg.Free;
   fFindWidg.Free;
   fProject.Free;
+  fProjMru.Free;
+  fFileMru.Free;
   //
   inherited;
 end;
@@ -370,6 +389,60 @@ begin
   end;
 end;
 
+procedure TCEMainForm.mruChange(Sender: TObject);
+var
+  srcLst: TMruFileList;
+  trgMnu: TMenuItem;
+  itm: TMenuItem;
+  fname: string;
+  clickTrg: TNotifyEvent;
+begin
+  srcLst := TMruFileList(Sender);
+  if srcLst = nil then exit;
+  trgMnu := TMenuItem(srcLst.objectTag);
+  if trgMnu = nil then exit;
+
+  if fUpdateCount > 0 then exit;
+  Inc(fUpdateCount);
+  try
+    if srcLst = fFileMru then
+      clickTrg := @mruFileItemClick
+    else if srcLst = fProjMru then
+      clickTrg := @mruProjItemClick;
+
+    trgMnu.Clear;
+
+    itm := TMenuItem.Create(trgMnu);
+    itm.Caption := 'Clear';
+    itm.OnClick := @mruClearClick;
+    itm.Tag := PtrInt(srcLst);
+    trgMnu.Add(itm);
+    trgMnu.AddSeparator;
+
+    for fname in srcLst do
+    begin
+      itm := TMenuItem.Create(trgMnu);
+      itm.Hint := fname;
+      itm.Caption := displayShortFilename(fname, 50);
+      itm.OnClick := clickTrg;
+      trgMnu.Add(itm);
+    end;
+
+  finally
+    Dec(fUpdateCount);
+  end;
+end;
+
+procedure TCEMainForm.mruClearClick(Sender: TObject);
+var
+  srcLst: TMruFileList;
+begin
+  srcLst := TMruFileList(TmenuItem(Sender).Tag);
+  if srcLst = nil then exit;
+  //
+  srcLst.Clear;
+end;
+
 procedure TCEMainForm.FormShow(Sender: TObject);
 begin
 end;
@@ -429,6 +502,7 @@ begin
   fEditWidg.editor[i].Lines.LoadFromFile(aFilename);
   fEditWidg.editor[i].fileName := aFilename;
   fEditWidg.focusedEditorChanged;
+  fFileMru.Insert(0,aFilename);
 end;
 
 procedure TCEMainForm.saveFile(const edIndex: NativeInt);
@@ -468,6 +542,7 @@ begin
   finally
     fEditWidg.editor[edIndex].fileName := aFilename;
     fEditWidg.editor[edIndex].modified := false;
+    fFileMru.Insert(0,aFilename);
   end;
 end;
 
@@ -487,6 +562,11 @@ begin
   for i := 0 to fWidgList.Count-1 do
     if fWidgList.widget[i] <> Sender then
       fWidgList.widget[i].docFocused(fEditWidg.editor[aIndex]);
+end;
+
+procedure TCEMainForm.mruFileItemClick(Sender: TObject);
+begin
+  openFile(TMenuItem(Sender).Hint);
 end;
 
 procedure TCEMainForm.actFileOpenExecute(Sender: TObject);
@@ -999,6 +1079,7 @@ procedure TCEMainForm.saveProjAs(const aFilename: string);
 begin
   fProject.fileName := aFilename;
   fProject.saveToFile(fProject.fileName);
+  fProjMru.Insert(0,fProject.fileName);
 end;
 
 procedure TCEMainForm.openProj(const aFilename: string);
@@ -1006,6 +1087,12 @@ begin
   closeProj;
   newProj;
   fProject.loadFromFile(aFilename);
+  fProjMru.Insert(0,aFilename);
+end;
+
+procedure TCEMainForm.mruProjItemClick(Sender: TObject);
+begin
+  openProj(TMenuItem(Sender).Hint);
 end;
 
 procedure TCEMainForm.actProjNewExecute(Sender: TObject);

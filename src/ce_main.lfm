@@ -135,6 +135,10 @@ object CEMainForm: TCEMainForm
           D0FF3C94D1FF3E97D3EE000000000000000000000000FFFFFF00
         }
       end
+      object mnuItemMruFile: TMenuItem
+        Caption = 'Open recent file'
+        ImageIndex = 9
+      end
       object MenuItem43: TMenuItem
         Action = actFileClose
         Bitmap.Data = {
@@ -860,6 +864,10 @@ object CEMainForm: TCEMainForm
           D3EF4498D2FF4197D1FF3F95D1FF3D94D0FF3B93D0FF3A92D0FF3A92D0FF3A93
           D0FF3C94D1FF3E97D3EE000000000000000000000000FFFFFF00
         }
+      end
+      object mnuItemMruProj: TMenuItem
+        Caption = 'Open recent project'
+        ImageIndex = 9
       end
       object MenuItem42: TMenuItem
         Action = actProjClose

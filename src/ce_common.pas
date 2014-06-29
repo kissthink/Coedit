@@ -5,7 +5,7 @@ unit ce_common;
 interface
 
 uses
-  Classes, SysUtils, ActnList, dialogs, forms;
+  Classes, SysUtils, ActnList, dialogs, forms, controls;
 
 const
 
@@ -19,6 +19,7 @@ type
   TMRUList = class(TStringList)
   private
     fMaxCount: Integer;
+    fObj: TObject;
   protected
     procedure setMaxCount(aValue: Integer);
     function checkItem(const S: string): boolean; virtual;
@@ -28,6 +29,7 @@ type
   public
     constructor Create;
     procedure Insert(Index: Integer; const S: string); override;
+    property objectTag: TObject read fObj write fObj;
   end;
 
   (**
@@ -80,6 +82,12 @@ type
     * Returns an unique object identifier, based on its heap address.
     *)
    function uniqueObjStr(const aObject: Tobject): string;
+
+   (**
+    * Reduce a filename if its length is over the threshold defined by charThresh.
+    * Even if the result is not usable anymore, it avoids any "visually-overloaded" MRU menus.
+    *)
+   function displayShortFilename(const aPath: string; charThresh: Word = 80): string;
 
 implementation
 
@@ -289,6 +297,29 @@ begin
   {$HINTS OFF}{$WARNINGS OFF}
   exit( format('%.8X',[NativeUint(@aObject)]));
   {$HINTS ON}{$WARNINGS ON}
+end;
+
+function displayShortFilename(const aPath: string; charThresh: Word = 80): string;
+var
+  i: NativeInt;
+  sepCnt: NativeInt;
+  drv: string;
+  pth1: string;
+begin
+  sepCnt := 0;
+  if length(aPath) <= charThresh then
+    exit(aPath);
+
+  drv := extractFileDrive(aPath);
+  i := length(aPath);
+  while(i <> length(drv)+1) do
+  begin
+    Inc(sepCnt, Byte(aPath[i] = directorySeparator));
+    if sepCnt = 2 then break;
+    Dec(i);
+  end;
+  pth1 := aPath[i..length(aPath)];
+  exit( format('%s%s...%s',[drv,directorySeparator,pth1]) );
 end;
 
 end.
