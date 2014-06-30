@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, RTTIGrids, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, ComCtrls, StdCtrls, Menus, Buttons, PropEdits, ObjectInspector,
-  ce_dmdwrap, ce_project, ce_widget;
+  ce_dmdwrap, ce_project, ce_widget, AnchorDocking;
 
 type
 
@@ -47,7 +47,9 @@ implementation
 constructor TCEProjectConfigurationWidget.create(aOwner: TComponent);
 begin
   inherited;
+  fID := 'PROJ_CONF';
   Tree.Selected := Tree.Items.GetLastNode;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);

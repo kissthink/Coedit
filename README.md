@@ -12,6 +12,7 @@ Current features
 - instant run (without saving, script-like).
 - synchronized edition in a block.
 - D syntax highlighter, folding, identifier markup.
+- current module member list.
 
 Planed in version 1
 -------------------
@@ -22,7 +23,7 @@ Planed in version 1
 
 Project information
 -------------------
-- state: alpha 1.
+- state: alpha 2.
 - programmed in Object pascal with [Lazarus](http://www.lazarus.freepascal.org).
 - based on *dmd* (*gdc* or *lmd* characteristics are not handled).
 - no other third party dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)

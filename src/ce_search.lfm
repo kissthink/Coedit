@@ -169,7 +169,7 @@ inherited CESearchWidget: TCESearchWidget
           Height = 19
           Top = 24
           Width = 60
-          Caption = 'Prompt'
+          Caption = 'prompt'
           TabOrder = 4
         end
       end

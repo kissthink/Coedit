@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common;
+  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common, AnchorDocking;
 
 type
   { TCEEditorWidget }
@@ -67,6 +67,7 @@ begin
   finally
     bmp.Free;
   end;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 function TCEEditorWidget.getEditorCount: NativeInt;

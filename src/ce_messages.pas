@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus, clipbrd;
+  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus, clipbrd, AnchorDocking;
 
 type
 
@@ -70,6 +70,7 @@ begin
   fID := 'ID_MSGS';
   //
   List.PopupMenu := contextMenu;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 procedure TCEMessagesWidget.scrollToBack;

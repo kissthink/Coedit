@@ -24,7 +24,6 @@ inherited CEMessagesWidget: TCEMessagesWidget
         Width = 740
         Align = alClient
         AutoSort = False
-        AutoWidthLastColumn = True
         BorderSpacing.Around = 2
         Columns = <        
           item

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, Menus, ComCtrls, ce_widget, jsonparser, fpjson,
-  ce_synmemo, process, actnlist, ce_common, ce_project;
+  ce_synmemo, process, actnlist, ce_common, ce_project, AnchorDocking;
 
 type
 
@@ -86,6 +86,7 @@ begin
   //
   Tree.OnDblClick := @TreeDblClick;
   Tree.PopupMenu := contextMenu;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 function TCEStaticExplorerWidget.contextName: string;
@@ -162,7 +163,7 @@ end;
 procedure TCEStaticExplorerWidget.TreeDeletion(Sender: TObject; Node: TTreeNode);
 begin
   if (node.Data <> nil) then
-    FreeMem(node.Data)
+    Dispose(PInt64(node.Data));
 end;
 
 procedure TCEStaticExplorerWidget.TreeKeyPress(Sender: TObject; var Key: char);
@@ -191,12 +192,32 @@ var
   prs: TJsonParser;
   dat: TJsonData;
   memb: TJsonData;
-  submemb: TJsonData;
   jsf, scf: string;
   ndCat: TTreeNode;
   ln: PInt64;
   nme: string;
-  i, j: NativeInt;
+  i: NativeInt;
+
+  // recursivively display members, without master categories.
+  procedure digMembers(const srcDt: TJsonData; const srcNd: TTreeNode);
+  var
+    _memb: TJsonData;
+    _ln: PInt64;
+    _nme: string;
+    _i: NativeInt;
+    _nd: TTreeNode;
+  begin
+    _memb := srcDt.FindPath('members');
+    if _memb <> nil then for _i := 0 to _memb.Count-1 do
+    begin
+      _ln   := new(PInt64);
+      _ln^  := _memb.Items[_i].GetPath('line').AsInt64;
+      _nme  := _memb.Items[_i].GetPath('name').AsString;
+      _nd   := Tree.Items.AddChildObject(srcNd, _nme, _ln);
+      digMembers(_memb.Items[_i], _nd);
+    end;
+  end;
+
 begin
   if ndAlias = nil then exit;
 
@@ -224,7 +245,6 @@ begin
 
   if fDoc = nil then exit;
   if fDoc.Lines.Count = 0 then exit;
-  subMemb := nil;
   memb := nil;
 
   // generate json
@@ -294,7 +314,7 @@ begin
     if memb <> nil then for i := 0 to memb.Count-1 do
     begin
 
-      // category
+      // categories
       ln  := new(PInt64);
       ln^ := memb.Items[i].GetPath('line').AsInt64;
       nme := memb.Items[i].GetPath('name').AsString;
@@ -314,15 +334,8 @@ begin
 
       ndCat.Parent.Visible := true;
 
-      // optional item members
-      submemb := memb.Items[i].FindPath('members');
-      if subMemb <> nil then for j := 0 to submemb.Count-1 do
-      begin
-        ln  := new(PInt64);
-        ln^ := submemb.Items[j].GetPath('line').AsInt64;
-        nme := submemb.Items[j].GetPath('name').AsString;
-        Tree.Items.AddChildObject(ndCat, nme, ln);
-      end;
+      //recursive
+      digMembers(memb.Items[i], ndCat);
 
     end;
   finally

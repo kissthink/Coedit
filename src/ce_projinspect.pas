@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
   actnlist, Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project,
-  ce_common, ce_widget;
+  ce_common, ce_widget, AnchorDocking;
 
 type
   { TCEProjectInspectWidget }
@@ -71,6 +71,7 @@ begin
   fConfNode := Tree.Items[1];
   //
   Tree.PopupMenu := contextMenu;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 function TCEProjectInspectWidget.contextName: string;

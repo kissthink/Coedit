@@ -7,11 +7,47 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, process,
+  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage,
   ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
   ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search;
 
 type
+
+  TCEMainForm = class;
+
+  (**
+   * Encapsulates the options.
+   * note: likely to change however needed to test correctly Coedit.
+   *)
+  TCEOptions = class(TComponent)
+  private
+    fFileMru, fProjMru: TMruFileList;
+    fWidgUpdDel, fWidgUpdPer: Integer;
+    fLeft, FTop, fWidth, fHeight: Integer;
+    procedure setFileMru(aValue: TMruFileList);
+    procedure setProjMru(aValue: TMruFileList);
+    procedure saveLayout(str: TStream);
+    procedure loadLayout(str: TStream);
+  published
+    property APP_Left: Integer read fLeft write fLeft;
+    property APP_Top: Integer read fTop write fTop;
+    property APP_Width: Integer read fWidth write fWidth;
+    property APP_Height: Integer read fHeight write fHeight;
+    //
+    property MRU_Files: TMruFileList read fFileMru write setFileMru;
+    property MRU_Projects: TMruFileList read fProjMru write setProjMru;
+    //
+    property WIDG_UpdateDelay: Integer read fWidgUpdDel write fWidgUpdDel;
+    property WIDG_UpdatePeriod: Integer read fWidgUpdPer write fWidgUpdPer;
+  public
+    constructor create(aOwner: TComponent); override;
+    destructor destroy; override;
+    procedure saveToFile(const aFilename: string);
+    procedure loadFromFile(const aFilename: string);
+    procedure beforeSave;
+    procedure afterSave;
+    procedure DefineProperties(Filer: TFiler); override;
+  end;
 
   { TCEMainForm }
   TCEMainForm = class(TForm)
@@ -217,6 +253,7 @@ var
   act: TAction;
   itm: TMenuItem;
   widg: TCEWidget;
+  opts: TCEOptions;
 begin
   inherited create(aOwner);
   //
@@ -275,10 +312,28 @@ begin
 
   newProj;
 
+  opts := TCEOptions.create(nil);
+  try
+  if fileExists('temp_coedit_options.txt') then
+    opts.loadFromFile('temp_coedit_options.txt');
+  finally
+    opts.Free;
+  end;
+
+
 end;
 
 destructor TCEMainForm.destroy;
+var
+  opts: TCEOptions;
 begin
+  opts := TCEOptions.create(nil);
+  try
+    opts.saveToFile('temp_coedit_options.txt');
+  finally
+    opts.Free;
+  end;
+  //
   fWidgList.Free;
   fMesgWidg.Free;
   fEditWidg.Free;
@@ -307,9 +362,9 @@ begin
     hasEd := curr <> nil;
     if hasEd then
     begin
-      actEdCopy.Enabled := curr.SelAvail;
-      actEdCut.Enabled := curr.SelAvail;
-      actEdPaste.Enabled := curr.CanPaste;
+      actEdCopy.Enabled := curr.SelAvail and fEditWidg.Focused;     // allows copy/cut/paste by shortcut on widgets
+      actEdCut.Enabled := curr.SelAvail and fEditWidg.Focused;      //
+      actEdPaste.Enabled := curr.CanPaste and fEditWidg.Focused;
       {$IFDEF MSWINDOWS}
       // close file : raises a segfault on linux UndoStuff.>>fList<<.Count...
       actEdUndo.Enabled := curr.CanUndo;
@@ -383,7 +438,7 @@ begin
   mainMenu.Items.Add(prt);
   for i := 0 to cnt-1 do
   begin
-    itm := TMenuItem.Create(self);
+    itm := TMenuItem.Create(prt);
     itm.Action := aWidget.contextAction(i);
     prt.Add(itm);
   end;
@@ -603,7 +658,7 @@ begin
   '    writeln("this is just a `toy feature`");' + LineEnding +
   '    writeln;' + LineEnding +
   '    writeln("coedit saves a temp d module before compiling it and running it...");' + LineEnding +
-  '}' + LineEnding;
+  '}';
 end;
 
 procedure TCEMainForm.actFileSaveAsExecute(Sender: TObject);
@@ -756,6 +811,7 @@ begin
   curr := fEditWidg.currentEditor;
   if assigned(curr) then curr.ExecuteCommand(ecBlockUnIndent, '', nil);
 end;
+
 {$ENDREGION}
 
 {$REGION run  ******************************************************************}
@@ -820,6 +876,8 @@ begin
     dmdproc.Options:= [poStdErrToOutput, poUsePipes];
     dmdproc.Executable:= 'dmd';
     dmdproc.Parameters.Add(fname + '.d');
+    dmdproc.Parameters.Add('-w');
+    dmdproc.Parameters.Add('-wi');
     try
       dmdproc.Execute;
       while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
@@ -1170,4 +1228,126 @@ begin
   EditWidget.currentEditor.Highlighter := LfmSyn;
 end;
 {$ENDREGION}
+
+{$REGION options ***************************************************************}
+constructor TCEOptions.create(aOwner: TComponent);
+begin
+  inherited;
+  fFileMru := TMruFileList.Create;
+  fProjMru := TMruFileList.Create;
+  //
+  fWidgUpdDel := 70;
+  fWidgUpdPer := 1000;
+  fLeft := 0;
+  fTop := 0;
+  fWidth := 800;
+  fHeight := 600;
+end;
+
+destructor TCEOptions.destroy;
+begin
+  fFileMru.Free;
+  fProjMru.Free;
+  inherited;
+end;
+
+procedure TCEOptions.setFileMru(aValue: TMruFileList);
+begin
+  fFileMru.Assign(aValue);
+end;
+
+procedure TCEOptions.setProjMru(aValue: TMruFileList);
+begin
+  fProjMru.Assign(aValue);
+end;
+
+procedure TCEOptions.saveLayout(str: TStream);
+var
+  st: TXMLConfigStorage;
+  cf: TPropStorageXMLConfig;
+begin
+  cf := TPropStorageXMLConfig.Create(nil);
+  st := TXMLConfigStorage.Create(cf);
+  try
+    DockMaster.SaveLayoutToConfig(st);
+    cf.SaveToStream(str);
+    str.Position := 0;
+  finally
+    st.Free;
+    cf.Free;
+  end;
+end;
+
+procedure TCEOptions.loadLayout(str: TStream);
+var
+  st: TXMLConfigStorage;
+  cf: TPropStorageXMLConfig;
+begin
+  cf := TPropStorageXMLConfig.Create(nil);
+  st := TXMLConfigStorage.Create(cf);
+  try
+    cf.LoadFromStream(str);
+    DockMaster.LoadLayoutFromConfig(st,true);
+  finally
+    st.Free;
+    cf.Free;
+  end;
+end;
+
+
+procedure TCEOptions.DefineProperties(Filer: TFiler);
+begin
+  //Filer.DefineBinaryProperty('APP_Docking', @loadLayout, @saveLayout, true);
+end;
+
+procedure TCEOptions.beforeSave;
+begin
+  fLeft   := mainForm.Left;
+  fTop    := mainForm.Top;
+  fWidth  := mainForm.Width;
+  fHeight := mainForm.Height;
+  //
+  fFileMru.Assign(mainForm.fFileMru);
+  fProjMru.Assign(mainForm.fProjMru);
+  //
+  fWidgUpdPer := mainForm.fEditWidg.updaterByLoopInterval;
+  fWidgUpdDel := mainForm.fEditWidg.updaterByDelayDuration;
+end;
+
+procedure TCEOptions.saveToFile(const aFilename: string);
+begin
+  beforeSave;
+  saveCompToTxtFile(Self, aFilename);
+end;
+
+procedure TCEOptions.loadFromFile(const aFilename: string);
+begin
+  try
+    loadCompFromTxtFile(Self, aFilename);
+  except
+    exit;
+  end;
+  afterSave;
+end;
+
+procedure TCEOptions.afterSave;
+var
+  widg: TCEWidget;
+begin
+  mainForm.Left   := fLeft;
+  mainForm.Top    := fTop;
+  mainForm.Width  := fWidth;
+  mainForm.Height := fHeight;
+  //
+  mainForm.fFileMru.Assign(fFileMru);
+  mainForm.fProjMru.Assign(fProjMru);
+  //
+  for widg in mainForm.fWidgList do
+  begin
+    widg.updaterByDelayDuration := fWidgUpdDel;
+    widg.updaterByLoopInterval := fWidgUpdPer;
+  end;
+end;
+{$ENDREGION}
+
 end.

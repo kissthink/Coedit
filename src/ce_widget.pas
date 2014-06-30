@@ -100,6 +100,9 @@ type
 implementation
 {$R *.lfm}
 
+uses
+  ce_main;
+
 (*******************************************************************************
  * TCEWidget
  *)
@@ -121,6 +124,7 @@ begin
 
   DockMaster.MakeDockable(Self, true, true, true);
   DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 
   for i := 0 to contextActionCount-1 do
   begin

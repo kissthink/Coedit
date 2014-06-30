@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   Menus, StdCtrls, actnList, Buttons, SynEdit, SynEditSearch, SynEditTypes, ce_common,
-  ce_widget, ce_synmemo;
+  ce_widget, ce_synmemo, AnchorDocking;
 
 type
 
@@ -39,6 +39,7 @@ type
     fActReplaceAll: TAction;
     fSearchMru, fReplaceMru: TMruList;
     fCancelAll: boolean;
+    fHasSearched: boolean;
     function getOptions: TSynSearchOptions;
     procedure actFindNextExecute(sender: TObject);
     procedure actReplaceAllExecute(sender: TObject);
@@ -82,6 +83,7 @@ begin
   //
   fSearchMru := TMruList.Create;
   fReplaceMru:= TMruList.Create;
+  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 destructor TCESearchWidget.Destroy;
@@ -105,7 +107,7 @@ end;
 
 function TCESearchWidget.contextName: string;
 begin
-  exit('Seach');
+  exit('Search');
 end;
 
 function TCESearchWidget.contextActionCount: integer;
@@ -127,6 +129,7 @@ procedure TCESearchWidget.cbToFindChange(Sender: TObject);
 begin
   if Updating then exit;
   fToFind := cbToFind.Text;
+  fHasSearched := false;
 end;
 
 procedure TCESearchWidget.chkEnableRepChange(Sender: TObject);
@@ -139,6 +142,7 @@ procedure TCESearchWidget.cbReplaceWthChange(Sender: TObject);
 begin
   if Updating then exit;
   fReplaceWth := cbReplaceWth.Text;
+  fHasSearched := false;
 end;
 
 function TCESearchWidget.getOptions: TSynSearchOptions;
@@ -155,11 +159,23 @@ begin
   if fEditor = nil then exit;
   //
   fSearchMru.Insert(0,fToFind);
-  if not chkFromCur.Checked then if chkBack.Checked then
-    fEditor.CaretXY := Point(high(Integer), high(Integer)) else
+  if not chkFromCur.Checked then
+  begin
+    if chkBack.Checked then
+      fEditor.CaretXY := Point(high(Integer), high(Integer))
+    else
       fEditor.CaretXY := Point(0,0);
+  end
+  else if fHasSearched then
+  begin
+    if chkBack.Checked then
+      fEditor.CaretX := fEditor.CaretX - 1
+    else
+      fEditor.CaretX := fEditor.CaretX + length(fToFind);
+  end;
   if fEditor.SearchReplace(fToFind, '', getOptions) = 0 then
-    dlgOkInfo('the expression cannot be found');
+    dlgOkInfo('the expression cannot be found')
+  else fHasSearched := true;
   UpdateByEvent;
 end;
 
@@ -171,10 +187,22 @@ begin
   fReplaceMru.Insert(0, fReplaceWth);
   if chkPrompt.Checked then
     fEditor.OnReplaceText := @replaceEvent;
-  if not chkFromCur.Checked then if chkBack.Checked then
-    fEditor.CaretXY := Point(high(Integer), high(Integer)) else
+  if not chkFromCur.Checked then
+  begin
+    if chkBack.Checked then
+      fEditor.CaretXY := Point(high(Integer), high(Integer))
+    else
       fEditor.CaretXY := Point(0,0);
-  fEditor.SearchReplace(fToFind, fReplaceWth, getOptions + [ssoReplace]);
+  end
+  else if fHasSearched then
+  begin
+    if chkBack.Checked then
+      fEditor.CaretX := fEditor.CaretX - 1
+    else
+      fEditor.CaretX := fEditor.CaretX + length(fToFind);
+  end;
+  if fEditor.SearchReplace(fToFind, fReplaceWth, getOptions + [ssoReplace]) <> 0 then
+    fHasSearched := true;
   fEditor.OnReplaceText := nil;
   UpdateByEvent;
 end;
