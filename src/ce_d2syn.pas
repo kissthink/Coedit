@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Graphics,
-  SynEditHighlighter, SynEditHighlighterFoldBase, SynEditTypes;
+  SynEditHighlighter, SynEditHighlighterFoldBase, SynEditTypes,
+  ce_dlangutils;
 
 const
 
@@ -151,95 +152,6 @@ type
 	end;
 
 implementation
-
-function isWhite(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := c in [#0..#32];
-end;
-
-function isSpace(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := c in [#9,' '];
-end;
-
-function isAlpha(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := (c in ['a'..'z']) or (c in ['A'..'Z']);
-end;
-
-function isNumber(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := (c in ['0'..'9']);
-end;
-
-function isDigit(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := (c in ['0'..'1']);
-end;
-
-function isAlNum(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := isAlpha(c) or isNumber(c);
-end;
-
-function isHex(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := isNumber(c) or (c in ['A'..'F']) or (c in ['a'..'f']);
-end;
-
-function isSymbol(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := c in [';', '{', '}', '(', ')', '[', ']', ',', '.', ':' , '"', #39, '?'];
-end;
-
-function isOperator(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := c in ['/', '*', '-', '+', '%', '>', '<', '=', '!',
-                  '&', '|', '^', '~', '$'];
-end;
-
-function isDoubleOperator(const s: string): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
-begin
-  result := false;
-  case s[1] of
-    '.': result := (s[2] = '.');
-
-    '>': result := s[2] in ['>', '='];
-    '<': result := s[2] in ['<', '=', '>'];
-    '=': result := s[2] in ['=', '>'];
-    '!': result := s[2] in ['=', '>', '<'];
-
-    '+': result := s[2] in ['+', '='];
-    '-': result := s[2] in ['-', '='];
-    '/': result := s[2] in ['='];
-    '*': result := s[2] in ['='];
-    '%': result := s[2] in ['='];
-    '~': result := s[2] in ['='];
-
-    '&': result := s[2] in ['&', '='];
-    '|': result := s[2] in ['|', '='];
-    '^': result := s[2] in ['^', '='];
-  end;
-end;
-
-function isTripleOperator(const s: string): boolean; {$IFNDEF DEBUG} inline; {$ENDIF}
-begin
-  result := false;
-  case s[1] of
-    '.': result := (s[2] = '.')   and (s[3] = '.');
-    '^': result := (s[2] = '^')   and (s[3] = '=');
-    '>': result := (s[2] = '>')   and (s[3] in ['>', '=']);
-    '<': result := ((s[2] = '<')  and (s[3] in ['<', '=']))
-                  or (s[2] = '>') and (s[3] = '=');
-    '!': result := ((s[2] = '<')  and (s[3] in ['>', '=']))
-                  or ((s[2] = '>')and (s[3] = '='));
-  end;
-end;
-
-function isQuadOperator(const s: string): boolean; {$IFNDEF DEBUG} inline; {$ENDIF}
-begin
-  result := (s = '>>>=') or (s = '!<>=');
-end;
 
 {$IFDEF USE_DICT_LINKEDCHARMAP}
 constructor TD2Dictionary.create;
@@ -526,6 +438,7 @@ TODO:
 - string literals: escape bug: std.path/std.regex: "\\"
 - comments: correct nested comments handling.
 }
+{$BOOLEVAL ON}
 procedure TSynD2Syn.next;
 label
   _postString1;
@@ -670,7 +583,7 @@ begin
       fRange := rkNone;
       readNext;
       // check postfix
-      if readCurr in ['c','w','d'] then
+      if isStringPostfix(readCurr) then
         readNext;
       exit;
     end;
@@ -679,7 +592,7 @@ begin
   begin
     if fRange = rkNone then
     begin
-      // check hex/WYSIWYG prefix
+      // check WYSIWYG/hex prefix
       if readCurr in ['r','x'] then
       begin
         if not (readNext = '"') then
@@ -695,7 +608,7 @@ begin
       begin
         readNext;
         // check postfix
-        if readCurr in ['c','w','d'] then
+        if isStringPostfix(readCurr) then
           readNext;
       end;
       fTokKind := tkStrng;
@@ -720,7 +633,7 @@ begin
       fRange := rkNone;
       readNext;
       // check postfix
-      if readCurr in ['c','w','d'] then
+      if isStringPostfix(readCurr) then
         readNext;
       exit;
     end;
@@ -736,7 +649,7 @@ begin
       begin
         readNext;
         // check postfix
-        if readCurr in ['c','w','d'] then
+        if isStringPostfix(readCurr) then
           readNext;
       end;
       fTokKind := tkStrng;
@@ -778,30 +691,30 @@ begin
   end;
 
   // symbols 2: operators
-  if isOperator(readCurr) then
+  if isOperator1(readCurr) then
   begin
     fTokKind := tkSymbl;
-    while isOperator(readNext) do (*!*);
+    while isOperator1(readNext) do (*!*);
     case fTokStop - fTokStart of
       1:begin
-          if not isOperator(readCurr) then exit
+          if not isOperator1(readCurr) then exit
             else Dec(fTokStop);
         end;
       2:begin
-          if (not isOperator(readCurr)) and
-            isDoubleOperator(fLineBuf[fTokStart..fTokStop-1])
+          if (not isOperator1(readCurr)) and
+            isOperator2(fLineBuf[fTokStart..fTokStop-1])
           then exit
             else Dec(fTokStop, 2);
         end;
       3:begin
-          if (not isOperator(readCurr)) and
-            isTripleOperator(fLineBuf[fTokStart..fTokStop-1])
+          if (not isOperator1(readCurr)) and
+            isOperator3(fLineBuf[fTokStart..fTokStop-1])
           then exit
             else Dec(fTokStop, 3);
         end;
       4:begin
-          if (not isOperator(readCurr)) and
-            isQuadOperator(fLineBuf[fTokStart..fTokStop-1])
+          if (not isOperator1(readCurr)) and
+            isOperator4(fLineBuf[fTokStart..fTokStop-1])
           then exit
             else Dec(fTokStop, 4);
         end;
@@ -817,7 +730,7 @@ begin
     begin
       if isWhite(readNext) then break;
       if isSymbol(readCurr) then break;
-      if isOperator(readCurr) then break;
+      if isOperator1(readCurr) then break;
     end;
     if fKeyWords.find(fLineBuf[FTokStart..fTokStop-1]) then
       fTokKind := tkKeywd
@@ -832,6 +745,7 @@ begin
   // Should not happend
   assert(false);
 end;
+{$BOOLEVAL OFF}
 
 function TSynD2Syn.GetEol: Boolean;
 begin

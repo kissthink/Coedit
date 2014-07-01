@@ -15,12 +15,17 @@ type
     fFilename: string;
     fModified: boolean;
     fAssocProject: TCEProject;
+    function getIfDSource: Boolean;
+    function getIfConfig: Boolean;
   public
     constructor Create(aOwner: TComponent); override;
     //
     property fileName: string read fFilename write fFilename;
     property modified: boolean read fModified write fModified;
     property project: TCEProject read fAssocProject write fAssocProject;
+    //
+    property isDSource: boolean read getIfDSource;
+    property isProjectSource: boolean read getIfConfig;
   end;
 
 var
@@ -29,7 +34,7 @@ var
 implementation
 
 uses
-  graphics;
+  graphics, ce_main;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -50,6 +55,16 @@ begin
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
+end;
+
+function TCESynMemo.getIfDSource: Boolean;
+begin
+  exit(Highlighter = D2Syn);
+end;
+
+function TCESynMemo.getIfConfig: Boolean;
+begin
+  exit(Highlighter = mainForm.LfmSyn);
 end;
 
 initialization

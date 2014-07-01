@@ -100,9 +100,6 @@ type
 implementation
 {$R *.lfm}
 
-uses
-  ce_main;
-
 (*******************************************************************************
  * TCEWidget
  *)
@@ -119,8 +116,8 @@ begin
   fUpdaterAuto.OnTimer := @updaterAutoProc;
   fUpdaterDelay := TTimer.Create(self);
 
-  updaterByLoopInterval := 50;
-  updaterByDelayDuration := 1000;
+  updaterByLoopInterval := 70;
+  updaterByDelayDuration := 1250;
 
   DockMaster.MakeDockable(Self, true, true, true);
   DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;

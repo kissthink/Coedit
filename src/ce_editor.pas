@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common, AnchorDocking;
+  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common, AnchorDocking,
+  ce_dlang;
 
 type
   { TCEEditorWidget }
@@ -26,7 +27,6 @@ type
     fKeyChanged: boolean;
     fSyncEdit: TSynPluginSyncroEdit;
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure memoKeyPress(Sender: TObject; var Key: Char);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
     procedure memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -138,7 +138,6 @@ begin
   memo.OnMouseDown := @memoMouseDown;
   memo.OnChange := @memoChange;
   memo.OnMouseMove := @memoMouseMove;
-  memo.OnKeyPress := @memoKeyPress;
   //
   pageControl.ActivePage := sheet;
   //http://bugs.freepascal.org/view.php?id=26320
@@ -158,15 +157,13 @@ end;
 
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-end;
-
-procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: Char);
-begin
-  if (sender is TCESynMemo) then
+if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
+  fKeyChanged := true;
   case Byte(Key) of
-    VK_UNKNOWN..VK_BACK: exit;
-    VK_PRIOR..VK_HELP: exit;
+    VK_UNKNOWN..VK_XBUTTON2: exit;
+    VK_SHIFT..VK_HELP: fKeyChanged := false;
+    VK_LWIN..VK_SLEEP: exit;
     VK_F1..$91: exit;
   end;
   fKeyChanged := true;
@@ -200,6 +197,9 @@ const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
 var
   ed: TCESynMemo;
+  tokLst: TLexTokenList;
+  errLst: TLexErrorList;
+  err: TLexError;
 begin
   ed := getCurrentEditor;
   if ed <> nil then
@@ -210,8 +210,31 @@ begin
   end;
   //
   if fKeyChanged then if editorIndex <> -1 then
+  begin
     mainForm.docChangeNotify(Self, editorIndex);
+
+    mainForm.MessageWidget.List.Clear;
+    tokLst := TLexTokenList.Create;
+    errLst := TLexErrorList.Create;
+    try
+      lex( ed.Lines.Text, tokLst );
+      checkSyntaxicErrors( tokLst, errLst);
+
+      for err in errLst do
+        mainForm.MessageWidget.addMessage(format(
+        '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+
+      mainForm.MessageWidget.scrollToBack;
+
+    finally
+      tokLst.Free;
+      errLst.Free;
+    end;
+
+
+  end;
   fKeyChanged := false;
+
 end;
 
 end.

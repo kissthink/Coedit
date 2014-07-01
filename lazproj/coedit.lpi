@@ -128,7 +128,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="15">
+    <Units Count="17">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -228,6 +228,16 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="ce_search"/>
       </Unit14>
+      <Unit15>
+        <Filename Value="..\src\ce_dlang.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_dlang"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\src\ce_dlangutils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_dlangutils"/>
+      </Unit16>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

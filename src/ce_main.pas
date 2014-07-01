@@ -16,7 +16,7 @@ type
   TCEMainForm = class;
 
   (**
-   * Encapsulates the options.
+   * Encapsulates the options in a writable component.
    * note: likely to change however needed to test correctly Coedit.
    *)
   TCEOptions = class(TComponent)
@@ -45,7 +45,7 @@ type
     procedure saveToFile(const aFilename: string);
     procedure loadFromFile(const aFilename: string);
     procedure beforeSave;
-    procedure afterSave;
+    procedure afterLoad;
     procedure DefineProperties(Filer: TFiler); override;
   end;
 
@@ -375,8 +375,8 @@ begin
       actEdIndent.Enabled := true;
       actEdUnIndent.Enabled := true;
       //
-      actFileCompAndRun.Enabled := true;
-      actFileCompAndRunWithArgs.Enabled := true;
+      actFileCompAndRun.Enabled := curr.isDSource;
+      actFileCompAndRunWithArgs.Enabled := curr.isDSource;
       actFileSave.Enabled := true;
       actFileSaveAs.Enabled := true;
       actFileClose.Enabled := true;
@@ -694,7 +694,7 @@ var
 begin
   if fEditWidg = nil then exit;
   if fEditWidg.editorIndex < 0 then exit;
-  if fEditWidg.editor[fEditWidg.editorIndex].Highlighter = LfmSyn
+  if fEditWidg.editor[fEditWidg.editorIndex].isProjectSource
     then exit;
   //
   str := fEditWidg.editor[fEditWidg.editorIndex].fileName;
@@ -1327,10 +1327,10 @@ begin
   except
     exit;
   end;
-  afterSave;
+  afterLoad;
 end;
 
-procedure TCEOptions.afterSave;
+procedure TCEOptions.afterLoad;
 var
   widg: TCEWidget;
 begin
