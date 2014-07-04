@@ -9,8 +9,6 @@ object CEMainForm: TCEMainForm
   DockSite = True
   Menu = mainMenu
   OnDropFiles = FormDropFiles
-  OnResize = FormResize
-  OnShow = FormShow
   Position = poMainFormCenter
   ShowHint = True
   LCLVersion = '1.2.4.0'
