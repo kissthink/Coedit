@@ -177,8 +177,6 @@ type
     procedure actProjSourceExecute(Sender: TObject);
     procedure actEdUnIndentExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
-    procedure FormResize(Sender: TObject);
-    procedure FormShow(Sender: TObject);
   private
     fUpdateCount: NativeInt;
     fProject: TCEProject;
@@ -496,14 +494,6 @@ begin
   if srcLst = nil then exit;
   //
   srcLst.Clear;
-end;
-
-procedure TCEMainForm.FormShow(Sender: TObject);
-begin
-end;
-
-procedure TCEMainForm.FormResize(Sender: TObject);
-begin
 end;
 {$ENDREGION}
 

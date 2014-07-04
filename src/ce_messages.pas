@@ -5,8 +5,8 @@ unit ce_messages;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, ComCtrls, ce_widget, ActnList, Menus, clipbrd, AnchorDocking;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
+  ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project, ce_synmemo;
 
 type
 
@@ -19,6 +19,7 @@ type
     fActSaveMsg: TAction;
     fActCopyMsg: TAction;
     fActSelAll: TAction;
+    fProject: TCEProject;
     procedure actClearExecute(Sender: TObject);
     procedure actSaveMsgExecute(Sender: TObject);
     procedure actCopyMsgExecute(Sender: TObject);
@@ -35,6 +36,14 @@ type
     function contextName: string; override;
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
+    //
+    procedure projNew(const aProject: TCEProject); override;
+    procedure projClose(const aProject: TCEProject); override;
+    //
+    procedure docFocused(const aDoc: TCESynMemo); override;
+    procedure docClose(const aDoc: TCESynMemo); override;
+    //
+    procedure Clear;
   end;
 
   PTCEMessageItem = ^TCEMessageItem;
@@ -142,6 +151,33 @@ begin
     3: result := fActSaveMsg;
     else result := nil;
   end;
+end;
+
+procedure TCEMessagesWidget.projNew(const aProject: TCEProject);
+begin
+  fProject := aProject;
+end;
+
+procedure TCEMessagesWidget.projClose(const aProject: TCEProject);
+begin
+  if fProject = aProject then
+    actClearExecute(nil);
+  fProject := nil;
+end;
+
+procedure TCEMessagesWidget.docFocused(const aDoc: TCESynMemo);
+begin
+  Clear;
+end;
+
+procedure TCEMessagesWidget.docClose(const aDoc: TCESynMemo);
+begin
+  Clear;
+end;
+
+procedure TCEMessagesWidget.Clear;
+begin
+  actClearExecute(nil);
 end;
 
 procedure TCEMessagesWidget.actClearExecute(Sender: TObject);

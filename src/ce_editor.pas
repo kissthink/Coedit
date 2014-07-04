@@ -23,9 +23,13 @@ type
   protected
     procedure UpdateByDelay; override;
   private
-    // http://bugs.freepascal.org/view.php?id=26329
     fKeyChanged: boolean;
+
+    // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
+
+    tokLst: TLexTokenList;
+    errLst: TLexErrorList;
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
@@ -37,6 +41,7 @@ type
     procedure identifierToD2Syn(const aMemo: TCESynMemo);
   public
     constructor create(aOwner: TComponent); override;
+    destructor destroy; override;
     procedure addEditor;
     procedure removeEditor(const aIndex: NativeInt);
     procedure focusedEditorChanged;
@@ -59,6 +64,10 @@ var
 begin
   inherited;
   fID := 'ID_EDIT';
+  //
+  tokLst := TLexTokenList.Create;
+  errLst := TLexErrorList.Create;
+  //
   fSyncEdit := TSynPluginSyncroEdit.Create(self);
   bmp := TBitmap.Create;
   try
@@ -68,6 +77,13 @@ begin
     bmp.Free;
   end;
   DockMaster.GetAnchorSite(Self).Name := ID;
+end;
+
+destructor TCEEditorWidget.destroy;
+begin
+  tokLst.Free;
+  errLst.Free;
+  inherited;
 end;
 
 function TCEEditorWidget.getEditorCount: NativeInt;
@@ -197,8 +213,6 @@ const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
 var
   ed: TCESynMemo;
-  tokLst: TLexTokenList;
-  errLst: TLexErrorList;
   err: TLexError;
 begin
   ed := getCurrentEditor;
@@ -213,24 +227,15 @@ begin
   begin
     mainForm.docChangeNotify(Self, editorIndex);
 
-    mainForm.MessageWidget.List.Clear;
-    tokLst := TLexTokenList.Create;
-    errLst := TLexErrorList.Create;
-    try
-      lex( ed.Lines.Text, tokLst );
-      checkSyntaxicErrors( tokLst, errLst);
-
-      for err in errLst do
-        mainForm.MessageWidget.addMessage(format(
-        '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
-
-      mainForm.MessageWidget.scrollToBack;
-
-    finally
-      tokLst.Free;
-      errLst.Free;
-    end;
-
+    mainForm.MessageWidget.Clear;
+    lex( ed.Lines.Text, tokLst );
+    checkSyntaxicErrors( tokLst, errLst);
+    for err in errLst do
+      mainForm.MessageWidget.addMessage(format(
+      '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+    mainForm.MessageWidget.scrollToBack;
+    tokLst.Clear;
+    errLst.Clear;
 
   end;
   fKeyChanged := false;

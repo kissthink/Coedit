@@ -723,6 +723,7 @@ var
   err: PLexError;
   tkIndex: NativeInt;
   pareCnt, curlCnt, squaCnt: NativeInt;
+  pareLeft, curlLeft, squaLeft: boolean;
 procedure addError(const aMsg: string);
 begin
   err := new(PLexError);
@@ -738,11 +739,12 @@ begin
   pareCnt := 0;
   curlCnt := 0;
   squaCnt := 0;
+  pareLeft:= False;
+  curlLeft:= False;
+  squaLeft:= False;
 
   for tk in aTokenList do
   begin
-
-    // token index
     Inc(tkIndex);
 
     // brackets count
@@ -758,12 +760,21 @@ begin
       end;
 
       // only for the first occurence
-      if pareCnt = -1 then
+      if not pareLeft then if pareCnt = -1 then
+      begin
         addError('a left parenthesis is missing');
-      if curlCnt = -1 then
+        pareLeft := true;
+      end;
+      if not curlLeft then if curlCnt = -1 then
+      begin
         addError('a left curly bracket is missing');
-      if squaCnt = -1 then
+        curlLeft := true;
+      end;
+      if not squaLeft then if squaCnt = -1 then
+      begin
         addError('a left square bracket is missing');
+        squaLeft := true;
+      end;
 
       // at the end
       if (tkIndex = aTokenList.Count-1) then
@@ -801,9 +812,9 @@ _preSeq:
         if old1.data = tk.data then
           addError('keyword is duplicated');
 
-      // needs negative numbr to be tokenized correctly: ... = -1; '-' is currently token as an operator.
-      if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
-        addError('operator rhs cannot be an operator');
+      if tk.data <> '&' then // ident = &ident
+        if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
+          addError('operator rhs cannot be an operator');
 
       if (old1.kind = ltkNumber) and (tk.kind = ltkNumber) then
         addError('symbol or operator expected after number');

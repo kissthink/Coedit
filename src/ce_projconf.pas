@@ -35,10 +35,10 @@ type
     procedure UpdateByEvent; override;
   public
     constructor create(aOwner: TComponent); override;
+    //
     procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
     procedure projClose(const aProject: TCEProject); override;
-    property project: TCEProject read fProj;
   end;
 
 implementation
