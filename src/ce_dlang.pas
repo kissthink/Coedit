@@ -163,12 +163,16 @@ type
    * Lexes aText and fills aList with the TLexToken found.
    *)
   procedure lex(const aText: string; const aList: TLexTokenList);
+
   (*****************************************************************************
-   * Detects various syntaxic error in a TLexTokenList
+   * Detects various syntactic errors in a TLexTokenList
    *)
-  procedure checkSyntaxicErrors(const aTokenList: TLexTokenList; const anErrorList: TLexErrorList);
+  procedure checkSyntacticErrors(const aTokenList: TLexTokenList; const anErrorList: TLexErrorList);
 
-
+  (*****************************************************************************
+   * Outputs the module name from a tokenized D source.
+   *)
+  function getModuleName(const aTokenList: TLexTokenList):string;
 
   (*****************************************************************************
    * Compares two TPoints.
@@ -677,7 +681,7 @@ end;
 {$BOOLEVAL OFF}
 {$ENDREGION}
 
-{$REGION Syntaxic errors}
+{$REGION Syntactic errors}
 function TLexErrorList.getError(index: integer): TLexError;
 begin
   result := PLexError(Items[index])^;
@@ -715,9 +719,9 @@ begin
   result.fIndex := -1;
 end;
 
-procedure checkSyntaxicErrors(const aTokenList: TLexTokenList; const anErrorList: TLexErrorList);
+procedure checkSyntacticErrors(const aTokenList: TLexTokenList; const anErrorList: TLexErrorList);
 const
-  errPrefix = 'syntaxic error: ';
+  errPrefix = 'syntactic error: ';
 var
   tk, old1, old2: TLexToken;
   err: PLexError;
@@ -797,13 +801,6 @@ begin
       goto _preSeq;
     end;
 
-    // invalid numbers
-    if tk.kind = ltkNumber then
-    begin
-
-      goto _preSeq;
-    end;
-
 _preSeq:
     // invalid sequences
     if tkIndex > 0 then // can use old1
@@ -812,8 +809,8 @@ _preSeq:
         if old1.data = tk.data then
           addError('keyword is duplicated');
 
-      if tk.data <> '&' then // ident = &ident
-        if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
+      if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
+        if not isPtrOperator(tk.data[1]) then // ident operator [&,*] ident
           addError('operator rhs cannot be an operator');
 
       if (old1.kind = ltkNumber) and (tk.kind = ltkNumber) then
@@ -832,6 +829,32 @@ _preSeq:
 
 
 end;
+
+function getModuleName(const aTokenList: TLexTokenList): string;
+var
+  ltk: TLexToken;
+  mtok: boolean;
+begin
+  result := '';
+  for ltk in aTokenList do
+  begin
+    if mtok then
+    begin
+      if ltk.kind = ltkIdentifier then
+        result += ltk.data;
+      if ltk.kind = ltkSymbol then
+      case ltk.data of
+        '.': result += ltk.data;
+        ';': exit;
+      end;
+    end
+    else
+      if ltk.kind = ltkKeyword then
+        if ltk.data = 'module' then
+          mtok := true;
+  end;
+end;
+
 {$ENDREGION}
 
 initialization

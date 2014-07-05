@@ -112,18 +112,16 @@ end;
 procedure TCEEditorWidget.focusedEditorChanged;
 var
   curr: TCESynMemo;
-  md: string;
 begin
   curr := getCurrentEditor;
   macRecorder.Editor := curr;
   fSyncEdit.Editor := curr;
   identifierToD2Syn(curr);
-  md := getModuleName(curr.Lines);
-  if md = '' then md := extractFileName(curr.fileName);
-  pageControl.ActivePage.Caption := md;
   //
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
+  //
+  fKeyChanged := true; // re-tokenize.
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
@@ -214,6 +212,7 @@ const
 var
   ed: TCESynMemo;
   err: TLexError;
+  md: string;
 begin
   ed := getCurrentEditor;
   if ed <> nil then
@@ -229,10 +228,16 @@ begin
 
     mainForm.MessageWidget.Clear;
     lex( ed.Lines.Text, tokLst );
-    checkSyntaxicErrors( tokLst, errLst);
+
+    checkSyntacticErrors( tokLst, errLst);
     for err in errLst do
       mainForm.MessageWidget.addMessage(format(
       '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+
+    md := getModuleName(tokLst);
+    if md = '' then md := extractFileName(ed.fileName);
+    pageControl.ActivePage.Caption := md;
+
     mainForm.MessageWidget.scrollToBack;
     tokLst.Clear;
     errLst.Clear;

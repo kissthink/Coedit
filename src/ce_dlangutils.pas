@@ -15,6 +15,7 @@ function isBit(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isAlNum(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isHex(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isSymbol(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
+function isPtrOperator(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isOperator1(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isOperator2(const s: string): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isOperator3(const s: string): boolean; {$IFNDEF DEBUG} inline; {$ENDIF}
@@ -66,6 +67,11 @@ begin
   exit(c in [';', '{', '}', '(', ')', '[', ']', ',', '.', ':' , '"', #39, '?', '$']);
 end;
 
+function isPtrOperator(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
+begin
+  exit(c in ['&', '*']);
+end;
+
 function isOperator1(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 begin
   exit(c in ['/', '*', '-', '+', '%', '>', '<', '=', '!',
@@ -86,7 +92,7 @@ begin
     '+': result := s[2] in ['+', '='];
     '-': result := s[2] in ['-', '='];
     '/': result := s[2] in ['='];
-    '*': result := s[2] in ['='];
+    '*': result := s[2] in ['=', '*']; // **: pointers
     '%': result := s[2] in ['='];
     '~': result := s[2] in ['='];
 
@@ -107,12 +113,13 @@ begin
                   or (s[2] = '>') and (s[3] = '=');
     '!': result := ((s[2] = '<')  and (s[3] in ['>', '=']))
                   or ((s[2] = '>')and (s[3] = '='));
+    '*': result := (s[2] = '*')   and (s[3] = '*'); // ***: pointers
   end;
 end;
 
 function isOperator4(const s: string): boolean; {$IFNDEF DEBUG} inline; {$ENDIF}
 begin
-  result := (s = '>>>=') or (s = '!<>=');
+  result := (s = '>>>=') or (s = '!<>=') or (s = '****');
 end;
 
 function isStringPostfix(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}

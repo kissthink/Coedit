@@ -696,15 +696,11 @@ begin
     fTokKind := tkSymbl;
     while isOperator1(readNext) do (*!*);
     case fTokStop - fTokStart of
-      1:begin
-          if not isOperator1(readCurr) then exit
-            else Dec(fTokStop);
-        end;
-      2:begin
+      4:begin
           if (not isOperator1(readCurr)) and
-            isOperator2(fLineBuf[fTokStart..fTokStop-1])
+            isOperator4(fLineBuf[fTokStart..fTokStop-1])
           then exit
-            else Dec(fTokStop, 2);
+            else Dec(fTokStop, 4);
         end;
       3:begin
           if (not isOperator1(readCurr)) and
@@ -712,11 +708,15 @@ begin
           then exit
             else Dec(fTokStop, 3);
         end;
-      4:begin
+      2:begin
           if (not isOperator1(readCurr)) and
-            isOperator4(fLineBuf[fTokStart..fTokStop-1])
+            isOperator2(fLineBuf[fTokStart..fTokStop-1])
           then exit
-            else Dec(fTokStop, 4);
+            else Dec(fTokStop, 2);
+        end;
+      1:begin
+          if not isOperator1(readCurr) then exit
+            else Dec(fTokStop);
         end;
     end;
     fTokKind := tkIdent;

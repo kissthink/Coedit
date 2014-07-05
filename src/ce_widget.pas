@@ -67,6 +67,7 @@ type
     procedure projNew(const aProject: TCEProject); virtual;
     procedure projChange(const aProject: TCEProject); virtual;
     procedure projClose(const aProject: TCEProject); virtual;
+    procedure projFocused(const aProject: TCEProject); virtual;
     //
     function contextName: string; virtual;
     function contextActionCount: integer; virtual;
@@ -220,6 +221,10 @@ begin
 end;
 
 procedure TCEWidget.projClose(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projFocused(const aProject: TCEProject);
 begin
 end;
 

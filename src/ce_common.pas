@@ -21,6 +21,8 @@ type
     fMaxCount: Integer;
     fObj: TObject;
   protected
+    fChecking: boolean;
+    procedure clearOutOfRange;
     procedure setMaxCount(aValue: Integer);
     function checkItem(const S: string): boolean; virtual;
     procedure Put(Index: Integer; const S: string); override;
@@ -54,11 +56,6 @@ type
    * Converts a relative path to an absolute path.
    *)
   function expandFilenameEx(const aBasePath, aFilename: string): string;
-
-  (**
-   * Extracts the module name of a D source file.
-   *)
-  function getModuleName(const aSource: TStrings): string;
 
   (**
    * Patches the directory separators from a string.
@@ -96,37 +93,48 @@ begin
   fMaxCount := 10;
 end;
 
+procedure TMRUList.clearOutOfRange;
+begin
+  while Count > fMaxCount do delete(Count-1);
+end;
+
 procedure TMRUList.setMaxCount(aValue: Integer);
 begin
   if aValue < 0 then aValue := 0;
   if fMaxCount = aValue then exit;
-  while Count > fMaxCount do delete(Count-1);
+  clearOutOfRange;
 end;
 
 function TMRUList.checkItem(const S: string): boolean;
+var
+  i: NativeInt;
 begin
-  exit( indexOf(S) = -1 );
+  i := indexOf(S);
+  if i = -1 then exit(true);
+  if i = 0 then exit(false);
+  if Count < 2 then exit(false);
+  exchange(i, i-1);
+  exit( false);
 end;
 
 procedure TMRUList.Put(Index: Integer; const S: string);
 begin
   if not (checkItem(S)) then exit;
   inherited;
-  while Count > fMaxCount do delete(Count-1);
+  clearOutOfRange;
 end;
 
 procedure TMRUList.Insert(Index: Integer; const S: string);
 begin
   if not (checkItem(S)) then exit;
   inherited;
-  while Count > fMaxCount do delete(Count-1);
+  clearOutOfRange;
 end;
 
 function TMRUFileList.checkItem(const S: string): boolean;
 begin
   exit( inherited checkItem(S) and fileExists(S));
 end;
-
 
 procedure saveCompToTxtFile(const aComp: TComponent; const aFilename: string);
 var
@@ -171,7 +179,7 @@ var
   curr: string;
 begin
   curr := '';
-  getDir(0,curr);
+  getDir(0, curr);
   try
     if curr <> aBasePath then
       chDir(aBasePath);
@@ -200,16 +208,16 @@ end;
 begin
   result := aPath;
   {$IFDEF MSWINDOWS}
-  result := patchProc(result,'/');
-  result := patchProc(result,':');
+  result := patchProc(result, '/');
+  result := patchProc(result, ':');
   {$ENDIF}
   {$IFDEF LINUX}
-  result := patchProc(result,'\');
-  result := patchProc(result,':');
+  result := patchProc(result, '\');
+  result := patchProc(result, ':');
   {$ENDIF}
   {$IFDEF MACOS}
-  result := patchProc(result,'\');
-  result := patchProc(result,'/');
+  result := patchProc(result, '\');
+  result := patchProc(result, '/');
   {$ENDIF}
 end;
 
@@ -222,59 +230,6 @@ begin
   begin
     str := sPaths.Strings[i];
     sPaths.Strings[i] := patchPlateformPath(str);
-  end;
-end;
-
-// TODO: block comments handling
-function getModuleName(const aSource: TStrings): string;
-var
-  ln: string;
-  pos, lcnt: NativeInt;
-  id: string;
-  tok: boolean;
-begin
-  result := '';
-  tok := false;
-  lcnt := -1;
-  for ln in aSource do
-  begin
-    pos := 1;
-    id := '';
-    lcnt += 1;
-    if lcnt > 100 then exit;
-
-    while(true) do
-    begin
-      if pos > length(ln) then
-        break;
-
-      if ln[pos] in [#0..#32] then
-      begin
-        Inc(pos);
-        id := '';
-        continue;
-      end;
-
-      if tok then if ln[pos] = ';' then
-        exit(id);
-
-      id += ln[pos];
-      Inc(pos);
-
-      if id = '//' then
-      begin
-        Inc(pos, length(ln));
-        break;
-      end;
-
-      if id = 'module' then
-      begin
-        tok := true;
-        id := '';
-        continue;
-      end;
-
-    end;
   end;
 end;
 
