@@ -198,7 +198,7 @@ var
   nme: string;
   i: NativeInt;
 
-  // recursivively display members, without master categories.
+  // recursively display members, without master categories.
   procedure digMembers(const srcDt: TJsonData; const srcNd: TTreeNode);
   var
     _memb: TJsonData;
@@ -314,6 +314,7 @@ begin
     if memb <> nil then for i := 0 to memb.Count-1 do
     begin
 
+      ndcat := nil;
       // categories
       ln  := new(PInt64);
       ln^ := memb.Items[i].GetPath('line').AsInt64;
@@ -324,12 +325,21 @@ begin
         'class'     :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
         'enum'      :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
         'function'  :ndCat := Tree.Items.AddChildObject(ndFunc, nme, ln);
-        'import'    :ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
+        'import', 'static import':
+                     ndCat := Tree.Items.AddChildObject(ndImp, nme, ln);
         'interface' :ndCat := Tree.Items.AddChildObject(ndIntf, nme, ln);
         'mixin'     :ndCat := Tree.Items.AddChildObject(ndMix, nme, ln);
         'struct'    :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
         'template'  :ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
         'variable'  :ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
+      end;
+
+      if ndCat = nil then
+      begin
+        {$IFDEF DEBUG}
+        writeln(memb.Items[i].GetPath('kind').AsString);
+        {$ENDIF}
+        continue;
       end;
 
       ndCat.Parent.Visible := true;

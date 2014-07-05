@@ -809,9 +809,11 @@ _preSeq:
         if old1.data = tk.data then
           addError('keyword is duplicated');
 
+(*
       if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
         if not isPtrOperator(tk.data[1]) then // ident operator [&,*] ident
           addError('operator rhs cannot be an operator');
+*)
 
       if (old1.kind = ltkNumber) and (tk.kind = ltkNumber) then
         addError('symbol or operator expected after number');
