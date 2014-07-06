@@ -120,8 +120,10 @@ begin
   //
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
-  //
-  fKeyChanged := true; // re-tokenize.
+
+  // re-tokenize.
+  fKeyChanged := true;
+  beginUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
