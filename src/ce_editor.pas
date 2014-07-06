@@ -228,17 +228,21 @@ begin
   begin
     mainForm.docChangeNotify(Self, editorIndex);
 
-    mainForm.MessageWidget.Clear;
-    lex( ed.Lines.Text, tokLst );
 
-    checkSyntacticErrors( tokLst, errLst);
-    for err in errLst do
-      mainForm.MessageWidget.addMessage(format(
-      '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+    if ed.Lines.Count > 0 then
+    begin
+      mainForm.MessageWidget.Clear;
+      lex( ed.Lines.Text, tokLst );
 
-    md := getModuleName(tokLst);
-    if md = '' then md := extractFileName(ed.fileName);
-    pageControl.ActivePage.Caption := md;
+      checkSyntacticErrors( tokLst, errLst);
+      for err in errLst do
+        mainForm.MessageWidget.addMessage(format(
+        '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+
+      md := getModuleName(tokLst);
+      if md = '' then md := extractFileName(ed.fileName);
+      pageControl.ActivePage.Caption := md;
+    end;
 
     mainForm.MessageWidget.scrollToBack;
     tokLst.Clear;
