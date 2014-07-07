@@ -81,9 +81,9 @@ type
   {$ENDIF}
   {$ENDIF}
 
-  TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI);
+  TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI, tkDDocs);
 
-  TRangeKind = (rkNone, rkString1, rkString2, rkBlockCom1, rkBlockCom2, rkAsm);
+  TRangeKind = (rkNone, rkString1, rkString2, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
 
   TFoldKind = (fkBrackets, fkComments1, fkComments2);
   TFoldKinds = set of TFoldKind;
@@ -98,6 +98,7 @@ type
 		fStrngAttrib: TSynHighlighterAttributes;
     fKeywdAttrib: TSynHighlighterAttributes;
     fCurrIAttrib: TSynHighlighterAttributes;
+    fDDocsAttrib: TSynHighlighterAttributes;
     fKeyWords: TD2Dictionary;
     fCurrIdent: string;
     fLineBuf: string;
@@ -119,6 +120,7 @@ type
     procedure setStrngAttrib(aValue: TSynHighlighterAttributes);
     procedure setKeywdAttrib(aValue: TSynHighlighterAttributes);
     procedure setCurrIAttrib(aValue: TSynHighlighterAttributes);
+    procedure setDDocsAttrib(aValue: TSynHighlighterAttributes);
     procedure doAttribChange(sender: TObject);
     procedure setCurrIdent(const aValue: string);
     procedure doChanged;
@@ -133,6 +135,7 @@ type
     property StrngAttrib: TSynHighlighterAttributes read fStrngAttrib write setStrngAttrib;
     property KeywdAttrib: TSynHighlighterAttributes read fKeywdAttrib write setKeywdAttrib;
     property CurrIAttrib: TSynHighlighterAttributes read fCurrIAttrib write setCurrIAttrib;
+    property DDocsAttrib: TSynHighlighterAttributes read fDDocsAttrib write setDDocsAttrib;
 	public
 		constructor create(aOwner: TComponent); override;
     destructor destroy; override;
@@ -286,6 +289,7 @@ begin
 	fStrngAttrib := TSynHighlighterAttributes.Create('String','String');
   fKeywdAttrib := TSynHighlighterAttributes.Create('Keyword','Keyword');
   fCurrIAttrib := TSynHighlighterAttributes.Create('CurrentIdentifier','CurrentIdentifier');
+  fDDocsAttrib := TSynHighlighterAttributes.Create('DDoc','DDoc');
 
   fNumbrAttrib.Foreground := $000079F2;
   fSymblAttrib.Foreground := clMaroon;
@@ -299,6 +303,8 @@ begin
   fCurrIAttrib.FrameColor := clGray;
   fCurrIAttrib.Background := cl3dlight;
 
+  fDDocsAttrib.Foreground := clTeal;
+
   fCommtAttrib.Style := [fsItalic];
   fKeywdAttrib.Style := [fsBold];
 
@@ -310,6 +316,7 @@ begin
   AddAttribute(fStrngAttrib);
   AddAttribute(fKeywdAttrib);
   AddAttribute(fCurrIAttrib);
+  AddAttribute(fDDocsAttrib);
 
   fAttribLut[TTokenKind.tkident] := fIdentAttrib;
   fAttribLut[TTokenKind.tkBlank] := fWhiteAttrib;
@@ -319,6 +326,7 @@ begin
   fAttribLut[TTokenKind.tkStrng] := fStrngAttrib;
   fAttribLut[TTokenKind.tksymbl] := fSymblAttrib;
   fAttribLut[TTokenKind.tkCurrI] := fCurrIAttrib;
+  fAttribLut[TTokenKind.tkDDocs] := fDDocsAttrib;
 
   SetAttributesOnChange(@doAttribChange);
   fTokStop := 1;
@@ -392,6 +400,11 @@ begin
   fCurrIAttrib.Assign(aValue);
 end;
 
+procedure TSynD2Syn.setDDocsAttrib(aValue: TSynHighlighterAttributes);
+begin
+  fDDocsAttrib.Assign(aValue);
+end;
+
 procedure TSynD2Syn.setCurrIdent(const aValue: string);
 begin
   if aValue = '' then exit;
@@ -427,17 +440,15 @@ begin
   result := fLineBuf[fTokStop-1];
 end;
 
-{
-TODO:
-- alternative attributes for ddoc comments.
-- range: asm range.
-- number literals: stricter.
-- number literals: binary.
-- string literals: delimited strings.
-- string literals: token strings.
-- string literals: escape bug: std.path/std.regex: "\\"
-- comments: correct nested comments handling.
-}
+
+//TODO-crange: asm range.
+//TODO-cnumber literals: stricter.
+//TODO-cnumber literals: binary.
+//TODO-cstring literals: delimited strings.
+//TODO-cstring literals: token strings.
+//TODO-cstring literals: escape bug: std.path/std.regex: "\\"
+//TODO-ccomments: correct nested comments handling.
+
 {$BOOLEVAL ON}
 procedure TSynD2Syn.next;
 label
@@ -463,8 +474,12 @@ begin
   begin
     if (readNext = '/') then
     begin
-      while readNext <> #10 do (*!*);
       fTokKind := tkCommt;
+      if readNext <> #10 then if readCurr = '/' then
+      begin
+        fTokKind := tkDDocs;
+      end;
+      while readCurr <> #10 do readNext(*!*);
       exit;
     end
     else
@@ -472,7 +487,28 @@ begin
   end;
 
   // block comments 1
-  if fRange = rkBlockCom1 then
+  if fRange = rkNone then if (readCurr = '/') then if (readNext = '*') then
+  begin
+    if (readNext = '*') then fTokKind := tkDDocs
+      else fTokKind := tkCommt;
+    while(true) do
+    begin
+      if readCurr = #10 then break;
+      if readNext = #10 then break;
+      if (readPrev = '*') and (readCurr = '/') then break;
+    end;
+    if (readCurr = #10) then
+      begin
+        if fTokKind = tkDDocs then fRange := rkBlockDoc1
+          else fRange := rkBlockCom1;
+        if fkComments1 in fFoldKinds then
+          StartCodeFoldBlock(nil);
+      end
+    else readNext;
+    exit;
+  end
+  else Dec(fTokStop);
+  if (fRange = rkBlockCom1) or (fRange = rkBlockDoc1) then
   begin
     while(true) do
       begin
@@ -482,13 +518,14 @@ begin
       end;
     if (readCurr = #10) then
     begin
-      fRange := rkBlockCom1;
-      fTokKind := tkCommt;
+      if fRange = rkBlockDoc1 then fTokKind := tkDDocs
+        else fTokKind := tkCommt;
       exit;
     end;
     if (readCurr = '/') then
     begin
-      fTokKind := tkCommt;
+      if fRange = rkBlockDoc1 then fTokKind := tkDDocs
+        else fTokKind := tkCommt;
       fRange := rkNone;
       readNext;
       if fkComments1 in fFoldKinds then
@@ -496,31 +533,30 @@ begin
       exit;
     end;
   end;
-  if fRange <> rkBlockCom2 then if (readCurr <> #10) and (readCurr = '/') then if (readNext = '*') then
-  begin
-    if fRange = rkNone then
+
+  // block comments 2
+  if fRange = rkNone then if (readCurr = '/') then if (readNext = '+') then
     begin
+      if (readNext = '+') then fTokKind := tkDDocs
+        else fTokKind := tkCommt;
       while(true) do
       begin
         if readCurr = #10 then break;
         if readNext = #10 then break;
-        if (readPrev = '*') and (readCurr = '/') then break;
+        if (readPrev = '+') and (readCurr = '/') then break;
       end;
       if (readCurr = #10) then
-        begin
-          fRange := rkBlockCom1;
-          if fkComments1 in fFoldKinds then
-            StartCodeFoldBlock(nil);
-        end
+      begin
+        if fTokKind = tkDDocs then fRange := rkBlockDoc2
+          else fRange := rkBlockCom2;
+        if fkComments2 in fFoldKinds then
+          StartCodeFoldBlock(nil);
+      end
       else readNext;
-      fTokKind := tkCommt;
       exit;
-    end;
-  end
-  else Dec(fTokStop);
-
-  // block comments 2
-  if fRange = rkBlockCom2 then
+    end
+    else Dec(fTokStop);
+  if (fRange = rkBlockCom2) or (fRange = rkBlockDoc2) then
   begin
     while(true) do
       begin
@@ -530,13 +566,14 @@ begin
       end;
     if (readCurr = #10) then
     begin
-      fRange := rkBlockCom2;
-      fTokKind := tkCommt;
+      if fRange = rkBlockDoc2 then fTokKind := tkDDocs
+        else fTokKind := tkCommt;
       exit;
     end;
     if (readCurr = '/') then
     begin
-      fTokKind := tkCommt;
+      if fRange = rkBlockDoc2 then fTokKind := tkDDocs
+        else fTokKind := tkCommt;
       fRange := rkNone;
       readNext;
       if fkComments2 in fFoldKinds then
@@ -544,36 +581,37 @@ begin
       exit;
     end;
   end;
-  if fRange <> rkBlockCom1 then if (readCurr <> #10) and (readCurr = '/') then if (readNext = '+') then
-  begin
-    if fRange = rkNone then
-    begin
-      while(true) do
-      begin
-        if readCurr = #10 then break;
-        if readNext = #10 then break;
-        if (readPrev = '+') and (readCurr = '/') then break;
-      end;
-      if (readCurr = #10) then
-      begin
-        fRange := rkBlockCom2;
-        if fkComments2 in fFoldKinds then
-          StartCodeFoldBlock(nil);
-      end
-      else readNext;
-      fTokKind := tkCommt;
-      exit;
-    end;
-  end
-  else Dec(fTokStop);
 
   // string 1
+  if fRange = rkNone then if (readCurr in ['r','x','"']) then
+  begin
+    // check WYSIWYG/hex prefix
+    if readCurr in ['r','x'] then
+    begin
+      if not (readNext = '"') then
+      begin
+        Dec(fTokStop);
+        goto _postString1;
+      end;
+    end;
+    // go to end of string/eol
+    while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
+    if (readCurr = #10) then fRange := rkString1
+    else
+    begin
+      readNext;
+      // check postfix
+      if isStringPostfix(readCurr) then
+        readNext;
+    end;
+    fTokKind := tkStrng;
+    exit;
+  end;
   if fRange = rkString1 then
   begin
     if (readCurr <> '"') then while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
     if (readCurr = #10) then
     begin
-      fRange := rkString1;
       fTokKind := tkStrng;
       exit;
     end;
@@ -588,42 +626,29 @@ begin
       exit;
     end;
   end;
-  if fRange <> rkString2 then if (readCurr in ['r','x','"']) then
-  begin
-    if fRange = rkNone then
-    begin
-      // check WYSIWYG/hex prefix
-      if readCurr in ['r','x'] then
-      begin
-        if not (readNext = '"') then
-        begin
-          Dec(fTokStop);
-          goto _postString1;
-        end;
-      end;
-      // go to end of string/eol
-      while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
-      if (readCurr = #10) then fRange := rkString1
-      else
-      begin
-        readNext;
-        // check postfix
-        if isStringPostfix(readCurr) then
-          readNext;
-      end;
-      fTokKind := tkStrng;
-      exit;
-    end;
-  end;
   _postString1:
 
   // string 2
+  if fRange = rkNone then if (readCurr = '`') then
+  begin
+    // go to end of string/eol
+    while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
+    if (readCurr = #10) then fRange := rkString2
+    else
+    begin
+      readNext;
+      // check postfix
+      if isStringPostfix(readCurr) then
+        readNext;
+    end;
+    fTokKind := tkStrng;
+    exit;
+  end;
   if fRange = rkString2 then
   begin
     if (readCurr <> '`') then while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
     if (readCurr = #10) then
     begin
-      fRange := rkString2;
       fTokKind := tkStrng;
       exit;
     end;
@@ -635,24 +660,6 @@ begin
       // check postfix
       if isStringPostfix(readCurr) then
         readNext;
-      exit;
-    end;
-  end;
-  if fRange <> rkString1 then if (readCurr = '`') then
-  begin
-    if fRange = rkNone then
-    begin
-      // go to end of string/eol
-      while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
-      if (readCurr = #10) then fRange := rkString2
-      else
-      begin
-        readNext;
-        // check postfix
-        if isStringPostfix(readCurr) then
-          readNext;
-      end;
-      fTokKind := tkStrng;
       exit;
     end;
   end;
