@@ -22,6 +22,7 @@ type
     procedure PageControlCloseTabClicked(Sender: TObject);
   protected
     procedure UpdateByDelay; override;
+    procedure UpdateByEvent; override;
   private
     fKeyChanged: boolean;
 
@@ -30,6 +31,7 @@ type
 
     tokLst: TLexTokenList;
     errLst: TLexErrorList;
+    procedure memoKeyPress(Sender: TObject; var Key: char);
     procedure memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
@@ -120,10 +122,12 @@ begin
   //
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
-
-  // re-tokenize.
-  fKeyChanged := true;
-  beginUpdateByDelay;
+  //
+  if (curr.modified or (pageCOntrol.ActivePage.Caption = '')) then
+  begin
+    fKeyChanged := true;
+    beginUpdateByDelay;
+  end;
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
@@ -151,6 +155,7 @@ begin
   //
   memo.OnKeyDown := @memoKeyDown;
   memo.OnKeyUp := @memoKeyDown;
+  memo.OnKeyPress := @memoKeyPress;
   memo.OnMouseDown := @memoMouseDown;
   memo.OnChange := @memoChange;
   memo.OnMouseMove := @memoMouseMove;
@@ -173,15 +178,19 @@ end;
 
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-if (sender is TCESynMemo) then
+  UpdateByEvent;
+  if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
-  fKeyChanged := true;
   case Byte(Key) of
-    VK_UNKNOWN..VK_XBUTTON2: exit;
-    VK_SHIFT..VK_HELP: fKeyChanged := false;
-    VK_LWIN..VK_SLEEP: exit;
-    VK_F1..$91: exit;
+    VK_CLEAR,VK_RETURN,VK_BACK : fKeyChanged := true;
+    //else fKeyChanged := false;
   end;
+  if fKeyChanged then
+    beginUpdateByDelay;
+end;
+
+procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: char);
+begin
   fKeyChanged := true;
   beginUpdateByDelay;
 end;
@@ -191,12 +200,15 @@ begin
   if (sender is TCESynMemo) then
     identifierToD2Syn(TCESynMemo(Sender));
   beginUpdateByDelay;
+  UpdateByEvent;
 end;
 
 procedure TCEEditorWidget.memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-  if ssLeft in Shift then
-    beginUpdateByDelay;
+  if not (ssLeft in Shift) then exit;
+  //
+  beginUpdateByDelay;
+  UpdateByEvent;
 end;
 
 procedure TCEEditorWidget.memoChange(Sender: TObject);
@@ -205,52 +217,56 @@ var
 begin
   ed := TCESynMemo(sender);
   ed.modified := true;
+  fKeyChanged := true;
   beginUpdateByDelay;
+  UpdateByEvent;
+end;
+
+procedure TCEEditorWidget.UpdateByEvent;
+const
+  modstr: array[boolean] of string = ('...', 'MODIFIED');
+var
+  ed: TCESynMemo;
+begin
+  ed := getCurrentEditor;
+  if ed = nil then exit;
+  //
+  editorStatus.Panels[0].Text := format('%d : %d',[ed.CaretY, ed.CaretX]);
+  editorStatus.Panels[1].Text := modstr[ed.modified];
+  editorStatus.Panels[2].Text := ed.fileName;
 end;
 
 procedure TCEEditorWidget.UpdateByDelay;
-const
-  modstr: array[boolean] of string = ('...', 'MODIFIED');
 var
   ed: TCESynMemo;
   err: TLexError;
   md: string;
 begin
   ed := getCurrentEditor;
-  if ed <> nil then
-  begin
-    editorStatus.Panels[0].Text := format('%d : %d',[ed.CaretY, ed.CaretX]);
-    editorStatus.Panels[1].Text := modstr[ed.modified];
-    editorStatus.Panels[2].Text := ed.fileName;
-  end;
+  if ed = nil then exit;
+  if not fKeyChanged then exit;
   //
-  if fKeyChanged then if editorIndex <> -1 then
-  begin
-    mainForm.docChangeNotify(Self, editorIndex);
-
-
-    if ed.Lines.Count > 0 then
-    begin
-      mainForm.MessageWidget.Clear;
-      lex( ed.Lines.Text, tokLst );
-
-      checkSyntacticErrors( tokLst, errLst);
-      for err in errLst do
-        mainForm.MessageWidget.addMessage(format(
-        '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
-
-      md := getModuleName(tokLst);
-      if md = '' then md := extractFileName(ed.fileName);
-      pageControl.ActivePage.Caption := md;
-    end;
-
-    mainForm.MessageWidget.scrollToBack;
-    tokLst.Clear;
-    errLst.Clear;
-
-  end;
   fKeyChanged := false;
+  mainForm.docChangeNotify(Self, editorIndex);
+  if ed.Lines.Count = 0 then exit;
+  //
+  mainForm.MessageWidget.Clear;
+  lex( ed.Lines.Text, tokLst );
 
+  checkSyntacticErrors( tokLst, errLst);
+  for err in errLst do
+    mainForm.MessageWidget.addMessage(format(
+    '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+
+  md := '';
+  if ed.isDSource then
+    md := getModuleName(tokLst);
+  if md = '' then md := extractFileName(ed.fileName);
+  pageControl.ActivePage.Caption := md;
+
+  mainForm.MessageWidget.scrollToBack;
+  tokLst.Clear;
+  errLst.Clear;
 end;
 
 end.
