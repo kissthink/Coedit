@@ -103,6 +103,7 @@ type
     fBinKind: TBinaryKind;
     fUt: boolean;
     fVerId: string;
+    fVerIds: TStringList;
     fInline: boolean;
     fNoBounds: boolean;
     fOptimz: boolean;
@@ -119,6 +120,7 @@ type
     procedure setGenStack(const aValue: boolean);
     procedure setMain(const aValue: boolean);
     procedure setRelease(const aValue: boolean);
+    procedure setVerIds(const aValue: TStringList);
   published
     property targetKind: TTargetSystem read fTrgKind write setTrgKind;
     property binaryKind: TBinaryKind read fBinKind write setBinKind;
@@ -130,7 +132,10 @@ type
     property release: boolean read fRelease write setRelease;
     property unittest: boolean read fUt write setUt;
     property versionIdentifier: string read fVerId write setVerId;
+    property versionIdentifiers: TStringList read fVerIds write setVerIds;
   public
+    constructor create;
+    destructor destroy; override;
     procedure assign(aValue: TPersistent); override;
     procedure getOpts(const aList: TStrings); override;
   end;
@@ -286,6 +291,12 @@ end;
 
 procedure TDocOpts.setGenDoc(const aValue: boolean);
 begin
+  if fDocDir <> '' then
+  begin
+    fGenDoc := true;
+    exit;
+  end;
+  //
   if fGenDoc = aValue then exit;
   fGenDoc := aValue;
   doChanged;
@@ -293,6 +304,12 @@ end;
 
 procedure TDocOpts.setGenJSON(const aValue: boolean);
 begin
+  if fJsonFname <> '' then
+  begin
+    fGenJson := true;
+    exit;
+  end;
+  //
   if fGenJson = aValue then exit;
   fGenJson := aValue;
   doChanged;
@@ -302,6 +319,7 @@ procedure TDocOpts.setDocDir(const aValue: string);
 begin
   if fDocDir = aValue then exit;
   fDocDir := patchPlateformPath(aValue);
+  if fDocDir <> '' then setGenDoc(true);
   doChanged;
 end;
 
@@ -309,6 +327,7 @@ procedure TDocOpts.setJSONFile(const aValue: string);
 begin
   if fJsonFname = aValue then exit;
   fJsonFname := patchPlateformPath(aValue);
+  if fJsonFname <> '' then setGenJSON(true);
   doChanged;
 end;
 
@@ -397,6 +416,18 @@ end;
 (*******************************************************************************
  * TOutputOpts
  *)
+constructor TOutputOpts.create;
+begin
+  fVerIds := TStringList.Create;
+  //fVerId := 'deprecated_field';
+end;
+
+destructor TOutputOpts.destroy;
+begin
+  fVerIds.Free;
+  inherited;
+end;
+
 procedure TOutputOpts.getOpts(const aList: TStrings);
 var
   opt: string;
@@ -416,6 +447,8 @@ begin
   if fGenStack then aList.Add('-gs');
   if fMain then aList.Add('-main');
   if fRelease then aList.Add('-release');
+  for opt in fVerIds do
+    aList.Add('-version=' + opt );
 end;
 
 procedure TOutputOpts.assign(aValue: TPersistent);
@@ -450,6 +483,12 @@ procedure TOutputOpts.setVerId(const aValue: string);
 begin
   if fVerId = aValue then exit;
   fVerId := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setVerIds(const aValue: TStringList);
+begin
+  fVerIds.Assign(aValue);
   doChanged;
 end;
 
@@ -683,10 +722,16 @@ end;
 
 procedure TOtherOpts.getOpts(const aList: TStrings);
 var
-  str: string;
+  str1, str2: string;
 begin
-  for str in fCustom do if str <> '' then
-    aList.Add(str);
+  for str1 in fCustom do if str1 <> '' then
+  begin
+    if str1[1] <> '-' then
+      str2 := '-' + str1
+    else
+      str2 := str1;
+    aList.Add(str2);
+  end;
 end;
 
 procedure TOtherOpts.setCustom(const aValue: TStringList);
