@@ -300,8 +300,8 @@ begin
 
   fCurrIAttrib.Foreground := clBlack;
   fCurrIAttrib.FrameEdges := sfeAround;
-  fCurrIAttrib.FrameColor := clGray;
-  fCurrIAttrib.Background := cl3dlight;
+  fCurrIAttrib.FrameColor := $D4D4D4;
+  fCurrIAttrib.Background := $F0F0F0;
 
   fDDocsAttrib.Foreground := clTeal;
 

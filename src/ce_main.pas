@@ -15,6 +15,8 @@ type
 
   TCEMainForm = class;
 
+  //TODO: options
+  //TODO-cwidget: options editor
   (**
    * Encapsulates the options in a writable component.
    * note: likely to change however needed to test correctly Coedit.

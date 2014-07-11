@@ -9,7 +9,7 @@ uses
 
 type
 
-  // TODO: interface for document content access/modification
+  // TODO-cinterface: document content access/modification
 
   (**
    * An implementer is informed when a new document is added, focused or closed.

@@ -106,6 +106,7 @@ begin
   nme := '';
   beginUpdateByEvent;
   cfg := fProj.addConfiguration;
+  // note: Cancel is actually related to the conf name not to the adding operation.
   if InputQuery('Configuration name', '', nme) then cfg.name := nme;
   fProj.ConfigurationIndex := cfg.Index;
   endUpdateByEvent;

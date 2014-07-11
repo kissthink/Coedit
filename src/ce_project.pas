@@ -100,7 +100,7 @@ var
   i: nativeInt;
 begin
   fOptsColl.Assign(aValue);
-  for i:= 0 to self.fOptsColl.Count-1 do
+  for i:= 0 to fOptsColl.Count-1 do
     Configuration[i].onChanged := @subMemberChanged;
 end;
 
