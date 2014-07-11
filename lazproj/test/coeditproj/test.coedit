@@ -6,7 +6,11 @@ object _1: TCEProject
       documentationOptions.generateJSON = False
       documentationOptions.DocumentationDirectory = '..\doc'
       debugingOptions.debug = True
-      debugingOptions.debugIdentifier = '2'
+      debugingOptions.debugIdentifiers.Strings = (
+        'a'
+        'b'
+      )
+      debugingOptions.debugLevel = 2
       debugingOptions.addDInformations = False
       debugingOptions.addCInformations = False
       debugingOptions.generateMapFile = False
@@ -35,6 +39,7 @@ object _1: TCEProject
       documentationOptions.DocumentationDirectory = '..\doc'
       debugingOptions.debug = False
       debugingOptions.debugIdentifier = '3'
+      debugingOptions.debugLevel = 0
       debugingOptions.addDInformations = False
       debugingOptions.addCInformations = False
       debugingOptions.generateMapFile = False

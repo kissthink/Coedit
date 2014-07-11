@@ -123,7 +123,7 @@ begin
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
   //
-  if (curr.modified or (pageCOntrol.ActivePage.Caption = '')) then
+  if (curr.modified or (pageControl.ActivePage.Caption = '')) then
   begin
     fKeyChanged := true;
     beginUpdateByDelay;

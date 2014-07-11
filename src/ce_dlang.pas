@@ -838,6 +838,7 @@ var
   mtok: boolean;
 begin
   result := '';
+  mtok := false;
   for ltk in aTokenList do
   begin
     if mtok then
@@ -856,7 +857,6 @@ begin
           mtok := true;
   end;
 end;
-
 {$ENDREGION}
 
 initialization

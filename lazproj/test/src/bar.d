@@ -12,5 +12,8 @@ class Bar{
         debug(1) writeln("bar says: debug level < 2");
         debug(2) writeln("bar says: debug level < 3");
         debug(3) writeln("bar says: debug level < 4");
+        debug(a) writeln("bar says: debug ident a");
+        debug(b) writeln("bar says: debug ident b");
+        debug(c) writeln("bar says: debug ident c");
     }
 }

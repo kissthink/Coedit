@@ -1140,6 +1140,9 @@ object CEMainForm: TCEMainForm
           91F4969391FF908D8B00969391FF969391F4979492008D8A8800
         }
       end
+      object MenuItem55: TMenuItem
+        Action = actProjOptView
+      end
       object MenuItem40: TMenuItem
         Caption = '-'
       end
@@ -1786,9 +1789,29 @@ object CEMainForm: TCEMainForm
     end
     object actProjSource: TAction
       Category = 'Project'
-      Caption = 'View Project source'
+      Caption = 'View project source'
       ImageIndex = 12
       OnExecute = actProjSourceExecute
+    end
+    object actEdIndent: TAction
+      Category = 'Edit'
+      Caption = 'Indent'
+      ImageIndex = 16
+      OnExecute = actEdIndentExecute
+      ShortCut = 24649
+    end
+    object actEdUnIndent: TAction
+      Category = 'Edit'
+      Caption = 'Unindent'
+      ImageIndex = 17
+      OnExecute = actEdUnIndentExecute
+      ShortCut = 24661
+    end
+    object actProjOptView: TAction
+      Category = 'Project'
+      Caption = 'View project options'
+      ImageIndex = 12
+      OnExecute = actProjOptViewExecute
     end
     object actProjCompile: TAction
       Category = 'Project'
@@ -1822,20 +1845,6 @@ object CEMainForm: TCEMainForm
       Caption = 'Run project...'
       ImageIndex = 21
       OnExecute = actProjRunWithArgsExecute
-    end
-    object actEdIndent: TAction
-      Category = 'Edit'
-      Caption = 'Indent'
-      ImageIndex = 16
-      OnExecute = actEdIndentExecute
-      ShortCut = 24649
-    end
-    object actEdUnIndent: TAction
-      Category = 'Edit'
-      Caption = 'Unindent'
-      ImageIndex = 17
-      OnExecute = actEdUnIndentExecute
-      ShortCut = 24661
     end
   end
   object imgList: TImageList

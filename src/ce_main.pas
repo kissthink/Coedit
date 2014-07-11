@@ -63,6 +63,7 @@ type
     actFileSaveAs: TAction;
     actFileSave: TAction;
     actFileCompAndRunWithArgs: TAction;
+    actProjOptView: TAction;
     actProjSource: TAction;
     actProjRun: TAction;
     actProjRunWithArgs: TAction;
@@ -136,6 +137,7 @@ type
     MenuItem52: TMenuItem;
     MenuItem53: TMenuItem;
     MenuItem54: TMenuItem;
+    MenuItem55: TMenuItem;
     mnuItemMruFile: TMenuItem;
     mnuItemMruProj: TMenuItem;
     mnuItemWin: TMenuItem;
@@ -171,6 +173,7 @@ type
     procedure actEdRedoExecute(Sender: TObject);
     procedure actFileSaveAsExecute(Sender: TObject);
     procedure actFileSaveExecute(Sender: TObject);
+    procedure actProjOptViewExecute(Sender: TObject);
     procedure actProjRunExecute(Sender: TObject);
     procedure actProjRunWithArgsExecute(Sender: TObject);
     procedure actProjSaveAsExecute(Sender: TObject);
@@ -414,6 +417,7 @@ begin
     actProjRun.Enabled := hasProj;
     actProjRunWithArgs.Enabled := hasProj;
     actProjSource.Enabled := hasProj;
+    actProjOptView.Enabled := hasProj;
 
     actFileAddToProj.Enabled := hasEd and hasProj;
 
@@ -934,6 +938,7 @@ begin
   getDir(0, olddir);
   try
 
+    fMesgWidg.Clear;
     fMesgWidg.addCeInf( 'compiling ' + aProject.fileName );
 
     prjpath := extractFilePath(aProject.fileName);
@@ -1219,6 +1224,19 @@ begin
   //
   openFile(fProject.fileName);
   EditWidget.currentEditor.Highlighter := LfmSyn;
+end;
+
+procedure TCEMainForm.actProjOptViewExecute(Sender: TObject);
+var
+  lst: TStringList;
+begin
+  lst := TStringList.Create;
+  try
+    fProject.getOpts(lst);
+    dlgOkInfo(lst.Text);
+  finally
+    lst.Free;
+  end;
 end;
 {$ENDREGION}
 

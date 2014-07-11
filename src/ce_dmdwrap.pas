@@ -7,6 +7,14 @@ interface
 uses
   classes, sysutils;
 
+(*
+
+procedure to add a new compiler option:
+- the option must be published with a setter proc, in the setter 'doChanged' must be called.
+- getOpts must be updated to generate the new option.
+- Assign() must be updated to copy the new option. (used when cloning a configuration)
+
+*)
 
 type
 
@@ -52,7 +60,7 @@ type
   (*****************************************************************************
    * Describes the different depreciation treatments.
    *)
-    TDepHandling = (silent, warning, error);
+  TDepHandling = (silent, warning, error);
 
   (*****************************************************************************
    * Encapsulates the options/args related to the compiler output messages.
@@ -84,15 +92,20 @@ type
     procedure getOpts(const aList: TStrings); override;
   end;
 
-  (*****************************************************************************
-   * Describes the target registry size
+  (**
+   * Describes the target registry size.
    *)
   TTargetSystem = (auto, os32bit, os64bit);
+
   (**
-   * Describes the output kind
+   * Describes the output kind.
    *)
   TBinaryKind = (executable, staticlib, sharedlib, obj);
 
+  (**
+   * Describes the bounds check kinds.
+   *)
+  TBoundCheckKind = (onAlways, safeOnly, offAlways);
 
   (*****************************************************************************
    * Encapsulates the options/args related to the analysis & the code gen.
@@ -105,16 +118,19 @@ type
     fVerId: string;
     fVerIds: TStringList;
     fInline: boolean;
+    fBoundsCheck: TBoundCheckKind;
     fNoBounds: boolean;
     fOptimz: boolean;
     fGenStack: boolean;
     fMain: boolean;
     fRelease: boolean;
+    procedure depPatch;
     procedure setUt(const aValue: boolean);
     procedure setVerId(const aValue: string);
     procedure setTrgKind(const aValue: TTargetSystem);
     procedure setBinKind(const aValue: TBinaryKind);
     procedure setInline(const aValue: boolean);
+    procedure setBoundsCheck(const aValue: TBoundCheckKind);
     procedure setNoBounds(const aValue: boolean);
     procedure setOptims(const aValue: boolean);
     procedure setGenStack(const aValue: boolean);
@@ -126,12 +142,13 @@ type
     property binaryKind: TBinaryKind read fBinKind write setBinKind;
     property inlining: boolean read fInline write setInline;
     property noBoundsCheck: boolean read fNoBounds write setNoBounds;
+    property boundsCheck: TBoundCheckKind read fBoundsCheck write setBoundsCheck;
     property optimizations: boolean read fOptimz write setOptims;
     property generateStackFrame: boolean read fGenStack write setGenStack;
     property addMain: boolean read fMain write setMain;
     property release: boolean read fRelease write setRelease;
     property unittest: boolean read fUt write setUt;
-    property versionIdentifier: string read fVerId write setVerId;
+    property versionIdentifier: string read fVerId write setVerId; // TODO-ccleaning:remove on beta1
     property versionIdentifiers: TStringList read fVerIds write setVerIds;
   public
     constructor create;
@@ -150,18 +167,29 @@ type
     fDbgD: boolean;
     fDbgC: boolean;
     fMap: boolean;
+    fDbgIdents: TStringList;
+    fDbgLevel: Integer;
+    fForceDbgBool: boolean;
+    procedure depPatch;
+    procedure updateForceDbgBool;
     procedure setDbg(const aValue: boolean);
     procedure setDbgIdent(const aValue: string);
     procedure setDbgD(const aValue: boolean);
     procedure setDbgC(const aValue: boolean);
     procedure setMap(const aValue: boolean);
+    procedure setDbgLevel(const aValue: Integer);
+    procedure setDbgIdents(const aValue: TStringList);
   published
     property debug: boolean read fDbg write setDbg;
-    property debugIdentifier: string read fDbgIdent write setDbgIdent;
+    property debugIdentifier: string read fDbgIdent write setDbgIdent; // TODO-ccleaning:remove on beta1
+    property debugIdentifiers: TStringList read fDbgIdents write setDbgIdents;
+    property debugLevel: Integer read fDbgLevel write setDbgLevel;
     property addDInformations: boolean read fDbgD write setDbgD;
     property addCInformations: boolean read fDbgC write setDbgC;
     property generateMapFile: boolean read fMap write setMap;
   public
+    constructor create;
+    destructor destroy; override;
     procedure assign(aValue: TPersistent); override;
     procedure getOpts(const aList: TStrings); override;
   end;
@@ -255,17 +283,12 @@ implementation
 uses
   ce_common;
 
-(*******************************************************************************
- * TOptsGroup
- *)
 procedure TOptsGroup.doChanged;
 begin
   if assigned(fOnChange) then fOnChange(self);
 end;
 
-(*******************************************************************************
- * TDocOpts
- *)
+{$REGION TDocOpts **************************************************************}
 procedure TDocOpts.getOpts(const aList: TStrings);
 begin
   if fGenDoc then aList.Add('-D');
@@ -330,10 +353,9 @@ begin
   if fJsonFname <> '' then setGenJSON(true);
   doChanged;
 end;
+{$ENDREGION}
 
-(*******************************************************************************
- * TMsgOpts
- *)
+{$REGION TMsgOpts **************************************************************}
 constructor TMsgOpts.create;
 begin
   fDepHandling := TDepHandling.warning;
@@ -412,14 +434,12 @@ begin
   fQuiet := aValue;
   doChanged;
 end;
+{$ENDREGION}
 
-(*******************************************************************************
- * TOutputOpts
- *)
+{$REGION TOutputOpts ***********************************************************}
 constructor TOutputOpts.create;
 begin
   fVerIds := TStringList.Create;
-  //fVerId := 'deprecated_field';
 end;
 
 destructor TOutputOpts.destroy;
@@ -428,19 +448,32 @@ begin
   inherited;
 end;
 
+procedure TOutputOpts.depPatch;
+begin
+  // patch deprecated fields
+  if fVerId <> '' then
+  begin
+    if fVerIds.IndexOf(fVerId) = -1 then
+      fVerIds.Add(fVerId);
+    fVerId := '';
+  end;
+end;
+
 procedure TOutputOpts.getOpts(const aList: TStrings);
 var
   opt: string;
 const
   trgKindStr: array[TTargetSystem] of string = ('', '-m32','-m64');
   binKindStr: array[TBinaryKind] of string = ('', '-lib', '-shared', '-c');
+  bchKindStr: array[TBoundCheckKind] of string = ('on', 'safeonly', 'off');
 begin
+  depPatch;
+  //
   opt := binKindStr[fBinKind];
   if opt <> '' then aList.Add(opt);
   opt := trgKindStr[fTrgKind];
   if opt <> '' then aList.Add(opt);
   if fUt then aList.Add('-unittest');
-  if fVerId <> '' then aList.Add('-version=' + fVerId);
   if fInline then aList.Add('-inline');
   if fNoBounds then aList.Add('-noboundscheck');
   if fOptimz then aList.Add('-O');
@@ -449,6 +482,16 @@ begin
   if fRelease then aList.Add('-release');
   for opt in fVerIds do
     aList.Add('-version=' + opt );
+  //
+  if fRelease then
+    begin
+      if fBoundsCheck <> safeOnly then
+        (*generate option*);
+    end
+  else
+    if fBoundsCheck <> onAlways then
+      (*generate option*);
+
 end;
 
 procedure TOutputOpts.assign(aValue: TPersistent);
@@ -462,12 +505,15 @@ begin
     fTrgKind := src.fTrgKind;
     fUt := src.fUt;
     fVerId := src.fVerId;
+    fVerIds.Assign(src.fVerIds);
     fInline := src.fInline;
     fNoBounds := src.fNoBounds;
     fOptimz := src.fOptimz;
     fGenStack := src.fGenStack;
     fMain := src.fMain;
     fRelease := src.fRelease;
+    //
+    depPatch;
   end
   else inherited;
 end;
@@ -513,11 +559,20 @@ begin
   doChanged;
 end;
 
+procedure TOutputOpts.setBoundsCheck(const aValue: TBoundCheckKind);
+begin
+  if fBoundsCheck = aValue then exit;
+  fBoundsCheck := aValue;
+  doChanged;
+end;
+
 procedure TOutputOpts.setNoBounds(const aValue: boolean);
 begin
   if fNoBounds = aValue then exit;
   fNoBounds := aValue;
   doChanged;
+   // turns old option to TBoundCheckKind.onAlways if true and set
+   // fNoBounds to false (wont be written anymore).
 end;
 
 procedure TOutputOpts.setOptims(const aValue: boolean);
@@ -547,14 +602,40 @@ begin
   fRelease := aValue;
   doChanged;
 end;
+{$ENDREGION}
 
-(*******************************************************************************
- * TDebugOpts
- *)
-procedure TDebugOpts.getOpts(const aList: TStrings);
+{$REGION TDebugOpts ************************************************************}
+constructor TDebugOpts.create;
 begin
+  fDbgIdents := TStringList.Create;
+end;
+
+destructor TDebugOpts.destroy;
+begin
+  fDbgIdents.Free;
+  inherited;
+end;
+
+procedure TDebugOpts.depPatch;
+begin
+  // patch deprecated field
+  if fDbgIdent <> '' then
+  begin
+    if fDbgIdents.IndexOf(fDbgIdent) = -1 then
+      fDbgIdents.Add(fDbgIdent);
+    fDbgIdent := '';
+  end;
+end;
+
+procedure TDebugOpts.getOpts(const aList: TStrings);
+var
+  idt: string;
+begin
+  depPatch;
   if fDbg then aList.Add('-debug');
-  if fDbgIdent <> '' then aList.Add('-debug=' + fDbgIdent);
+  if fDbgLevel <> 0 then aList.Add('-debug=' + intToStr(fDbgLevel));
+  for idt in fDbgIdents do
+    aList.Add('-debug=' + idt);
   if fDbgD then aList.Add('-g');
   if fDbgC then aList.Add('-gc');
   if fMap then aList.Add('-map');
@@ -569,15 +650,30 @@ begin
     src := TDebugOpts(aValue);
     fDbg := src.fDbg;
     fDbgIdent := src.fDbgIdent;
+    fDbgIdents.Assign(src.fDbgIdents);
+    fDbgLevel := src.fDbgLevel;
     fDbgD := src.fDbgD;
     fDbgC := src.fDbgC;
     fMap := src.fMap;
+    //
+    depPatch;
   end
   else inherited;
 end;
 
+procedure TDebugOpts.updateForceDbgBool;
+begin
+  fForceDbgBool := (fDbgLevel > 0) or  (fDbgIdents.Count > 0);
+  if fForceDbgBool then setDbg(true);
+end;
+
 procedure TDebugOpts.setDbg(const aValue: boolean);
 begin
+  if fForceDbgBool then
+  begin
+    fDbg := true;
+    exit;
+  end;
   if fDbg = aValue then exit;
   fDbg := aValue;
   doChanged;
@@ -611,9 +707,24 @@ begin
   doChanged;
 end;
 
-(*******************************************************************************
- * TPathsOpts
- *)
+procedure TDebugOpts.setDbgLevel(const aValue: Integer);
+begin
+  if fDbgLevel = aValue then exit;
+  fDbgLevel := aValue;
+  if fDbgLevel < 0 then fDbgLevel := 0;
+  updateForceDbgBool;
+  doChanged;
+end;
+
+procedure TDebugOpts.setDbgIdents(const aValue: TStringList);
+begin
+  fDbgIdents.Assign(aValue);
+  updateForceDbgBool;
+  doChanged;
+end;
+{$ENDREGION}
+
+{$REGION TPathsOpts ************************************************************}
 constructor TPathsOpts.create;
 begin
   fSrcs := TStringList.Create;
@@ -693,10 +804,9 @@ begin
   patchPlateformPaths(fImpt);
   doChanged;
 end;
+{$ENDREGION}
 
-(*******************************************************************************
- * TOtherOpts
- *)
+{$REGION TOtherOpts ************************************************************}
 constructor TOtherOpts.create;
 begin
   fCustom := TStringList.Create;
@@ -739,10 +849,9 @@ begin
   fCustom.Assign(aValue);
   doChanged;
 end;
+{$ENDREGION}
 
-(*******************************************************************************
- * TCompilerConfiguration
- *)
+{$REGION TCompilerConfiguration ************************************************}
 constructor TCompilerConfiguration.create(aCollection: TCollection);
 begin
   inherited create(aCollection);
@@ -857,6 +966,7 @@ procedure TCompilerConfiguration.setOthers(const aValue: TOtherOpts);
 begin
   fOthers.Assign(aValue);
 end;
+{$ENDREGION}
 
 initialization
   RegisterClasses([TCompilerConfiguration, TOtherOpts, TPathsOpts,
