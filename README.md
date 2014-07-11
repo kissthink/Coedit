@@ -13,6 +13,7 @@ Current features
 - synchronized edition in a block.
 - D syntax highlighter, folding, identifier markup.
 - current module member list.
+- search and replace.
 
 Planed in version 1
 -------------------
@@ -23,19 +24,15 @@ Planed in version 1
 
 Project information
 -------------------
-- state: alpha 2.
-- programmed in Object pascal with [Lazarus](http://www.lazarus.freepascal.org).
+- state: alpha 3.
+- programmed in Pascal with [Lazarus](http://www.lazarus.freepascal.org).
 - based on *dmd* (*gdc* or *lmd* characteristics are not handled).
 - no other third party dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)
 
 Setup & test
 ------------
-Coedit must be build from the sources:
-- clone this repository (even if not mandatory, preferably from the latest tag, as tagged versions are more tested then the others.)
-- both [dmd](http://dlang.org/download.html) and [Lazarus](http://www.lazarus.freepascal.org) must be setup.
-- open "coedit.lpr" in *Lazarus*, set the build mode to *Release*
-- press the Run button (or build)
-- run coedit and project, open *"lazproj\test\coeditproj\test.coedit"* from the project menu to give a brief try.
+Coedit must be build from the sources.
+The complete procedure is described in the first section of the [wiki](https://github.com/BBasile/Coedit/wiki)
 
 Preview
 -------
