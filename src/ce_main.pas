@@ -339,9 +339,9 @@ begin
   fPrjCfWidg.Free;
   fStExpWidg.Free;
   fFindWidg.Free;
-  fProject.Free;
   fProjMru.Free;
   fFileMru.Free;
+  fProject.Free;
   //
   inherited;
 end;
@@ -940,7 +940,7 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options := [poStdErrToOutput, poUsePipes];
+    dmdproc.Options := [poNewConsole, poStdErrToOutput, poUsePipes];
 
     dmdproc.Executable := 'dmd';
     aProject.getOpts(dmdproc.Parameters);
@@ -1113,7 +1113,8 @@ procedure TCEMainForm.newProj;
 var
   widg: TCEWidget;
 begin
-  fProject := TCEProject.Create(self);
+  fProject := TCEProject.Create(nil);
+  fProject.Name := 'CurrentProject';
   for widg in WidgetList do widg.projNew(fProject);
   fProject.onChange := @projChange;
 end;
