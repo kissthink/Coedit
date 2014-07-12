@@ -193,8 +193,13 @@ function patchPlateformPath(const aPath: string): string;
 function patchProc(const src: string; const invalid: char): string;
 var
   i: Integer;
+  dir: string;
 begin
-  result := src;
+  dir := ExtractFileDrive(src);
+  if length(dir) > 0 then
+    result := src[length(dir)+1..length(src)]
+  else
+    result := src;
   i := pos(invalid, result);
   if i <> 0 then
   begin
@@ -204,6 +209,7 @@ begin
     until
       i = 0;
   end;
+  result := dir + result;
 end;
 begin
   result := aPath;
