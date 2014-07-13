@@ -50,6 +50,8 @@ type
     procedure projNew(const aProject: TCEProject); override;
     procedure projChange(const aProject: TCEProject); override;
     procedure projClose(const aProject: TCEProject); override;
+    procedure projCompile(const aProject: TCEProject); override;
+    procedure projRun(const aProject: TCEProject); override;
   end;
 
 implementation
@@ -152,6 +154,16 @@ begin
   if fDoc <> aDoc then exit;
   fDoc := nil;
   beginUpdateByDelay;
+end;
+
+procedure TCEStaticExplorerWidget.projCompile(const aProject: TCEProject);
+begin
+  stopUpdateByDelay;
+end;
+
+procedure TCEStaticExplorerWidget.projRun(const aProject: TCEProject);
+begin
+  stopUpdateByDelay;
 end;
 
 procedure TCEStaticExplorerWidget.UpdateByDelay;

@@ -25,7 +25,7 @@ void main(string args[])
     }
     // if not UsePipes in RunOptions
     // then:
-    // readln;
+     readln;
     // (input is passed thru the new console)
 
     // else: input is not handled so readln will hang Coedit until

@@ -9,7 +9,7 @@ uses
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
   SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common, AnchorDocking,
-  ce_dlang;
+  ce_dlang, ce_project;
 
 type
   { TCEEditorWidget }
@@ -48,6 +48,9 @@ type
     procedure removeEditor(const aIndex: NativeInt);
     procedure focusedEditorChanged;
     //
+    procedure projCompile(const aProject: TCEProject); override;
+    procedure projRun(const aProject: TCEProject); override;
+    //
     property currentEditor: TCESynMemo read getCurrentEditor;
     property editor[index: NativeInt]: TCESynMemo read getEditor;
     property editorCount: NativeInt read getEditorCount;
@@ -58,7 +61,7 @@ implementation
 {$R *.lfm}
 
 uses
-  ce_main;
+  ce_main, ce_messages;
 
 constructor TCEEditorWidget.create(aOwner: TComponent);
 var
@@ -123,7 +126,7 @@ begin
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
   //
-  if (curr.modified or (pageControl.ActivePage.Caption = '')) then
+  if (pageControl.ActivePage.Caption = '') then
   begin
     fKeyChanged := true;
     beginUpdateByDelay;
@@ -168,6 +171,7 @@ end;
 
 procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);
 begin
+  mainForm.MessageWidget.ClearMessages(msEditor);
   editor[aIndex].OnChange:= nil;
   pageControl.Pages[aIndex].Free;
 end;
@@ -223,6 +227,16 @@ begin
   UpdateByEvent;
 end;
 
+procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
+begin
+  stopUpdateByDelay;
+end;
+
+procedure TCEEditorWidget.projRun(const aProject: TCEProject);
+begin
+  stopUpdateByDelay;
+end;
+
 procedure TCEEditorWidget.UpdateByEvent;
 const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
@@ -251,13 +265,13 @@ begin
   mainForm.docChangeNotify(Self, editorIndex);
   if ed.Lines.Count = 0 then exit;
   //
-  mainForm.MessageWidget.Clear;
+  mainForm.MessageWidget.ClearMessages(msEditor);
   lex( ed.Lines.Text, tokLst );
 
   checkSyntacticErrors( tokLst, errLst);
   for err in errLst do
-    mainForm.MessageWidget.addMessage(format(
-    '%s  (@line:%4.d @char:%.4d)',[err.msg, err.position.y, err.position.x]));
+    mainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
+    [err.msg, err.position.y, err.position.x]), msEditor);
 
   md := '';
   if ed.isDSource then

@@ -1,7 +1,7 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 621
+  Left = 812
   Height = 172
-  Top = 659
+  Top = 258
   Width = 744
   Caption = 'Messages'
   ClientHeight = 172
@@ -17,32 +17,28 @@ inherited CEMessagesWidget: TCEMessagesWidget
       ClientHeight = 172
       ClientWidth = 744
       PopupMenu = nil
-      object List: TListView[0]
+      object List: TTreeView[0]
         Left = 2
         Height = 168
         Top = 2
         Width = 740
         Align = alClient
-        AutoSort = False
         BorderSpacing.Around = 2
-        Columns = <        
-          item
-            Width = 736
-          end>
+        DefaultItemHeight = 16
         Font.CharSet = ANSI_CHARSET
         Font.Height = -12
         Font.Name = 'Lucida Console'
         Font.Pitch = fpFixed
         Font.Quality = fqDraft
         HideSelection = False
-        IconOptions.WrapText = False
+        Images = imgList
         MultiSelect = True
         ParentFont = False
         ReadOnly = True
-        ShowColumnHeaders = False
-        SmallImages = imgList
+        ShowLines = False
+        ShowRoot = False
         TabOrder = 0
-        ViewStyle = vsReport
+        Options = [tvoAllowMultiselect, tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoToolTips, tvoThemedDraw]
       end
     end
   end

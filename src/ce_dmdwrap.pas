@@ -158,7 +158,7 @@ type
   end;
 
   (*****************************************************************************
-   * Encapsulates the options/args related to the debuging
+   * Encapsulates the options/args related to the debugging
    *)
   TDebugOpts = class(TOptsGroup)
   private

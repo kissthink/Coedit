@@ -51,6 +51,10 @@ type
     // if not re-called during 'updaterByDelayDuration' ms then
     // 'UpdateByDelay' is called once.
     procedure beginUpdateByDelay;
+    // prevent any pending update.
+    procedure stopUpdateByDelay;
+    // immediate call any pending update.
+    procedure endUpdatebyDelay;
     // increments the updates count.
     procedure beginUpdateByEvent;
     // decrements the update count and call 'UpdateByEvent' if the
@@ -67,6 +71,8 @@ type
     procedure projNew(const aProject: TCEProject); virtual;
     procedure projChange(const aProject: TCEProject); virtual;
     procedure projClose(const aProject: TCEProject); virtual;
+    procedure projCompile(const aProject: TCEProject); virtual;
+    procedure projRun(const aProject: TCEProject); virtual;
     procedure projFocused(const aProject: TCEProject); virtual;
     //
     function contextName: string; virtual;
@@ -185,6 +191,16 @@ begin
   fUpdaterDelay.OnTimer := @updaterLatchProc;
 end;
 
+procedure TCEWidget.stopUpdateByDelay;
+begin
+  fUpdaterDelay.OnTimer := nil;
+end;
+
+procedure TCEWidget.endUpdateByDelay;
+begin
+  updaterLatchProc(nil);
+end;
+
 procedure TCEWidget.updaterAutoProc(Sender: TObject);
 begin
   fUpdating := true;
@@ -221,6 +237,14 @@ begin
 end;
 
 procedure TCEWidget.projClose(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projCompile(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projRun(const aProject: TCEProject);
 begin
 end;
 

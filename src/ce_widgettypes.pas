@@ -37,7 +37,10 @@ type
     procedure projNew(const aProject: TCEProject);
     procedure projChange(const aProject: TCEProject);
     procedure projClose(const aProject: TCEProject);
-    // not used yet.
+    procedure projCompile(const aProject: TCEProject);
+    procedure projRun(const aProject: TCEProject);
+
+    // not used yet: (project group)
     procedure projFocused(const aProject: TCEProject);
   end;
 

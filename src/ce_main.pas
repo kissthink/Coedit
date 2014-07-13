@@ -837,7 +837,7 @@ begin
     end;
     Str.SetSize(readSz);
     lns.LoadFromStream(Str);
-    for msg in lns do fMesgWidg.addMessage(msg);
+    for msg in lns do fMesgWidg.addMessage(msg); // proj/file ?
   finally
     str.Free;
     lns.Free;
@@ -858,7 +858,7 @@ begin
   getDir(0, olddir);
   try
 
-    fMesgWidg.addCeInf( 'compiling ' + fEditWidg.editor[edIndex].fileName );
+    fMesgWidg.addCeInf( 'compiling ' + fEditWidg.editor[edIndex].fileName, msEditor );
 
     temppath := GetTempDir(false);
     chDir(temppath);
@@ -891,7 +891,7 @@ begin
     begin
 
       fMesgWidg.addCeInf( fEditWidg.editor[edIndex].fileName
-        + ' successfully compiled' );
+        + ' successfully compiled', msEditor );
 
       runproc.Options:= [poStderrToOutPut, poUsePipes];
       {$IFDEF MSWINDOWS}
@@ -913,7 +913,7 @@ begin
     end
     else
       fMesgWidg.addCeErr( fEditWidg.editor[edIndex].fileName
-        + ' has not been compiled' );
+        + ' has not been compiled', msEditor );
 
   finally
     dmdproc.Free;
@@ -927,13 +927,17 @@ var
   dmdproc: TProcess;
   ppproc: TProcess;
   olddir, prjpath: string;
+  i: NativeInt;
 begin
 
-  fMesgWidg.Clear;
+  fMesgWidg.ClearMessages(msProject);
+
+  for i := 0 to fWidgList.Count-1 do
+    fWidgList.widget[i].projCompile(aProject);
 
   if aProject.Sources.Count = 0 then
   begin
-    fMesgWidg.addCeErr( aProject.fileName + ' has no source files' );
+    fMesgWidg.addCeErr( aProject.fileName + ' has no source files', msProject);
     exit;
   end;
 
@@ -950,7 +954,7 @@ begin
           ppproc.Free;
         end;
       end
-      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist');
+      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', msProject);
   end;
 
   olddir := '';
@@ -959,7 +963,7 @@ begin
   try
 
 
-    fMesgWidg.addCeInf( 'compiling ' + aProject.fileName );
+    fMesgWidg.addCeInf( 'compiling ' + aProject.fileName, msProject);
 
     prjpath := extractFilePath(aProject.fileName);
     if directoryExists(prjpath) then chDir(prjpath);
@@ -982,10 +986,10 @@ begin
       if dmdProc.ExitStatus = 0 then
       {$ENDIF}
         fMesgWidg.addCeInf( aProject.fileName
-          + ' successfully compiled' )
+          + ' successfully compiled', msProject)
       else
         fMesgWidg.addCeErr( aProject.fileName
-          + ' has not been compiled' );
+          + ' has not been compiled', msProject);
     end;
 
     with fProject.currentConfiguration do
@@ -1001,7 +1005,7 @@ begin
             ppproc.Free;
           end;
         end
-        else fMesgWidg.addCeWarn('the post-compilation executable does not exist');
+        else fMesgWidg.addCeWarn('the post-compilation executable does not exist', msProject);
     end;
 
   finally
@@ -1014,9 +1018,13 @@ procedure TCEMainForm.runProject(const aProject: TCEProject; const runArgs: stri
 var
   runproc: TProcess;
   procname: string;
+  i: NativeInt;
 begin
   if aProject.currentConfiguration.outputOptions.binaryKind <>
     executable then exit;
+
+  for i := 0 to fWidgList.Count-1 do
+    fWidgList.widget[i].projRun(aProject);
 
   runproc := TProcess.Create(nil);
   try
@@ -1040,12 +1048,11 @@ begin
 
     if not fileExists(procname) then
     begin
-      fMesgWidg.addCeErr('output executable missing: ' + procname);
+      fMesgWidg.addCeErr('output executable missing: ' + procname, msProject);
       exit;
     end;
 
     runproc.Executable := procname;
-    //runproc.Parameters.Text := runArgs;
     runproc.Execute;
     while runproc.Running do if runproc.ExitStatus <> 0 then break;
     ProcessOutputToMsg(runproc);
