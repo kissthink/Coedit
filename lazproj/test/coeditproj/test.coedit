@@ -24,13 +24,24 @@ object _1: TCEProject
       outputOptions.binaryKind = executable
       outputOptions.inlining = False
       outputOptions.noBoundsCheck = False
+      outputOptions.boundsCheck = onAlways
       outputOptions.optimizations = False
       outputOptions.generateStackFrame = False
       outputOptions.addMain = False
       outputOptions.release = False
       outputOptions.unittest = True
-      outputOptions.versionIdentifier = 'revision_1'
+      outputOptions.versionIdentifiers.Strings = (
+        'revision_1'
+      )
       pathsOptions.outputFilename = '..\output\main.exe'
+      preBuildProcess.executable = 'C:\Dev\pasproj\Coedit\lazproj\test\coeditproj\pre.bat'
+      preBuildProcess.options = [poWaitOnExit]
+      preBuildProcess.showWindow = swoNone
+      postBuildProcess.executable = 'C:\Dev\pasproj\Coedit\lazproj\test\coeditproj\post.bat'
+      postBuildProcess.options = [poWaitOnExit]
+      postBuildProcess.showWindow = swoNone
+      runOptions.options = []
+      runOptions.showWindow = swoNone
     end  
     item
       name = 'alternative'
@@ -53,6 +64,7 @@ object _1: TCEProject
       outputOptions.binaryKind = executable
       outputOptions.inlining = True
       outputOptions.noBoundsCheck = True
+      outputOptions.boundsCheck = onAlways
       outputOptions.optimizations = True
       outputOptions.generateStackFrame = False
       outputOptions.addMain = False
@@ -60,11 +72,17 @@ object _1: TCEProject
       outputOptions.unittest = True
       outputOptions.versionIdentifier = 'revision_1'
       pathsOptions.outputFilename = '..\output\main.exe'
+      preBuildProcess.options = []
+      preBuildProcess.showWindow = swoNone
+      postBuildProcess.options = []
+      postBuildProcess.showWindow = swoNone
+      runOptions.options = []
+      runOptions.showWindow = swoNone
     end>
   Sources.Strings = (
     '..\src\main.d'
-    '..\src\bar.d'
-    '..\src\foo.d'
+    '..\src\barclass.d'
+    '..\src\fooclass.d'
   )
   ConfigurationIndex = 0
 end

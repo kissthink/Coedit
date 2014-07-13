@@ -5,7 +5,7 @@ unit ce_common;
 interface
 
 uses
-  Classes, SysUtils, ActnList, dialogs, forms, controls;
+  Classes, SysUtils, ActnList, dialogs, forms, process;
 
 const
 
@@ -43,6 +43,14 @@ type
   end;
 
   (**
+   *  TProcess with assign() overriden.
+   *)
+  TProcessEx = class helper for TProcess
+  public
+    procedure Assign(aValue: TPersistent);
+  end;
+
+  (**
    * Save a component with a readable aspect.
    *)
   procedure saveCompToTxtFile(const aComp: TComponent; const aFilename: string);
@@ -50,7 +58,8 @@ type
   (**
    * Load a component.
    *)
-  procedure loadCompFromTxtFile(const aComp: TComponent; const aFilename: string);
+  procedure loadCompFromTxtFile(const aComp: TComponent; const aFilename: string;
+    aPropNotFoundHandler: TPropertyNotFoundEvent = nil; anErrorHandler: TReaderError = nil);
 
   (**
    * Converts a relative path to an absolute path.
@@ -62,31 +71,62 @@ type
    * This is used to ensure that a project saved on a platform can be loaded
    * on another one.
    *)
-   function patchPlateformPath(const aPath: string): string;
-   procedure patchPlateformPaths(const sPaths: TStrings);
+  function patchPlateformPath(const aPath: string): string;
+  procedure patchPlateformPaths(const sPaths: TStrings);
 
-   (**
-    * Ok/Cancel modal dialog
-    *)
-   function dlgOkCancel(const aMsg: string): TModalResult;
+  (**
+   * Ok/Cancel modal dialog
+   *)
+  function dlgOkCancel(const aMsg: string): TModalResult;
 
-   (**
-    * Info dialog
-    *)
-   function dlgOkInfo(const aMsg: string): TModalResult;
+  (**
+   * Info dialog
+   *)
+  function dlgOkInfo(const aMsg: string): TModalResult;
 
-   (**
-    * Returns an unique object identifier, based on its heap address.
-    *)
-   function uniqueObjStr(const aObject: Tobject): string;
+  (**
+   * Returns an unique object identifier, based on its heap address.
+   *)
+  function uniqueObjStr(const aObject: Tobject): string;
 
-   (**
-    * Reduce a filename if its length is over the threshold defined by charThresh.
-    * Even if the result is not usable anymore, it avoids any "visually-overloaded" MRU menus.
-    *)
-   function displayShortFilename(const aPath: string; charThresh: Word = 80): string;
+  (**
+   * Reduces a filename if its length is over the threshold defined by charThresh.
+   * Even if the result is not usable anymore, it avoids any "visually-overloaded" MRU menu.
+   *)
+  function shortenPath(const aPath: string; charThresh: Word = 80): string;
 
 implementation
+
+procedure TProcessEx.Assign(aValue: TPersistent);
+var
+  src: TProcess;
+begin
+  if aValue is TProcess then
+  begin
+    src := TProcess(aValue);
+    PipeBufferSize := src.PipeBufferSize;
+    Active := src.Active;
+    Executable := src.Executable;
+    Parameters := src.Parameters;
+    ConsoleTitle := src.ConsoleTitle;
+    CurrentDirectory := src.CurrentDirectory;
+    Desktop := src.Desktop;
+    Environment := src.Environment;
+    Options := src.Options;
+    Priority := src.Priority;
+    StartupOptions := src.StartupOptions;
+    ShowWindow := src.ShowWindow;
+    WindowColumns := src.WindowColumns;
+    WindowHeight := src.WindowHeight;
+    WindowLeft := src.WindowLeft;
+    WindowRows := src.WindowRows;
+    WindowTop := src.WindowTop;
+    WindowWidth := src.WindowWidth;
+    FillAttribute := src.FillAttribute;
+    XTermProgram := src.XTermProgram;
+  end
+  else inherited;
+end;
 
 constructor TMRUList.Create;
 begin
@@ -153,9 +193,11 @@ begin
   end;
 end;
 
-procedure loadCompFromTxtFile(const aComp: TComponent; const aFilename: string);
+procedure loadCompFromTxtFile(const aComp: TComponent; const aFilename: string;
+  aPropNotFoundHandler: TPropertyNotFoundEvent = nil; anErrorHandler: TReaderError = nil);
 var
   str1, str2: TMemoryStream;
+  rdr: TReader;
 begin
   str1 := TMemoryStream.Create;
   str2 := TMemoryStream.Create;
@@ -165,7 +207,14 @@ begin
     ObjectTextToBinary(str1,str2);
     str2.Position := 0;
     try
-      str2.ReadComponent(aComp);
+      rdr := TReader.Create(str2, 4096);
+      try
+        rdr.OnPropertyNotFound := aPropNotFoundHandler;
+        rdr.OnError := anErrorHandler;
+        rdr.ReadRootComponent(aComp);
+      finally
+        rdr.Free;
+      end;
     except
     end;
   finally
@@ -260,7 +309,7 @@ begin
   {$HINTS ON}{$WARNINGS ON}
 end;
 
-function displayShortFilename(const aPath: string; charThresh: Word = 80): string;
+function shortenPath(const aPath: string; charThresh: Word = 80): string;
 var
   i: NativeInt;
   sepCnt: NativeInt;

@@ -157,7 +157,10 @@ begin
     5: exit( fProj.currentConfiguration.outputOptions );
     6: exit( fProj.currentConfiguration.otherOptions );
     7: exit( fProj.currentConfiguration.pathsOptions );
-    8: exit( fProj.currentConfiguration );
+    8: exit( fProj.currentConfiguration.preBuildProcess );
+    9: exit( fProj.currentConfiguration.postBuildProcess );
+    10: exit( fProj.currentConfiguration.runOptions );
+    11: exit( fProj.currentConfiguration );
     else result := nil;
   end;
 end;

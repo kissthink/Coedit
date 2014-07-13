@@ -1,7 +1,7 @@
 inherited CEMessagesWidget: TCEMessagesWidget
-  Left = 1143
+  Left = 621
   Height = 172
-  Top = 511
+  Top = 659
   Width = 744
   Caption = 'Messages'
   ClientHeight = 172

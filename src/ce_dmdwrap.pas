@@ -5,7 +5,7 @@ unit ce_dmdwrap;
 interface
 
 uses
-  classes, sysutils;
+  classes, sysutils, process;
 
 (*
 
@@ -239,6 +239,55 @@ type
   end;
 
   (*****************************************************************************
+   * Encapsulates the most common TProcess options.
+   * Used to simplify pre/post-compilation and run process options.
+   *)
+  TCustomProcOptions = class(TOptsGroup)
+  private
+    fExecutable: string;
+    fOptions: TProcessOptions;
+    fParameters: TStringList;
+    fShowWin: TShowWindowOptions;
+    procedure setExecutable(const aValue: string);
+    procedure setOptions(const aValue: TProcessOptions);
+    procedure setParameters(const aValue: TStringList);
+    procedure setShowWin(const aValue: TShowWindowOptions);
+  protected
+    property executable: string read fExecutable write setExecutable;
+    property options: TProcessOptions read fOptions write setOptions;
+    property parameters: TStringList read fParameters write setParameters;
+    property showWindow: TShowWindowOptions read fShowWin write setShowWin;
+  public
+    constructor create;
+    destructor destroy; override;
+    procedure assign(source: TPersistent); override;
+    procedure getOpts(const aList: TStrings); override;
+    procedure setProcess(const aProcess: TProcess);
+  end;
+
+  (*****************************************************************************
+   * Encapsulates the options for the pre/post compilation processes
+   *)
+  TCompileProcOptions = class(TCustomProcOptions)
+  published
+    property executable;
+    property options;
+    property parameters;
+    property showWindow;
+  end;
+
+  (*****************************************************************************
+   * Encapsulates the options for the project run process.
+   * 'executable' prop is hidden since it's defined by the project.
+   *)
+  TProjectRunOptions = class(TCustomProcOptions)
+  published
+    property options;
+    property parameters;
+    property showWindow;
+  end;
+
+  (*****************************************************************************
    * Encapsulates all the contextual options/args
    *)
   TCompilerConfiguration = class(TCollectionItem)
@@ -251,6 +300,9 @@ type
     fOutputOpts: TOutputOpts;
     fPathsOpts: TPathsOpts;
     fOthers: TOtherOpts;
+    fPreProcOpt: TCompileProcOptions;
+    fPostProcOpt: TCompileProcOptions;
+    fRunProjOpt: TProjectRunOptions;
     procedure doChanged;
     procedure subOptsChanged(sender: TObject);
     procedure setName(const aValue: string);
@@ -260,6 +312,9 @@ type
     procedure setOutputOpts(const aValue: TOutputOpts);
     procedure setPathsOpts(const aValue: TPathsOpts);
     procedure setOthers(const aValue: TOtherOpts);
+    procedure setPreProcOpt(const aValue: TCompileProcOptions);
+    procedure setPostProcOpt(const aValue: TCompileProcOptions);
+    procedure setRunProjOpt(const aValue: TProjectRunOptions);
   protected
     function nameFromID: string;
   published
@@ -270,6 +325,9 @@ type
     property outputOptions: TOutputOpts read fOutputOpts write setOutputOpts;
     property pathsOptions: TPathsOpts read fPathsOpts write setPathsOpts;
     property otherOptions: TOtherOpts read fOthers write setOthers;
+    property preBuildProcess: TCompileProcOptions read fPreProcOpt write setPreProcOpt;
+    property postBuildProcess: TCompileProcOptions read fPostProcOpt write setPostProcOpt;
+    property runOptions: TProjectRunOptions read fRunProjOpt write setRunProjOpt;
   public
     constructor create(aCollection: TCollection); override;
     destructor destroy; override;
@@ -281,7 +339,7 @@ type
 implementation
 
 uses
-  ce_common;
+  ce_common, ce_main;
 
 procedure TOptsGroup.doChanged;
 begin
@@ -851,6 +909,74 @@ begin
 end;
 {$ENDREGION}
 
+{$REGION TCustomProcOptions ****************************************************}
+constructor TCustomProcOptions.create;
+begin
+  fParameters := TStringList.Create;
+end;
+
+destructor TCustomProcOptions.destroy;
+begin
+  fParameters.Free;
+  inherited;
+end;
+
+procedure TCustomProcOptions.assign(source: TPersistent);
+var
+  src: TCustomProcOptions;
+begin
+  if source is TCustomProcOptions then
+  begin
+    src := TCustomProcOptions(source);
+    fParameters.Assign(src.fParameters);
+    fOptions := src.fOptions;
+    fExecutable := src.fExecutable;
+    fShowWin := src.fShowWin;
+  end
+  else inherited;
+end;
+
+procedure TCustomProcOptions.getOpts(const aList: TStrings);
+begin
+end;
+
+procedure TCustomProcOptions.setProcess(const aProcess: TProcess);
+begin
+  aProcess.Parameters := fParameters;
+  aProcess.Executable := fExecutable;
+  aProcess.ShowWindow := fShowWin;
+  aProcess.Options    := fOptions;
+  aProcess.StartupOptions := aProcess.StartupOptions + [suoUseShowWindow];
+end;
+
+procedure TCustomProcOptions.setExecutable(const aValue: string);
+begin
+  if fExecutable = aValue then exit;
+  fExecutable := aValue;
+  doChanged;
+end;
+
+procedure TCustomProcOptions.setOptions(const aValue: TProcessOptions);
+begin
+  if fOptions = aValue then exit;
+  fOptions := aValue;
+  doChanged;
+end;
+
+procedure TCustomProcOptions.setParameters(const aValue: TStringList);
+begin
+  fParameters.Assign(aValue);
+  doChanged;
+end;
+
+procedure TCustomProcOptions.setShowWin(const aValue: TShowWindowOptions);
+begin
+  if fShowWin = aValue then exit;
+  fShowWin := aValue;
+  doChanged;
+end;
+{$ENDREGION}
+
 {$REGION TCompilerConfiguration ************************************************}
 constructor TCompilerConfiguration.create(aCollection: TCollection);
 begin
@@ -862,6 +988,9 @@ begin
   fOutputOpts := TOutputOpts.create;
   fPathsOpts  := TPathsOpts.create;
   fOthers     := TOtherOpts.create;
+  fPreProcOpt := TCompileProcOptions.create;
+  fPostProcOpt:= TCompileProcOptions.create;
+  fRunProjOpt := TProjectRunOptions.create;
 
   fDocOpts.onChange     := @subOptsChanged;
   fDebugOpts.onChange   := @subOptsChanged;
@@ -869,6 +998,9 @@ begin
   fOutputOpts.onChange  := @subOptsChanged;
   fPathsOpts.onChange   := @subOptsChanged;
   fOthers.onChange      := @subOptsChanged;
+  fPreProcOpt.onChange  := @subOptsChanged;
+  fPostProcOpt.onChange := @subOptsChanged;
+  fRunProjOpt.onChange  := @subOptsChanged;
 
   fName := nameFromID;
 end;
@@ -882,6 +1014,9 @@ begin
   fOutputOpts.free;
   fPathsOpts.free;
   fOthers.free;
+  fPreProcOpt.free;
+  fPostProcOpt.free;
+  fRunProjOpt.Free;
   inherited;
 end;
 
@@ -898,6 +1033,9 @@ begin
     fOutputOpts.assign(src.fOutputOpts);
     fPathsOpts.assign(src.fPathsOpts);
     fOthers.assign(src.fOthers);
+    fPreProcOpt.assign(src.fPreProcOpt);
+    fPostProcOpt.assign(src.fPostProcOpt);
+    fRunProjOpt.assign(src.fRunProjOpt);
   end
   else inherited;
 end;
@@ -966,9 +1104,24 @@ procedure TCompilerConfiguration.setOthers(const aValue: TOtherOpts);
 begin
   fOthers.Assign(aValue);
 end;
+
+procedure TCompilerConfiguration.setPreProcOpt(const aValue: TCompileProcOptions);
+begin
+  fPreProcOpt.assign(aValue);
+end;
+
+procedure TCompilerConfiguration.setPostProcOpt(const aValue: TCompileProcOptions);
+begin
+  fPostProcOpt.assign(aValue);
+end;
+
+procedure TCompilerConfiguration.setRunProjOpt(const aValue: TProjectRunOptions);
+begin
+  fRunProjOpt.assign(aValue);
+end;
 {$ENDREGION}
 
 initialization
-  RegisterClasses([TCompilerConfiguration, TOtherOpts, TPathsOpts,
-    TDebugOpts, TOutputOpts, TMsgOpts, TDocOpts]);
+  RegisterClasses([TOtherOpts, TPathsOpts, TDebugOpts, TOutputOpts, TMsgOpts,
+    TDocOpts, TCompileProcOptions, TProjectRunOptions, TCompilerConfiguration]);
 end.

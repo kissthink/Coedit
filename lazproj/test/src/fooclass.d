@@ -1,4 +1,4 @@
-module foo;
+module fooclass;
 
 import std.stdio;
 

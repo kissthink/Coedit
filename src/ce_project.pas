@@ -4,8 +4,6 @@ unit ce_project;
 
 interface
 
-// TODO: pre/post compilation shell-script / process
-// TODO: run opts, newConsole, catch output, etc
 // TODO: configuration templates
 
 uses
@@ -39,6 +37,10 @@ type
     procedure setConfIx(aValue: Integer);
     function getConfig(const ix: integer): TCompilerConfiguration;
     function getCurrConf: TCompilerConfiguration;
+    procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
+      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+    procedure readerError(Reader: TReader; const Message: string;
+      var Handled: Boolean);
   published
     property OptionsCollection: TCollection read fOptsColl write setOptsColl;
     property Sources: TStringList read fSrcs write setSrcs; // 'read' should return a copy to avoid abs/rel errors
@@ -67,7 +69,7 @@ type
 implementation
 
 uses
-  ce_common;
+  ce_common, dialogs;
 
 constructor TCEProject.create(aOwner: TComponent);
 begin
@@ -264,10 +266,24 @@ end;
 procedure TCEProject.loadFromFile(const aFilename: string);
 begin
   Filename := aFilename;
-  loadCompFromTxtFile(self, aFilename);
+  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
   patchPlateformPaths(fSrcs);
   doChanged;
   fModified := false;
+end;
+
+procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;
+      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+begin
+  // continue loading: this method grants the project compat. in case of drastical changes.
+  Skip := true;
+  Handled := true;
+end;
+
+procedure TCEProject.readerError(Reader: TReader; const Message: string;
+  var Handled: Boolean);
+begin
+  Handled := true;
 end;
 
 initialization

@@ -161,6 +161,7 @@ begin
   memo.OnMouseMove := @memoMouseMove;
   //
   pageControl.ActivePage := sheet;
+
   //http://bugs.freepascal.org/view.php?id=26320
   focusedEditorChanged;
 end;

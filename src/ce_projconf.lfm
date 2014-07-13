@@ -1,24 +1,24 @@
 inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
-  Left = 1323
-  Height = 277
-  Top = 600
-  Width = 450
+  Left = 1394
+  Height = 383
+  Top = 480
+  Width = 445
   Caption = 'Project configuration'
-  ClientHeight = 277
-  ClientWidth = 450
+  ClientHeight = 383
+  ClientWidth = 445
   inherited Back: TPanel
-    Height = 277
-    Width = 450
-    ClientHeight = 277
-    ClientWidth = 450
+    Height = 383
+    Width = 445
+    ClientHeight = 383
+    ClientWidth = 445
     inherited Content: TPanel
-      Height = 277
-      Width = 450
-      ClientHeight = 277
-      ClientWidth = 450
+      Height = 383
+      Width = 445
+      ClientHeight = 383
+      ClientWidth = 445
       object Tree: TTreeView[0]
         Left = 4
-        Height = 243
+        Height = 349
         Hint = 'filter configuration elements'
         Top = 30
         Width = 125
@@ -37,7 +37,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
         Options = [tvoAutoExpand, tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
         Items.Data = {
           F9FFFFFF020003000000FFFFFFFFFFFFFFFF01000000FFFFFFFF000000000000
-          0000000700000047656E6572616CFFFFFFFFFFFFFFFF02000000FFFFFFFF0600
+          0000000700000047656E6572616CFFFFFFFFFFFFFFFF02000000FFFFFFFF0900
           000000000000010A00000043617465676F72696573FFFFFFFFFFFFFFFF020000
           00FFFFFFFF000000000000000000080000004D65737361676573FFFFFFFFFFFF
           FFFF03000000FFFFFFFF000000000000000000080000004465627567696E67FF
@@ -46,26 +46,33 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           0000060000004F7574707574FFFFFFFFFFFFFFFF06000000FFFFFFFF00000000
           0000000000060000004F7468657273FFFFFFFFFFFFFFFF07000000FFFFFFFF00
           0000000000000000050000005061746873FFFFFFFFFFFFFFFF08000000FFFFFF
-          FF0000000000000000000E000000416C6C2063617465676F72696573
+          FF000000000000000000110000005072652D6275696C642070726F63657373FF
+          FFFFFFFFFFFFFF09000000FFFFFFFF00000000000000000012000000506F7374
+          2D6275696C642070726F63657373FFFFFFFFFFFFFFFF0A000000FFFFFFFF0000
+          000000000000000B00000052756E206F7074696F6E73FFFFFFFFFFFFFFFF0B00
+          0000FFFFFFFF0000000000000000000E000000416C6C2063617465676F726965
+          73
         }
       end
       object Panel1: TPanel[1]
-        Left = 2
+        Left = 4
         Height = 24
         Top = 2
-        Width = 446
+        Width = 437
         Align = alTop
+        BorderSpacing.Left = 2
+        BorderSpacing.Right = 2
         BorderSpacing.Around = 2
         BevelOuter = bvNone
         ClientHeight = 24
-        ClientWidth = 446
+        ClientWidth = 437
         TabOrder = 1
         object selConf: TComboBox
           Left = 0
           Height = 23
           Hint = 'select a configuration'
           Top = 1
-          Width = 355
+          Width = 346
           Align = alClient
           BorderSpacing.Top = 1
           BorderSpacing.Right = 1
@@ -75,7 +82,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           TabOrder = 0
         end
         object btnAddConf: TSpeedButton
-          Left = 356
+          Left = 347
           Height = 24
           Hint = 'add an empty configuration'
           Top = 0
@@ -121,7 +128,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnDelConf: TSpeedButton
-          Left = 386
+          Left = 377
           Height = 24
           Hint = 'remove selected configuration'
           Top = 0
@@ -167,7 +174,7 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
           ShowCaption = False
         end
         object btnCloneConf: TSpeedButton
-          Left = 416
+          Left = 407
           Height = 24
           Hint = 'clone selected configuration'
           Top = 0
@@ -215,15 +222,15 @@ inherited CEProjectConfigurationWidget: TCEProjectConfigurationWidget
       end
       object Splitter1: TSplitter[2]
         Left = 129
-        Height = 249
+        Height = 355
         Top = 28
         Width = 5
       end
       object Grid: TTIPropertyGrid[3]
         Left = 134
-        Height = 243
+        Height = 349
         Top = 30
-        Width = 312
+        Width = 307
         Align = alClient
         BorderSpacing.Top = 4
         BorderSpacing.Right = 4

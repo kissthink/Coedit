@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage,
+  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, asyncprocess,
   ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
   ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search;
 
@@ -239,6 +239,7 @@ type
     property MessageWidget: TCEMessagesWidget read fMesgWidg;
     property EditWidget: TCEEditorWidget read fEditWidg;
     property ProjectWidget: TCEProjectInspectWidget read fProjWidg;
+    property ProjectConfWidget: TCEProjectConfigurationWidget read fPrjCfWidg;
   end;
 
 var
@@ -482,7 +483,7 @@ begin
     begin
       itm := TMenuItem.Create(trgMnu);
       itm.Hint := fname;
-      itm.Caption := displayShortFilename(fname, 50);
+      itm.Caption := shortenPath(fname, 50);
       itm.OnClick := clickTrg;
       trgMnu.Add(itm);
     end;
@@ -924,8 +925,11 @@ end;
 procedure TCEMainForm.compileProject(const aProject: TCEProject);
 var
   dmdproc: TProcess;
+  ppproc: TProcess;
   olddir, prjpath: string;
 begin
+
+  fMesgWidg.Clear;
 
   if aProject.Sources.Count = 0 then
   begin
@@ -933,12 +937,28 @@ begin
     exit;
   end;
 
+  with fProject.currentConfiguration do
+  begin
+    if preBuildProcess.executable <> '' then
+      if fileExists(preBuildProcess.Executable) then
+      begin
+        ppproc := TProcess.Create(nil);
+        try
+          preBuildProcess.setProcess(ppproc);
+          ppproc.Execute;
+        finally
+          ppproc.Free;
+        end;
+      end
+      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist');
+  end;
+
   olddir := '';
   dmdproc := TProcess.Create(nil);
   getDir(0, olddir);
   try
 
-    fMesgWidg.Clear;
+
     fMesgWidg.addCeInf( 'compiling ' + aProject.fileName );
 
     prjpath := extractFilePath(aProject.fileName);
@@ -968,6 +988,22 @@ begin
           + ' has not been compiled' );
     end;
 
+    with fProject.currentConfiguration do
+    begin
+      if postBuildProcess.executable <> '' then
+        if fileExists(postBuildProcess.Executable) then
+        begin
+          ppproc := TProcess.Create(nil);
+          try
+            postBuildProcess.setProcess(ppproc);
+            ppproc.Execute;
+          finally
+            ppproc.Free;
+          end;
+        end
+        else fMesgWidg.addCeWarn('the post-compilation executable does not exist');
+    end;
+
   finally
     dmdproc.Free;
     chDir(olddir);
@@ -984,7 +1020,10 @@ begin
 
   runproc := TProcess.Create(nil);
   try
-    runproc.Options := [poNewConsole, poStdErrToOutput];
+    runproc.Options := aProject.currentConfiguration.runOptions.options;
+    runproc.Parameters := aProject.currentConfiguration.runOptions.parameters;
+    runproc.ShowWindow := aProject.currentConfiguration.runOptions.showWindow;
+    runproc.Parameters.AddText(runArgs);
 
     procname := aProject.currentConfiguration.pathsOptions.outputFilename;
     if procname <> '' then procname := aProject.getAbsoluteFilename(procname)
@@ -1006,9 +1045,10 @@ begin
     end;
 
     runproc.Executable := procname;
-    runproc.Parameters.Text := runArgs;
+    //runproc.Parameters.Text := runArgs;
     runproc.Execute;
     while runproc.Running do if runproc.ExitStatus <> 0 then break;
+    ProcessOutputToMsg(runproc);
 
   finally
     runproc.Free;
@@ -1104,7 +1144,7 @@ begin
   //
   aEditor.modified := false;
   aEditor.Lines.SaveToFile(fProject.fileName);
-  self.openProj(fProject.fileName);
+  openProj(fProject.fileName);
 end;
 
 procedure TCEMainForm.closeProj;
@@ -1361,4 +1401,6 @@ begin
 end;
 {$ENDREGION}
 
+initialization
+  RegisterClasses([TCEOptions]);
 end.

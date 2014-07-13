@@ -12,7 +12,6 @@ uses
 type
 
   { TCESearchWidget }
-
   TCESearchWidget = class(TCEWidget)
     btnFind: TBitBtn;
     btnReplace: TBitBtn;

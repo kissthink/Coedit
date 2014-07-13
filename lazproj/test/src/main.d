@@ -10,18 +10,24 @@ Test:
 module main;
 
 import std.stdio;
-import foo;
-import bar;
+import fooclass;
+import barclass;
 
 void main(string args[])
 {
-    auto ffoo = new Foo;
-    auto bbar = new Bar;
+    auto foo = new Foo;
+    auto bar = new Bar;
 
     scope(exit)
     {
-        delete ffoo;
-        delete bbar;
+        delete foo;
+        delete bar;
     }
-    readln;
+    // if not UsePipes in RunOptions
+    // then:
+    // readln;
+    // (input is passed thru the new console)
+
+    // else: input is not handled so readln will hang Coedit until
+    // the new process is manually killed
 }
