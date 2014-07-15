@@ -245,15 +245,18 @@ type
   TCustomProcOptions = class(TOptsGroup)
   private
     fExecutable: string;
+    fWorkDir: string;
     fOptions: TProcessOptions;
     fParameters: TStringList;
     fShowWin: TShowWindowOptions;
     procedure setExecutable(const aValue: string);
+    procedure setWorkDir(const aValue: string);
     procedure setOptions(const aValue: TProcessOptions);
     procedure setParameters(const aValue: TStringList);
     procedure setShowWin(const aValue: TShowWindowOptions);
   protected
     property executable: string read fExecutable write setExecutable;
+    property workingDirectory: string read fWorkDir write setWorkDir;
     property options: TProcessOptions read fOptions write setOptions;
     property parameters: TStringList read fParameters write setParameters;
     property showWindow: TShowWindowOptions read fShowWin write setShowWin;
@@ -271,6 +274,7 @@ type
   TCompileProcOptions = class(TCustomProcOptions)
   published
     property executable;
+    property workingDirectory;
     property options;
     property parameters;
     property showWindow;
@@ -282,6 +286,7 @@ type
    *)
   TProjectRunOptions = class(TCustomProcOptions)
   published
+    property workingDirectory;
     property options;
     property parameters;
     property showWindow;
@@ -523,7 +528,7 @@ var
 const
   trgKindStr: array[TTargetSystem] of string = ('', '-m32','-m64');
   binKindStr: array[TBinaryKind] of string = ('', '-lib', '-shared', '-c');
-  bchKindStr: array[TBoundCheckKind] of string = ('on', 'safeonly', 'off');
+  //bchKindStr: array[TBoundCheckKind] of string = ('on', 'safeonly', 'off');
 begin
   depPatch;
   //
@@ -946,6 +951,7 @@ begin
   aProcess.Executable := fExecutable;
   aProcess.ShowWindow := fShowWin;
   aProcess.Options    := fOptions;
+  aProcess.CurrentDirectory := fWorkDir;
   aProcess.StartupOptions := aProcess.StartupOptions + [suoUseShowWindow];
 end;
 
@@ -953,6 +959,13 @@ procedure TCustomProcOptions.setExecutable(const aValue: string);
 begin
   if fExecutable = aValue then exit;
   fExecutable := aValue;
+  doChanged;
+end;
+
+procedure TCustomProcOptions.setWorkDir(const aValue: string);
+begin
+  if fWorkDir = aValue then exit;
+  fWorkDir := aValue;
   doChanged;
 end;
 

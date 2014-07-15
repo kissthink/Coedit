@@ -18,6 +18,7 @@ type
     Tree: TTreeView;
     TreeFilterEdit1: TTreeFilterEdit;
     procedure TreeDeletion(Sender: TObject; Node: TTreeNode);
+    procedure TreeFilterEdit1AfterFilter(Sender: TObject);
     procedure TreeKeyPress(Sender: TObject; var Key: char);
   private
     fActRefresh: TAction;
@@ -32,6 +33,7 @@ type
     procedure TreeDblClick(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
     procedure actAutoRefreshExecute(Sender: TObject);
+    procedure updateVisibleCat;
   protected
     procedure UpdateByDelay; override;
   published
@@ -178,6 +180,26 @@ begin
     Dispose(PInt64(node.Data));
 end;
 
+procedure TCEStaticExplorerWidget.updateVisibleCat;
+begin
+  ndAlias.Visible := ndAlias.Count > 0;
+  ndClass.Visible := ndClass.Count > 0;
+  ndEnum.Visible := ndEnum.Count > 0;
+  ndFunc.Visible := ndFunc.Count > 0;
+  ndImp.Visible := ndImp.Count > 0;
+  ndIntf.Visible := ndIntf.Count > 0;
+  ndMix.Visible := ndMix.Count > 0;
+  ndStruct.Visible := ndStruct.Count > 0;
+  ndTmp.Visible := ndTmp.Count > 0;
+  ndVar.Visible := ndVar.Count > 0;
+end;
+
+procedure TCEStaticExplorerWidget.TreeFilterEdit1AfterFilter(Sender: TObject);
+begin
+  if TreeFilterEdit1.Filter ='' then
+    updateVisibleCat;
+end;
+
 procedure TCEStaticExplorerWidget.TreeKeyPress(Sender: TObject; var Key: char);
 begin
   if Key = #13 then TreeDblClick(nil);
@@ -244,16 +266,7 @@ begin
   ndTmp.DeleteChildren;
   ndVar.DeleteChildren;
 
-  ndAlias.Visible := false;
-  ndClass.Visible := false;
-  ndEnum.Visible := false;
-  ndFunc.Visible := false;
-  ndImp.Visible := false;
-  ndIntf.Visible := false;
-  ndMix.Visible := false;
-  ndStruct.Visible := false;
-  ndTmp.Visible := false;
-  ndVar.Visible := false;
+  updateVisibleCat;
 
   if fDoc = nil then exit;
   if fDoc.Lines.Count = 0 then exit;

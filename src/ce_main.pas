@@ -181,6 +181,7 @@ type
     procedure actEdUndoExecute(Sender: TObject);
     procedure actProjSourceExecute(Sender: TObject);
     procedure actEdUnIndentExecute(Sender: TObject);
+    procedure ApplicationProperties1Exception(Sender: TObject; E: Exception);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
     fUpdateCount: NativeInt;
@@ -200,7 +201,7 @@ type
     procedure widgetShowFromAction(sender: TObject);
 
     // run & exec sub routines
-    procedure ProcessOutputToMsg(const aProcess: TProcess);
+    procedure ProcessOutputToMsg(const aProcess: TProcess;aCtxt: TMessageContext = msUnknown);
     procedure compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
     procedure compileProject(const aProject: TCEProject);
     procedure runProject(const aProject: TCEProject; const runArgs: string = '');
@@ -350,6 +351,13 @@ begin
   fProject.Free;
   //
   inherited;
+end;
+
+procedure TCEMainForm.ApplicationProperties1Exception(Sender: TObject;E: Exception);
+begin
+  if fMesgWidg = nil then
+    ce_common.dlgOkError(E.Message)
+  else fMesgWidg.addCeErr(E.Message);
 end;
 
 procedure TCEMainForm.ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
@@ -808,11 +816,10 @@ begin
   curr := fEditWidg.currentEditor;
   if assigned(curr) then curr.ExecuteCommand(ecBlockUnIndent, '', nil);
 end;
-
 {$ENDREGION}
 
 {$REGION run  ******************************************************************}
-procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess);
+procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess; aCtxt: TMessageContext = msUnknown);
 var
   str: TMemoryStream;
   lns: TStringList;
@@ -837,7 +844,7 @@ begin
     end;
     Str.SetSize(readSz);
     lns.LoadFromStream(Str);
-    for msg in lns do fMesgWidg.addMessage(msg); // proj/file ?
+    for msg in lns do fMesgWidg.addMessage(msg, aCtxt);
   finally
     str.Free;
     lns.Free;
@@ -878,7 +885,7 @@ begin
     try
       dmdproc.Execute;
       while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(dmdproc);
+      ProcessOutputToMsg(dmdproc, msEditor);
     finally
       DeleteFile(fname + '.d');
     end;
@@ -896,13 +903,14 @@ begin
       runproc.Options:= [poStderrToOutPut, poUsePipes];
       {$IFDEF MSWINDOWS}
       runproc.Executable := fname + '.exe';
+      runproc.CurrentDirectory := extractFilePath(runProc.Executable);
       runproc.Parameters.Text := runArgs;
       {$ELSE}
       runproc.Executable := fname;
       {$ENDIF}
       runproc.Execute;
       while runproc.Running do if runproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(runproc);
+      ProcessOutputToMsg(runproc, msEditor);
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');
@@ -949,6 +957,8 @@ begin
         ppproc := TProcess.Create(nil);
         try
           preBuildProcess.setProcess(ppproc);
+          if ppproc.CurrentDirectory = '' then
+            ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
           ppproc.Execute;
         finally
           ppproc.Free;
@@ -978,7 +988,7 @@ begin
     try
       dmdproc.Execute;
       while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(dmdproc);
+      ProcessOutputToMsg(dmdproc, msProject);
     finally
       {$IFDEF MSWINDOWS} //  STILL_ACTIVE ambiguity
       if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
@@ -1000,6 +1010,8 @@ begin
           ppproc := TProcess.Create(nil);
           try
             postBuildProcess.setProcess(ppproc);
+            if ppproc.CurrentDirectory = '' then
+              ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
             ppproc.Execute;
           finally
             ppproc.Free;
@@ -1028,11 +1040,8 @@ begin
 
   runproc := TProcess.Create(nil);
   try
-    runproc.Options := aProject.currentConfiguration.runOptions.options;
-    runproc.Parameters := aProject.currentConfiguration.runOptions.parameters;
-    runproc.ShowWindow := aProject.currentConfiguration.runOptions.showWindow;
+    aProject.currentConfiguration.runOptions.setProcess(runProc);
     runproc.Parameters.AddText(runArgs);
-
     procname := aProject.currentConfiguration.pathsOptions.outputFilename;
     if procname <> '' then procname := aProject.getAbsoluteFilename(procname)
     else if aProject.Sources.Count > 0 then
@@ -1053,9 +1062,11 @@ begin
     end;
 
     runproc.Executable := procname;
+    if runproc.CurrentDirectory = '' then
+      runproc.CurrentDirectory := extractFilePath(runproc.Executable);
     runproc.Execute;
     while runproc.Running do if runproc.ExitStatus <> 0 then break;
-    ProcessOutputToMsg(runproc);
+    ProcessOutputToMsg(runproc, msProject);
 
   finally
     runproc.Free;

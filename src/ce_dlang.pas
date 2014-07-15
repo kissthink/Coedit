@@ -723,7 +723,7 @@ procedure checkSyntacticErrors(const aTokenList: TLexTokenList; const anErrorLis
 const
   errPrefix = 'syntactic error: ';
 var
-  tk, old1, old2: TLexToken;
+  tk, old1, old2, lastSig: TLexToken;
   err: PLexError;
   tkIndex: NativeInt;
   pareCnt, curlCnt, squaCnt: NativeInt;
@@ -746,6 +746,9 @@ begin
   pareLeft:= False;
   curlLeft:= False;
   squaLeft:= False;
+  FillByte( old1, sizeOf(TLexToken), 0);
+  FillByte( old2, sizeOf(TLexToken), 0);
+  FillByte( lastSig, sizeOf(TLexToken), 0);
 
   for tk in aTokenList do
   begin
@@ -802,28 +805,28 @@ begin
     end;
 
 _preSeq:
+
     // invalid sequences
-    if tkIndex > 0 then // can use old1
+    if tkIndex > 0 then
     begin
+      // empty statements:
+      if (tk.kind = ltkSymbol) and (tk.data = ';') then
+        if (lastSig.kind = ltkSymbol) and (lastSig.data = ';') then
+          addError('invalid syntax for empty statement');
+      if tk.kind <> ltkComment then lastSig := tk;
+
+      // suspicious double keywords
       if (old1.kind = ltkKeyword) and (tk.kind = ltkKeyword) then
         if old1.data = tk.data then
           addError('keyword is duplicated');
 
-(*
-      if (old1.kind = ltkOperator) and (tk.kind = ltkOperator) then
-        if not isPtrOperator(tk.data[1]) then // ident operator [&,*] ident
-          addError('operator rhs cannot be an operator');
-*)
-
+      // suspicious double numbers
       if (old1.kind = ltkNumber) and (tk.kind = ltkNumber) then
         addError('symbol or operator expected after number');
-
     end;
-    if tkIndex > 1 then // can use old2
+    if tkIndex > 1 then
     begin
-
     end;
-
 
     old1 := tk;
     old2 := old1;

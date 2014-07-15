@@ -16,7 +16,7 @@ type
    *)
   ICEMultiDocMonitor = interface
     procedure docNew(const aDoc: TCESynMemo);
-    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo); // docSelected or docActivated
     procedure docChanged(const aDoc: TCESynMemo);
     procedure docClose(const aDoc: TCESynMemo);
   end;
@@ -41,7 +41,7 @@ type
     procedure projRun(const aProject: TCEProject);
 
     // not used yet: (project group)
-    procedure projFocused(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject); // projSelected or projActivated
   end;
 
 implementation

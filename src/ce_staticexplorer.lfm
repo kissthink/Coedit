@@ -71,6 +71,7 @@ inherited CEStaticExplorerWidget: TCEStaticExplorerWidget
           Height = 23
           Top = 2
           Width = 226
+          OnAfterFilter = TreeFilterEdit1AfterFilter
           ButtonWidth = 23
           NumGlyphs = 1
           Align = alCustom

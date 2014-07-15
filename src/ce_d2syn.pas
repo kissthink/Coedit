@@ -448,6 +448,7 @@ end;
 //TODO-cstring literals: token strings.
 //TODO-cstring literals: escape bug: std.path/std.regex: "\\"
 //TODO-ccomments: correct nested comments handling.
+//TODO-cidea: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
 
 {$BOOLEVAL ON}
 procedure TSynD2Syn.next;

@@ -38,6 +38,7 @@ inherited CEMessagesWidget: TCEMessagesWidget
         ShowLines = False
         ShowRoot = False
         TabOrder = 0
+        OnKeyDown = ListKeyDown
         Options = [tvoAllowMultiselect, tvoAutoItemHeight, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoToolTips, tvoThemedDraw]
       end
     end

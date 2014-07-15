@@ -275,7 +275,7 @@ end;
 procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;
       var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
 begin
-  // continue loading: this method grants the project compat. in case of drastical changes.
+  // continue loading: this method grants the project compat. in case of drastic changes.
   Skip := true;
   Handled := true;
 end;

@@ -2789,6 +2789,7 @@ object CEMainForm: TCEMainForm
     HintHidePause = 1000
     HintPause = 25
     HintShortPause = 8
+    OnException = ApplicationProperties1Exception
     left = 96
   end
   object LfmSyn: TSynLFMSyn

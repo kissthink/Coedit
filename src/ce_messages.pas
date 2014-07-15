@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project, ce_synmemo;
+  lcltype, ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project,
+  ce_synmemo, LMessages;
 
 type
 
@@ -22,6 +23,7 @@ type
   TCEMessagesWidget = class(TCEWidget)
     imgList: TImageList;
     List: TTreeView;
+    procedure ListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     fActClearAll: TAction;
     fActClearEdi: TAction;
@@ -42,7 +44,7 @@ type
     procedure listDeletion(Sender: TObject; Node: TTreeNode);
     function newMessageItemData(aCtxt: TMessageContext): PMessageItemData;
   published
-    property maxMessageCount: Integer read fMaxMessCnt write setMaxMessageCount default 250;
+    property maxMessageCount: Integer read fMaxMessCnt write setMaxMessageCount default 125;
   public
     constructor create(aOwner: TComponent); override;
     //
@@ -82,7 +84,7 @@ uses
 
 constructor TCEMessagesWidget.create(aOwner: TComponent);
 begin
-  fMaxMessCnt := 250;
+  fMaxMessCnt := 125;
   //
   fActClearAll := TAction.Create(self);
   fActClearAll.OnExecute := @actClearAllExecute;
@@ -145,6 +147,23 @@ begin
   if not Visible then exit;
   if List.BottomItem <> nil then
     List.BottomItem.MakeVisible;
+end;
+
+procedure TCEMessagesWidget.ListKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  i: NativeInt;
+begin
+  if Key in [VK_BACK, VK_DELETE] then
+  begin
+    if List.SelectionCount > 0 then
+    begin
+    for i := List.Items.Count-1 downto 0 do
+      if List.Items[i].MultiSelected then
+        List.Items.Delete(List.Items[i]);
+    end
+    else ClearAllMessages;
+  end;
 end;
 
 procedure TCEMessagesWidget.filterMessages;
@@ -327,6 +346,7 @@ begin
   end;
 end;
 
+// TODO: link to editor line when possible.
 function semanticMsgAna(const aMessg: string): TMessageKind;
 var
   pos: Nativeint;
@@ -335,11 +355,13 @@ function checkIdent: TMessageKind;
 begin
   case idt of
     'ERROR', 'error', 'Error', 'Invalid', 'invalid',
-    'illegal', 'Illegal', 'fatal', 'Fatal', 'Critical', 'critical':
+    'exception', 'Exception', 'illegal', 'Illegal',
+    'fatal', 'Fatal', 'Critical', 'critical':
       exit(msgkError);
-    'Warning', 'warning':
+    'Warning', 'warning', 'caution', 'Caution':
       exit(msgkWarn);
-    'Hint', 'hint', 'Tip', 'tip':
+    'Hint', 'hint', 'Tip', 'tip', 'advice', 'Advice',
+    'suggestion', 'Suggestion':
       exit(msgkHint);
     'Information', 'information':
       exit(msgkInfo);
