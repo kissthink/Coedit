@@ -121,7 +121,11 @@ begin
   curr := getCurrentEditor;
   macRecorder.Editor := curr;
   fSyncEdit.Editor := curr;
-  identifierToD2Syn(curr);
+  if curr <> nil then
+  begin
+    identifierToD2Syn(curr);
+    curr.checkFileDate;
+  end;
   //
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);

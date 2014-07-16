@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, SynEdit, SynMemo, ce_d2syn,
-  SynPluginSyncroEdit, SynEditKeyCmds, ce_project;
+  SynPluginSyncroEdit, SynEditKeyCmds, ce_project, ce_common;
 
 type
 
@@ -14,13 +14,17 @@ type
   private
     fFilename: string;
     fModified: boolean;
+    fNoDateCheck: boolean;
+    fFileDate: double;
     fAssocProject: TCEProject;
     function getIfDSource: Boolean;
     function getIfConfig: Boolean;
+    procedure setFilename(const aValue: string);
   public
     constructor Create(aOwner: TComponent); override;
+    procedure checkFileDate;
     //
-    property fileName: string read fFilename write fFilename;
+    property fileName: string read fFilename write setFilename;
     property modified: boolean read fModified write fModified;
     property project: TCEProject read fAssocProject write fAssocProject;
     //
@@ -34,7 +38,7 @@ var
 implementation
 
 uses
-  graphics, ce_main;
+  graphics, ce_main, controls;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -55,6 +59,33 @@ begin
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
+end;
+
+procedure TCESynMemo.setFilename(const aValue: string);
+begin
+  if fFilename = aValue then exit;
+  fNoDateCheck := false;
+  fFilename := aValue;
+  FileAge(fFilename, fFileDate);
+end;
+
+procedure TCESynMemo.checkFileDate;
+var
+  newDate: double;
+begin
+  if not FileAge(fFilename, newDate) then exit;
+  if fFileDate = newDate then exit;
+  if fFileDate <> 0.0 then
+  begin
+    if dlgOkCancel(format('"%s" has been modified by another program, load the new version ?',
+      [shortenPath(fFilename)])) = mrOk then
+    begin
+      Lines.LoadFromFile(fFilename);
+      fModified := false;
+    end
+    else fNoDateCheck := true;
+  end;
+  fFileDate := newDate;
 end;
 
 function TCESynMemo.getIfDSource: Boolean;
