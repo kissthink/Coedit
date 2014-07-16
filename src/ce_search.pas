@@ -40,9 +40,8 @@ type
     fCancelAll: boolean;
     fHasSearched: boolean;
     function getOptions: TSynSearchOptions;
-    procedure actFindNextExecute(sender: TObject);
     procedure actReplaceAllExecute(sender: TObject);
-    procedure actReplaceNextExecute(sender: TObject);
+
     procedure replaceEvent(Sender: TObject; const ASearch, AReplace:
       string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   protected
@@ -57,6 +56,9 @@ type
     function contextName: string; override;
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
+    //
+    procedure actFindNextExecute(sender: TObject);
+    procedure actReplaceNextExecute(sender: TObject);
   end;
 
 implementation

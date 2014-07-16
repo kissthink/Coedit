@@ -75,6 +75,13 @@ type
   procedure patchPlateformPaths(const sPaths: TStrings);
 
   (**
+   * Patches the file extension from a string.
+   * This is used to ensure that a project saved on a platform can be loaded
+   * on another one. Note that the ext which are handled are specific to coedit projects.
+   *)
+  function patchPlateformExt(const aFilename: string): string;
+
+  (**
    * Ok/Cancel modal dialog
    *)
   function dlgOkCancel(const aMsg: string): TModalResult;
@@ -291,6 +298,45 @@ begin
     str := sPaths.Strings[i];
     sPaths.Strings[i] := patchPlateformPath(str);
   end;
+end;
+
+function patchPlateformExt(const aFilename: string): string;
+var
+  ext, newext: string;
+begin
+  ext := extractFileExt(aFilename);
+  newext := '';
+  result := aFilename[1..length(aFilename)-length(ext)];
+  {$IFDEF MSWINDOWS}
+  case ext of
+    '.so': newext := '.dll';
+    '.dylib': newext := '.dll';
+    '.a':  newext := '.lib';
+    '.o':  newext := '.obj';
+    else  newext := ext;
+  end;
+  {$ENDIF}
+  {$IFDEF LINUX}
+  case ext of
+    '.dll': newext := '.so';
+    '.dylib': newext := '.so';
+    '.lib': newext := '.a';
+    '.obj': newext := '.o';
+    '.exe': newext := '';
+    else  newext  := ext;
+  end;
+  {$ENDIF}
+  {$IFDEF MACOS}
+  case ext of
+    '.dll': newext := '.dylib';
+    '.so':  newext := '.dylib';
+    '.lib': newext := '.a';
+    '.obj': newext := '.o';
+    '.exe': newext := '';
+    else  newext  := ext;
+  end;
+  {$ENDIF}
+  result += newext;
 end;
 
 function dlgOkCancel(const aMsg: string): TModalResult;

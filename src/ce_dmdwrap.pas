@@ -47,8 +47,8 @@ type
     procedure setDocDir(const aValue: string);
     procedure setJSONFile(const aValue: string);
   published
-    property generateDocumentation: boolean read fGenDoc write setGenDoc;
-    property generateJSON: boolean read fGenJson write setGenJSON;
+    property generateDocumentation: boolean read fGenDoc write setGenDoc default false;
+    property generateJSON: boolean read fGenJson write setGenJSON default false;
     property DocumentationDirectory: string read fDocDir write setDocDir;
     property JSONFilename: string read fJsonFname write setJSONFile;
   public
@@ -73,19 +73,22 @@ type
     fWarnEx: boolean;
     fVtls: boolean;
     fQuiet: boolean;
+    fVgc: boolean;
     procedure setDepHandling(const aValue: TDepHandling);
     procedure setVerb(const aValue: boolean);
     procedure setWarn(const aValue: boolean);
     procedure setWarnEx(const aValue: boolean);
     procedure setVtls(const aValue: boolean);
     procedure setQuiet(const aValue: boolean);
+    procedure setVgc(const aValue: boolean);
   published
-    property depreciationHandling: TDepHandling read fDepHandling write setDepHandling;
-    property verbose: boolean read fVerb write setVerb;
-    property warnings: boolean read fWarn write setWarn;
-    property additionalWarnings: boolean read fWarnEx write setWarnEx;
-    property tlsInformations: boolean read fVtls write setVtls;
-    property quiet: boolean read fQuiet write setQuiet;
+    property depreciationHandling: TDepHandling read fDepHandling write setDepHandling default warning;
+    property verbose: boolean read fVerb write setVerb default false;
+    property warnings: boolean read fWarn write setWarn default true;
+    property additionalWarnings: boolean read fWarnEx write setWarnEx default false;
+    property tlsInformations: boolean read fVtls write setVtls default false;
+    property quiet: boolean read fQuiet write setQuiet default false;
+    property showHiddenAlloc: boolean read fVgc write setVgc default false;
   public
     constructor create;
     procedure assign(aValue: TPersistent); override;
@@ -124,7 +127,10 @@ type
     fGenStack: boolean;
     fMain: boolean;
     fRelease: boolean;
+    fAllInst: boolean;
+    fStackStomp: boolean;
     procedure depPatch;
+    procedure setAllInst(const aValue: boolean);
     procedure setUt(const aValue: boolean);
     procedure setVerId(const aValue: string);
     procedure setTrgKind(const aValue: TTargetSystem);
@@ -137,19 +143,22 @@ type
     procedure setMain(const aValue: boolean);
     procedure setRelease(const aValue: boolean);
     procedure setVerIds(const aValue: TStringList);
+    procedure setStackStomp(const aValue: boolean);
   published
-    property targetKind: TTargetSystem read fTrgKind write setTrgKind;
-    property binaryKind: TBinaryKind read fBinKind write setBinKind;
-    property inlining: boolean read fInline write setInline;
+    property targetKind: TTargetSystem read fTrgKind write setTrgKind default auto;
+    property binaryKind: TBinaryKind read fBinKind write setBinKind default executable;
+    property inlining: boolean read fInline write setInline default false;
     property noBoundsCheck: boolean read fNoBounds write setNoBounds;
     property boundsCheck: TBoundCheckKind read fBoundsCheck write setBoundsCheck;
-    property optimizations: boolean read fOptimz write setOptims;
-    property generateStackFrame: boolean read fGenStack write setGenStack;
-    property addMain: boolean read fMain write setMain;
-    property release: boolean read fRelease write setRelease;
-    property unittest: boolean read fUt write setUt;
+    property optimizations: boolean read fOptimz write setOptims default false;
+    property generateStackFrame: boolean read fGenStack write setGenStack default false;
+    property addMain: boolean read fMain write setMain default false;
+    property release: boolean read fRelease write setRelease default false;
+    property unittest: boolean read fUt write setUt default false;
     property versionIdentifier: string read fVerId write setVerId; // TODO-ccleaning:remove on beta1
     property versionIdentifiers: TStringList read fVerIds write setVerIds;
+    property generateAllTmpCode: boolean read fAllInst write setAllInst default false;
+    property addStackStompCode: boolean read fStackStomp write setStackStomp default false;
   public
     constructor create;
     destructor destroy; override;
@@ -180,13 +189,13 @@ type
     procedure setDbgLevel(const aValue: Integer);
     procedure setDbgIdents(const aValue: TStringList);
   published
-    property debug: boolean read fDbg write setDbg;
+    property debug: boolean read fDbg write setDbg default false;
     property debugIdentifier: string read fDbgIdent write setDbgIdent; // TODO-ccleaning:remove on beta1
     property debugIdentifiers: TStringList read fDbgIdents write setDbgIdents;
-    property debugLevel: Integer read fDbgLevel write setDbgLevel;
-    property addDInformations: boolean read fDbgD write setDbgD;
-    property addCInformations: boolean read fDbgC write setDbgC;
-    property generateMapFile: boolean read fMap write setMap;
+    property debugLevel: Integer read fDbgLevel write setDbgLevel default 0;
+    property addDInformations: boolean read fDbgD write setDbgD default false;
+    property addCInformations: boolean read fDbgC write setDbgC default false;
+    property generateMapFile: boolean read fMap write setMap default false;
   public
     constructor create;
     destructor destroy; override;
@@ -422,6 +431,7 @@ end;
 constructor TMsgOpts.create;
 begin
   fDepHandling := TDepHandling.warning;
+  fWarn := true;
 end;
 
 procedure TMsgOpts.getOpts(const aList: TStrings);
@@ -437,6 +447,7 @@ begin
   if fWarnEx then aList.Add('-wi');
   if fVtls then aList.Add('-vtls');
   if fQuiet then aList.Add('-quiet');
+  //if fVgc then aList.Add('-vgc');
 end;
 
 procedure TMsgOpts.assign(aValue: TPersistent);
@@ -452,6 +463,7 @@ begin
     fWarnEx := src.fWarnEx;
     fVtls   := src.fVtls;
     fQuiet  := src.fQuiet;
+    fVgc    := src.fVgc;
   end
   else inherited;
 end;
@@ -495,6 +507,13 @@ procedure TMsgOpts.setQuiet(const aValue: boolean);
 begin
   if fQuiet = aValue then exit;
   fQuiet := aValue;
+  doChanged;
+end;
+
+procedure TMsgOpts.setVgc(const aValue: boolean);
+begin
+  if fVgc = aValue then exit;
+  fVgc := aValue;
   doChanged;
 end;
 {$ENDREGION}
@@ -541,6 +560,8 @@ begin
   if fNoBounds then aList.Add('-noboundscheck');
   if fOptimz then aList.Add('-O');
   if fGenStack then aList.Add('-gs');
+  //if fStackStomp then aList.Add('-gx');
+  //if fAllInst then aList.Add('-allinst');
   if fMain then aList.Add('-main');
   if fRelease then aList.Add('-release');
   for opt in fVerIds do
@@ -575,6 +596,8 @@ begin
     fGenStack := src.fGenStack;
     fMain := src.fMain;
     fRelease := src.fRelease;
+    fAllinst := src.fAllInst;
+    fStackStomp := src.fStackStomp;
     //
     depPatch;
   end
@@ -585,6 +608,13 @@ procedure TOutputOpts.setUt(const aValue: boolean);
 begin
   if fUt = aValue then exit;
   fUt := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setAllInst(const aValue: boolean);
+begin
+  if fAllinst = aValue then exit;
+  fAllinst := aValue;
   doChanged;
 end;
 
@@ -663,6 +693,13 @@ procedure TOutputOpts.setRelease(const aValue: boolean);
 begin
   if fRelease = aValue then exit;
   fRelease := aValue;
+  doChanged;
+end;
+
+procedure TOutputOpts.setStackStomp(const aValue: boolean);
+begin
+  if fStackStomp = aValue then exit;
+  fStackStomp := aValue;
   doChanged;
 end;
 {$ENDREGION}
@@ -837,6 +874,7 @@ procedure TPathsOpts.setFname(const aValue: string);
 begin
   if fFname = aValue then exit;
   fFname := patchPlateformPath(aValue);
+  fFname := patchPlateformExt(fFname);
   doChanged;
 end;
 
