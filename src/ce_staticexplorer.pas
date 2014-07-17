@@ -300,8 +300,6 @@ begin
       dmdProc.CurrentDirectory := extractFilePath(fProj.fileName);
       if fProj <> nil then for i := 0 to fProj.Sources.Count-1 do
         dmdproc.Parameters.Add('-I' + fProj.getAbsoluteSourceName(i));
-      for nme in fProj.Sources do
-        dmdproc.Parameters.Add('-I' + extractFilePath(nme));
       for nme in fProj.currentConfiguration.pathsOptions.Includes do
         dmdproc.Parameters.Add('-I' + nme);
     end;
