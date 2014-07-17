@@ -5,8 +5,9 @@ unit ce_synmemo;
 interface
 
 uses
-  Classes, SysUtils, SynEdit, SynMemo, ce_d2syn,
-  SynPluginSyncroEdit, SynEditKeyCmds, ce_project, ce_common;
+  Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditTextBuffer,
+  SynEditHighlighter, controls, LazSynEditText, SynPluginSyncroEdit,
+  SynEditKeyCmds, ce_project, ce_common;
 
 type
 
@@ -17,19 +18,33 @@ type
     fNoDateCheck: boolean;
     fFileDate: double;
     fAssocProject: TCEProject;
-    function getIfDSource: Boolean;
-    function getIfConfig: Boolean;
-    procedure setFilename(const aValue: string);
+    fIsDSource: boolean;
+    fIsConfig: boolean;
+    fIdentifier: string;
+    procedure changeNotify(Sender: TObject);
+    procedure identifierToD2Syn;
+  protected
+    procedure SetHighlighter(const Value: TSynCustomHighlighter); override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y:Integer); override;
   public
     constructor Create(aOwner: TComponent); override;
-    procedure checkFileDate;
+    procedure setFocus; override;
+    procedure UpdateShowing; override;
     //
-    property fileName: string read fFilename write setFilename;
-    property modified: boolean read fModified write fModified;
+    procedure checkFileDate;
+    procedure loadFromFile(const aFilename: string);
+    procedure saveToFile(const aFilename: string);
+    procedure save;
+    //
+    property Identifier: string read fIdentifier;
+    property fileName: string read fFilename;
+    property modified: boolean read fModified;
     property project: TCEProject read fAssocProject write fAssocProject;
     //
-    property isDSource: boolean read getIfDSource;
-    property isProjectSource: boolean read getIfConfig;
+    property isDSource: boolean read fIsDSource;
+    property isProjectSource: boolean read fIsConfig;
   end;
 
 var
@@ -38,7 +53,7 @@ var
 implementation
 
 uses
-  graphics, ce_main, controls;
+  graphics, ce_main;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -59,14 +74,73 @@ begin
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
+  //
+  fFilename := '<new document>';
+  fModified := false;
+
+  // http://forum.lazarus.freepascal.org/index.php/topic,25213.0.html
+  //TSynEditStringList(Lines).AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
+  onChange := @changeNotify;
 end;
 
-procedure TCESynMemo.setFilename(const aValue: string);
+procedure TCESynMemo.setFocus;
 begin
-  if fFilename = aValue then exit;
-  fNoDateCheck := false;
-  fFilename := aValue;
+  inherited;
+  checkFileDate;
+  identifierToD2Syn;
+end;
+
+procedure TCESynMemo.UpdateShowing;
+begin
+  inherited;
+  if not Visible then exit;
+  checkFileDate;
+  identifierToD2Syn;
+end;
+
+procedure TCESynMemo.SetHighlighter(const Value: TSynCustomHighlighter);
+begin
+  inherited;
+  fIsDSource := Highlighter = D2Syn;
+  fIsConfig := Highlighter = mainForm.LfmSyn;
+end;
+
+procedure TCESynMemo.identifierToD2Syn;
+begin
+  fIdentifier := GetWordAtRowCol(LogicalCaretXY);
+  if fIsDSource then D2Syn.CurrentIdentifier := fIdentifier;
+end;
+
+procedure TCESynMemo.changeNotify(Sender: TObject);
+begin
+  identifierToD2Syn;
+  fModified := true;
+end;
+
+procedure TCESynMemo.loadFromFile(const aFilename: string);
+begin
+  Lines.LoadFromFile(aFilename);
+  fFilename := aFilename;
   FileAge(fFilename, fFileDate);
+  fNoDateCheck := false;
+  fModified := false;
+end;
+
+procedure TCESynMemo.saveToFile(const aFilename: string);
+begin
+  Lines.SaveToFile(aFilename);
+  fFilename := aFilename;
+  FileAge(fFilename, fFileDate);
+  fNoDateCheck := false;
+  fModified := false;
+end;
+
+procedure TCESynMemo.save;
+begin
+  Lines.SaveToFile(fFilename);
+  FileAge(fFilename, fFileDate);
+  fNoDateCheck := false;
+  fModified := false;
 end;
 
 procedure TCESynMemo.checkFileDate;
@@ -78,7 +152,7 @@ begin
   if fFileDate <> 0.0 then
   begin
     if dlgOkCancel(format('"%s" has been modified by another program, load the new version ?',
-      [shortenPath(fFilename)])) = mrOk then
+      [shortenPath(fFilename, 25)])) = mrOk then
     begin
       Lines.LoadFromFile(fFilename);
       fModified := false;
@@ -88,14 +162,22 @@ begin
   fFileDate := newDate;
 end;
 
-function TCESynMemo.getIfDSource: Boolean;
+procedure TCESynMemo.KeyDown(var Key: Word; Shift: TShiftState);
 begin
-  exit(Highlighter = D2Syn);
+  inherited;
+  identifierToD2Syn;
 end;
 
-function TCESynMemo.getIfConfig: Boolean;
+procedure TCESynMemo.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
-  exit(Highlighter = mainForm.LfmSyn);
+  inherited;
+  identifierToD2Syn;
+end;
+
+procedure TCESynMemo.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y:Integer);
+begin
+  inherited;
+  identifierToD2Syn;
 end;
 
 initialization

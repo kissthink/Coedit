@@ -63,6 +63,8 @@ type
     actFileSaveAs: TAction;
     actFileSave: TAction;
     actFileCompAndRunWithArgs: TAction;
+    actEdFind: TAction;
+    actEdFindNext: TAction;
     actProjOptView: TAction;
     actProjSource: TAction;
     actProjRun: TAction;
@@ -138,6 +140,9 @@ type
     MenuItem53: TMenuItem;
     MenuItem54: TMenuItem;
     MenuItem55: TMenuItem;
+    MenuItem56: TMenuItem;
+    MenuItem57: TMenuItem;
+    MenuItem58: TMenuItem;
     mnuItemMruFile: TMenuItem;
     mnuItemMruProj: TMenuItem;
     mnuItemWin: TMenuItem;
@@ -148,6 +153,8 @@ type
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
     LfmSyn: TSynLFMSyn;
+    procedure actEdFindExecute(Sender: TObject);
+    procedure actEdFindNextExecute(Sender: TObject);
     procedure actFileAddToProjExecute(Sender: TObject);
     procedure actFileCloseExecute(Sender: TObject);
     procedure actFileCompAndRunExecute(Sender: TObject);
@@ -182,6 +189,7 @@ type
     procedure actProjSourceExecute(Sender: TObject);
     procedure actEdUnIndentExecute(Sender: TObject);
     procedure ApplicationProperties1Exception(Sender: TObject; E: Exception);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
     fUpdateCount: NativeInt;
@@ -284,8 +292,6 @@ begin
   fWidgList.addWidget(@fStExpWidg);
   fWidgList.addWidget(@fFindWidg);
 
-  for widg in fWidgList do widg.Show;
-
   for widg in fWidgList do
   begin
     act := TAction.Create(self);
@@ -298,6 +304,7 @@ begin
     itm.Action := act;
     itm.Tag := ptrInt(widg);
     mnuItemWin.Add(itm);
+    widg.Show
   end;
 
   Height := 0;
@@ -358,6 +365,25 @@ begin
   if fMesgWidg = nil then
     ce_common.dlgOkError(E.Message)
   else fMesgWidg.addCeErr(E.Message);
+end;
+
+procedure TCEMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+var
+  i: NativeInt;
+  ed: TCESynMemo;
+begin
+  canClose := false;
+  if fProject <> nil then if fProject.modified then
+    if ce_common.dlgOkCancel('last project modifications are not saved, quit anyway ?')
+        <> mrOK then exit;
+  for i := 0 to fEditWidg.editorCount-1 do
+  begin
+    ed := fEditWidg.editor[i];
+    if ed.modified then if ce_common.dlgOkCancel(format
+      ('last "%s" modifications are not saved, quit anyway ?',
+        [shortenPath(ed.fileName, 25)])) <> mrOK then exit;
+  end;
+  canClose := true;
 end;
 
 procedure TCEMainForm.ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
@@ -514,24 +540,9 @@ end;
 
 {$REGION file ******************************************************************}
 procedure TCEMainForm.newFile;
-var
-  i, j: NativeInt;
-  str: string;
 begin
   if fEditWidg = nil then exit;
-  //
-  i := fEditWidg.editorCount;
   fEditWidg.addEditor;
-  j := 0;
-  while(true) do
-  begin
-    str := format('<new %d>',[j]);
-    if findFile(str) = -1 then break;
-    if j >= high(NativeInt) then break;
-    j += 1;
-  end;
-  fEditWidg.editor[i].fileName := str;
-  fEditWidg.editor[i].modified := false;
   fEditWidg.focusedEditorChanged;
 end;
 
@@ -559,8 +570,7 @@ begin
   end;
   i := fEditWidg.editorCount;
   fEditWidg.addEditor;
-  fEditWidg.editor[i].Lines.LoadFromFile(aFilename);
-  fEditWidg.editor[i].fileName := aFilename;
+  fEditWidg.editor[i].loadFromFile(aFilename);
   fEditWidg.focusedEditorChanged;
   fFileMru.Insert(0,aFilename);
 end;
@@ -581,11 +591,7 @@ begin
   //
   str := fEditWidg.editor[edIndex].fileName;
   if str = '' then exit;
-  try
-    fEditWidg.editor[edIndex].Lines.SaveToFile(str);
-  finally
-    fEditWidg.editor[edIndex].modified := false;
-  end;
+  fEditWidg.editor[edIndex].save;
   //
   for i := 0 to fWidgList.Count-1 do
     fWidgList.widget[i].docChanged(fEditWidg.editor[edIndex]);
@@ -597,13 +603,8 @@ begin
   if edIndex < 0 then exit;
   if edIndex >= fEditWidg.editorCount then exit;
   //
-  try
-    fEditWidg.editor[edIndex].Lines.SaveToFile(aFilename);
-  finally
-    fEditWidg.editor[edIndex].fileName := aFilename;
-    fEditWidg.editor[edIndex].modified := false;
-    fFileMru.Insert(0,aFilename);
-  end;
+  fEditWidg.editor[edIndex].saveToFile(aFilename);
+  fFileMru.Insert(0, aFilename);
 end;
 
 procedure TCEMainForm.docChangeNotify(Sender: TObject; const aIndex: Integer);
@@ -816,6 +817,31 @@ begin
   curr := fEditWidg.currentEditor;
   if assigned(curr) then curr.ExecuteCommand(ecBlockUnIndent, '', nil);
 end;
+
+procedure TCEMainForm.actEdFindExecute(Sender: TObject);
+var
+  win: TAnchorDockHostSite;
+  ed: TCESynMemo;
+  str: string;
+begin
+  win := DockMaster.GetAnchorSite(fFindWidg);
+  if win = nil then exit;
+  win.Show;
+  win.BringToFront;
+  ed := fEditWidg.currentEditor;
+  if ed = nil then exit;
+  if ed.SelAvail then
+    str := ed.SelText
+  else str := ed.Identifier;
+  ffindwidg.cbToFind.Text := str;
+  ffindwidg.cbToFindChange(nil);
+end;
+
+procedure TCEMainForm.actEdFindNextExecute(Sender: TObject);
+begin
+  ffindwidg.actFindNextExecute(nil);
+end;
+
 {$ENDREGION}
 
 {$REGION run  ******************************************************************}
@@ -1160,8 +1186,7 @@ begin
   if fProject = nil then exit;
   if fProject.fileName <> aEditor.fileName then exit;
   //
-  aEditor.modified := false;
-  aEditor.Lines.SaveToFile(fProject.fileName);
+  aEditor.saveToFile(fProject.fileName);
   openProj(fProject.fileName);
 end;
 

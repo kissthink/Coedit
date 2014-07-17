@@ -43,7 +43,7 @@ type
   end;
 
   (**
-   *  TProcess with assign() overriden.
+   *  TProcess with assign() 'overriden'.
    *)
   TProcessEx = class helper for TProcess
   public

@@ -40,7 +40,6 @@ type
     function getEditor(index: NativeInt): TCESynMemo;
     function getEditorCount: NativeInt;
     function getEditorIndex: NativeInt;
-    procedure identifierToD2Syn(const aMemo: TCESynMemo);
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
@@ -121,11 +120,6 @@ begin
   curr := getCurrentEditor;
   macRecorder.Editor := curr;
   fSyncEdit.Editor := curr;
-  if curr <> nil then
-  begin
-    identifierToD2Syn(curr);
-    curr.checkFileDate;
-  end;
   //
   if pageControl.ActivePageIndex <> -1 then
     mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
@@ -164,7 +158,10 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnKeyPress := @memoKeyPress;
   memo.OnMouseDown := @memoMouseDown;
-  memo.OnChange := @memoChange;
+
+  // http://forum.lazarus.freepascal.org/index.php/topic,25213.0.html
+  //memo.OnChange := @memoChange;
+
   memo.OnMouseMove := @memoMouseMove;
   //
   pageControl.ActivePage := sheet;
@@ -180,19 +177,11 @@ begin
   pageControl.Pages[aIndex].Free;
 end;
 
-procedure TCEEditorWidget.identifierToD2Syn(const aMemo: TCESynMemo);
-begin
-  D2Syn.CurrentIdentifier := aMemo.GetWordAtRowCol(aMemo.LogicalCaretXY);
-end;
-
 procedure TCEEditorWidget.memoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   UpdateByEvent;
-  if (sender is TCESynMemo) then
-    identifierToD2Syn(TCESynMemo(Sender));
   case Byte(Key) of
     VK_CLEAR,VK_RETURN,VK_BACK : fKeyChanged := true;
-    //else fKeyChanged := false;
   end;
   if fKeyChanged then
     beginUpdateByDelay;
@@ -206,8 +195,6 @@ end;
 
 procedure TCEEditorWidget.memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if (sender is TCESynMemo) then
-    identifierToD2Syn(TCESynMemo(Sender));
   beginUpdateByDelay;
   UpdateByEvent;
 end;
@@ -221,11 +208,7 @@ begin
 end;
 
 procedure TCEEditorWidget.memoChange(Sender: TObject);
-var
-  ed: TCESynMemo;
 begin
-  ed := TCESynMemo(sender);
-  ed.modified := true;
   fKeyChanged := true;
   beginUpdateByDelay;
   UpdateByEvent;
