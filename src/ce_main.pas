@@ -340,6 +340,7 @@ begin
   DockMaster.OnCreateControl := @DockMasterCreateControl;
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
+
   if DockManager is TAnchorDockManager then begin
     aManager:=TAnchorDockManager(DockManager);
     aManager.PreferredSiteSizeAsSiteMinimum:=false;
@@ -362,8 +363,6 @@ begin
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fPrjCfWidg),
     DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
-  //
-  SaveDocking;
 end;
 
 procedure TCEMainForm.InitSettings;
@@ -409,7 +408,7 @@ procedure TCEMainForm.SaveDocking;
 var
   xcfg: TXMLConfigStorage;
 begin
-  xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',true);
+  xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
   try
     // <Item1 Name="CEMainForm" Type="CustomSite" ChildCount="..."> is always missing
     DockMaster.SaveLayoutToConfig(xcfg);

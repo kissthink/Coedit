@@ -425,7 +425,7 @@ begin
   result:=Folder;
   {$ENDIF}
   {$IFDEF UNIX}
-  result := ExpandFileName('~/'));
+  result := ExpandFileName('~/');
   {$ENDIF}
   result += directorySeparator + 'Coedit' + directorySeparator;
 end;
