@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, asyncprocess,
+  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls,
   ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
   ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search;
 
@@ -19,17 +19,21 @@ type
   //TODO-cwidget: options editor
   (**
    * Encapsulates the options in a writable component.
-   * note: likely to change however needed to test correctly Coedit.
    *)
   TCEOptions = class(TComponent)
   private
     fFileMru, fProjMru: TMruFileList;
-    fWidgUpdDel, fWidgUpdPer: Integer;
     fLeft, FTop, fWidth, fHeight: Integer;
+    fErrorFlg: boolean;
     procedure setFileMru(aValue: TMruFileList);
     procedure setProjMru(aValue: TMruFileList);
     procedure saveLayout(str: TStream);
     procedure loadLayout(str: TStream);
+    //
+    procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
+      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+    procedure readerError(Reader: TReader; const Message: string;
+      var Handled: Boolean);
   published
     property APP_Left: Integer read fLeft write fLeft;
     property APP_Top: Integer read fTop write fTop;
@@ -38,17 +42,16 @@ type
     //
     property MRU_Files: TMruFileList read fFileMru write setFileMru;
     property MRU_Projects: TMruFileList read fProjMru write setProjMru;
-    //
-    property WIDG_UpdateDelay: Integer read fWidgUpdDel write fWidgUpdDel;
-    property WIDG_UpdatePeriod: Integer read fWidgUpdPer write fWidgUpdPer;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    procedure defineProperties(Filer: TFiler); override;
     procedure saveToFile(const aFilename: string);
     procedure loadFromFile(const aFilename: string);
     procedure beforeSave;
     procedure afterLoad;
-    procedure DefineProperties(Filer: TFiler); override;
+    //
+    property hasLoaded: boolean read fErrorFlg;
   end;
 
   { TCEMainForm }
@@ -204,6 +207,14 @@ type
     fProjMru: TMruFileList;
     fFileMru: TMruFileList;
 
+    //Init - Fina
+    procedure InitMRUs;
+    procedure InitWidgets;
+    procedure InitDocking;
+    procedure InitSettings;
+    procedure SaveSettings;
+    procedure SaveDocking;
+
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
     procedure widgetShowFromAction(sender: TObject);
@@ -239,6 +250,8 @@ type
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    procedure DockMasterCreateControl(Sender: TObject; aName: string; var
+      AControl: TControl; DoDisableAutoSizing: boolean);
     //
     procedure openFile(const aFilename: string);
     procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
@@ -252,7 +265,7 @@ type
   end;
 
 var
-  mainForm: TCEMainForm;
+  CEMainForm: TCEMainForm;
 
 implementation
 {$R *.lfm}
@@ -260,23 +273,34 @@ implementation
 uses
   SynMacroRecorder;
 
-{$REGION std comp methods ******************************************************}
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMainForm.create(aOwner: TComponent);
-var
-  act: TAction;
-  itm: TMenuItem;
-  widg: TCEWidget;
-  opts: TCEOptions;
 begin
   inherited create(aOwner);
+  InitMRUs;
+  InitWidgets;
+  InitDocking;
+  InitSettings;
   //
+  newProj;
+end;
+
+procedure TCEMainForm.InitMRUs;
+begin
   fProjMru := TMruFileList.Create;
   fFileMru := TMruFileList.Create;
   fProjMru.objectTag := mnuItemMruProj;
   fFileMru.objectTag := mnuItemMruFile;
   fProjMru.OnChange := @mruChange;
   fFileMru.OnChange := @mruChange;
-  //
+end;
+
+procedure TCEMainForm.InitWidgets;
+var
+  widg: TCEWidget;
+  act: TAction;
+  itm: TMenuItem;
+begin
   fWidgList := TCEWidgetList.Create;
   fMesgWidg := TCEMessagesWidget.create(nil);
   fEditWidg := TCEEditorWidget.create(nil);
@@ -304,47 +328,101 @@ begin
     itm.Action := act;
     itm.Tag := ptrInt(widg);
     mnuItemWin.Add(itm);
-    widg.Show
   end;
+end;
 
-  Height := 0;
-  DockMaster.MakeDockSite(Self, [akBottom], admrpChild, true);
+procedure TCEMainForm.InitDocking;
+var
+  i: NativeInt;
+  aManager: TAnchorDockManager;
+begin
+  DockMaster.MakeDockSite(Self, [akBottom], admrpChild);
+  DockMaster.OnCreateControl := @DockMasterCreateControl;
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), Self, alLeft);
+  if DockManager is TAnchorDockManager then begin
+    aManager:=TAnchorDockManager(DockManager);
+    aManager.PreferredSiteSizeAsSiteMinimum:=false;
+  end;
+  Height := 0;
+
+    for i := 0 to fWidgList.Count-1 do
+  begin
+    DockMaster.MakeDockable(fWidgList.widget[i],true);
+    DockMaster.GetAnchorSite(fWidgList.widget[i]).Header.HeaderPosition := adlhpTop;
+  end;
+
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), DockMaster.GetSite(Self), alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), DockMaster.GetSite(Self), alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), DockMaster.GetSite(Self), alLeft);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fFindWidg),
     DockMaster.GetAnchorSite(fStExpWidg), alBottom, fStExpWidg);
   width := width - fProjWidg.Width;
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), DockMaster.GetSite(Self), alRight);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fPrjCfWidg),
     DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
+  //
+  SaveDocking;
+end;
 
-  newProj;
-
+procedure TCEMainForm.InitSettings;
+var
+  fname1: string;
+  fname2: string;
+  opts: TCEOptions;
+begin
+  fname1 := getDocPath + 'options.txt';
+  fname2 := getDocPath + 'options.bak';
   opts := TCEOptions.create(nil);
   try
-  if fileExists('temp_coedit_options.txt') then
-    opts.loadFromFile('temp_coedit_options.txt');
+    if fileExists(fname1) then
+    begin
+      opts.loadFromFile(fname1);
+      if opts.hasLoaded then
+      begin
+        if fileExists(fname2) then
+          deleteFile(fname2);
+        if not fileExists(fname2) then
+          copyFile(fname1, fname2, false);
+      end;
+    end;
   finally
     opts.Free;
   end;
-
-
 end;
 
-destructor TCEMainForm.destroy;
+procedure TCEMainForm.SaveSettings;
 var
   opts: TCEOptions;
 begin
   opts := TCEOptions.create(nil);
   try
-    opts.saveToFile('temp_coedit_options.txt');
+    forceDirectory(getDocPath);
+    opts.saveToFile(getDocPath + 'options.txt');
   finally
     opts.Free;
   end;
+end;
+
+procedure TCEMainForm.SaveDocking;
+var
+  xcfg: TXMLConfigStorage;
+begin
+  xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',true);
+  try
+    // <Item1 Name="CEMainForm" Type="CustomSite" ChildCount="..."> is always missing
+    DockMaster.SaveLayoutToConfig(xcfg);
+    xcfg.WriteToDisk;
+  finally
+    xcfg.Free;
+  end;
+end;
+
+destructor TCEMainForm.destroy;
+begin
+  SaveSettings;
+  SaveDocking;
   //
   fWidgList.Free;
   fMesgWidg.Free;
@@ -538,7 +616,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION file ******************************************************************}
+{$REGION file ------------------------------------------------------------------}
 procedure TCEMainForm.newFile;
 begin
   if fEditWidg = nil then exit;
@@ -740,7 +818,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION edit ******************************************************************}
+{$REGION edit ------------------------------------------------------------------}
 procedure TCEMainForm.actEdCopyExecute(Sender: TObject);
 var
   curr: TCESynMemo;
@@ -844,7 +922,7 @@ end;
 
 {$ENDREGION}
 
-{$REGION run  ******************************************************************}
+{$REGION run -------------------------------------------------------------------}
 procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess; aCtxt: TMessageContext = msUnknown);
 var
   str: TMemoryStream;
@@ -1157,7 +1235,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION view ******************************************************************}
+{$REGION view ------------------------------------------------------------------}
 procedure TCEMainForm.widgetShowFromAction(sender: TObject);
 var
   widg: TCEWidget;
@@ -1170,9 +1248,21 @@ begin
   win.Show;
   win.BringToFront;
 end;
+
+procedure TCEMainForm.DockMasterCreateControl(Sender: TObject; aName: string; var
+  AControl: TControl; DoDisableAutoSizing: boolean);
+var
+  i: NativeInt;
+begin
+  for i := 0 to fWidgList.Count-1 do if fWidgList.widget[i].Name = aName then
+  begin
+    AControl := fWidgList.widget[i];
+    if DoDisableAutoSizing then AControl.DisableAutoSizing;
+  end;
+end;
 {$ENDREGION}
 
-{$REGION project ***************************************************************}
+{$REGION project ---------------------------------------------------------------}
 procedure TCEMainForm.projChange(sender: TObject);
 var
   widg: TCEWidget;
@@ -1323,15 +1413,13 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION options ***************************************************************}
+{$REGION options ---------------------------------------------------------------}
 constructor TCEOptions.create(aOwner: TComponent);
 begin
   inherited;
   fFileMru := TMruFileList.Create;
   fProjMru := TMruFileList.Create;
   //
-  fWidgUpdDel := 70;
-  fWidgUpdPer := 1000;
   fLeft := 0;
   fTop := 0;
   fWidth := 800;
@@ -1343,6 +1431,20 @@ begin
   fFileMru.Free;
   fProjMru.Free;
   inherited;
+end;
+
+procedure TCEOptions.readerPropNoFound(Reader: TReader; Instance: TPersistent;
+  var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+begin
+  Skip := true;
+  Handled := true;
+end;
+
+procedure TCEOptions.readerError(Reader: TReader; const Message: string;
+  var Handled: Boolean);
+begin
+  Handled := true;
+  fErrorFlg := false;
 end;
 
 procedure TCEOptions.setFileMru(aValue: TMruFileList);
@@ -1388,59 +1490,66 @@ begin
   end;
 end;
 
-
-procedure TCEOptions.DefineProperties(Filer: TFiler);
+procedure TCEOptions.defineProperties(Filer: TFiler);
 begin
-  //Filer.DefineBinaryProperty('APP_Docking', @loadLayout, @saveLayout, true);
+  inherited;
+  // Filer is either a TReader or a TWriter
+  CEMainForm.fEditWidg.declareProperties(Filer);
+  CEMainForm.fFindWidg.declareProperties(Filer);
+  CEMainForm.fMesgWidg.declareProperties(Filer);
+  CEMainForm.fPrjCfWidg.declareProperties(Filer);
+  CEMainForm.fProjWidg.declareProperties(Filer);
+  CEMainForm.fStExpWidg.declareProperties(Filer);
 end;
 
 procedure TCEOptions.beforeSave;
 begin
-  fLeft   := mainForm.Left;
-  fTop    := mainForm.Top;
-  fWidth  := mainForm.Width;
-  fHeight := mainForm.Height;
+  fLeft   := CEMainForm.Left;
+  fTop    := CEMainForm.Top;
+  fWidth  := CEMainForm.Width;
+  fHeight := CEMainForm.Height;
   //
-  fFileMru.Assign(mainForm.fFileMru);
-  fProjMru.Assign(mainForm.fProjMru);
+  fFileMru.Assign(CEMainForm.fFileMru);
+  fProjMru.Assign(CEMainForm.fProjMru);
   //
-  fWidgUpdPer := mainForm.fEditWidg.updaterByLoopInterval;
-  fWidgUpdDel := mainForm.fEditWidg.updaterByDelayDuration;
+  CEMainForm.fEditWidg.beforeSave(nil);
+  CEMainForm.fFindWidg.beforeSave(nil);
+  CEMainForm.fMesgWidg.beforeSave(nil);
+  CEMainForm.fPrjCfWidg.beforeSave(nil);
+  CEMainForm.fProjWidg.beforeSave(nil);
+  CEMainForm.fStExpWidg.beforeSave(nil);
 end;
 
 procedure TCEOptions.saveToFile(const aFilename: string);
 begin
+  fErrorFlg := true;
   beforeSave;
-  saveCompToTxtFile(Self, aFilename);
+  ce_common.saveCompToTxtFile(self, aFilename);
 end;
 
 procedure TCEOptions.loadFromFile(const aFilename: string);
 begin
-  try
-    loadCompFromTxtFile(Self, aFilename);
-  except
-    exit;
-  end;
+  fErrorFlg := true;
+  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
   afterLoad;
 end;
 
 procedure TCEOptions.afterLoad;
-var
-  widg: TCEWidget;
 begin
-  mainForm.Left   := fLeft;
-  mainForm.Top    := fTop;
-  mainForm.Width  := fWidth;
-  mainForm.Height := fHeight;
+  CEMainForm.Left   := fLeft;
+  CEMainForm.Top    := fTop;
+  CEMainForm.Width  := fWidth;
+  CEMainForm.Height := fHeight;
   //
-  mainForm.fFileMru.Assign(fFileMru);
-  mainForm.fProjMru.Assign(fProjMru);
+  CEMainForm.fFileMru.Assign(fFileMru);
+  CEMainForm.fProjMru.Assign(fProjMru);
   //
-  for widg in mainForm.fWidgList do
-  begin
-    widg.updaterByDelayDuration := fWidgUpdDel;
-    widg.updaterByLoopInterval := fWidgUpdPer;
-  end;
+  CEMainForm.fEditWidg.afterLoad(nil);
+  CEMainForm.fFindWidg.afterLoad(nil);
+  CEMainForm.fMesgWidg.afterLoad(nil);
+  CEMainForm.fPrjCfWidg.afterLoad(nil);
+  CEMainForm.fProjWidg.afterLoad(nil);
+  CEMainForm.fStExpWidg.afterLoad(nil);
 end;
 {$ENDREGION}
 

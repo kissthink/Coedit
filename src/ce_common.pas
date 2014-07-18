@@ -5,7 +5,11 @@ unit ce_common;
 interface
 
 uses
-  Classes, SysUtils, ActnList, dialogs, forms, process;
+  Classes, SysUtils,
+  {$IFDEF WINDOWS}
+  Windows,
+  {$ENDIF}
+  ActnList, dialogs, forms, process;
 
 const
 
@@ -40,6 +44,8 @@ type
   TMRUFileList = class(TMRUList)
   protected
     function checkItem(const S: string): boolean; override;
+  public
+    procedure assign(src: TPersistent); override;
   end;
 
   (**
@@ -106,6 +112,11 @@ type
    * Even if the result is not usable anymore, it avoids any "visually-overloaded" MRU menu.
    *)
   function shortenPath(const aPath: string; charThresh: Word = 80): string;
+
+  (**
+   * Returns the folder Coedit documents and settings.
+   *)
+  function getDocPath: string;
 
 implementation
 
@@ -181,6 +192,15 @@ begin
   if not (checkItem(S)) then exit;
   inherited;
   clearOutOfRange;
+end;
+
+procedure TMRUFileList.assign(src: TPersistent);
+var
+  i: NativeInt;
+begin
+  inherited;
+  for i := Count-1 downto 0 do
+    if not fileExists(Strings[i]) then Delete(i);
 end;
 
 function TMRUFileList.checkItem(const S: string): boolean;
@@ -388,6 +408,26 @@ begin
   end;
   pth1 := aPath[i..length(aPath)];
   exit( format('%s%s...%s',[drv,directorySeparator,pth1]) );
+end;
+
+function getDocPath: string;
+{$IFDEF WINDOWS}
+var
+  PIDL : PItemIDList;
+  Folder : array[0..MAX_PATH] of Char;
+const
+  CSIDL_APPDATA = $001A;
+{$ENDIF}
+begin
+  {$IFDEF WINDOWS}
+  SHGetSpecialFolderLocation(0, CSIDL_APPDATA, PIDL);
+  SHGetPathFromIDList(PIDL, Folder);
+  result:=Folder;
+  {$ENDIF}
+  {$IFDEF UNIX}
+  result := ExpandFileName('~/'));
+  {$ENDIF}
+  result += directorySeparator + 'Coedit' + directorySeparator;
 end;
 
 end.

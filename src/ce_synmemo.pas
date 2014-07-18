@@ -5,9 +5,8 @@ unit ce_synmemo;
 interface
 
 uses
-  Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditTextBuffer,
-  SynEditHighlighter, controls, LazSynEditText, SynPluginSyncroEdit,
-  SynEditKeyCmds, ce_project, ce_common;
+  Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditHighlighter, controls,
+  LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project, ce_common;
 
 type
 
@@ -78,9 +77,7 @@ begin
   fFilename := '<new document>';
   fModified := false;
 
-  // http://forum.lazarus.freepascal.org/index.php/topic,25213.0.html
-  //TSynEditStringList(Lines).AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
-  onChange := @changeNotify;
+  TextBuffer.AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
 end;
 
 procedure TCESynMemo.setFocus;
@@ -102,7 +99,7 @@ procedure TCESynMemo.SetHighlighter(const Value: TSynCustomHighlighter);
 begin
   inherited;
   fIsDSource := Highlighter = D2Syn;
-  fIsConfig := Highlighter = mainForm.LfmSyn;
+  fIsConfig := Highlighter = CEMainForm.LfmSyn;
 end;
 
 procedure TCESynMemo.identifierToD2Syn;

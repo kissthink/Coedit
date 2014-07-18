@@ -22,22 +22,37 @@ type
     procedure TreeKeyPress(Sender: TObject; var Key: char);
   private
     fActRefresh: TAction;
+    fActRefreshOnChange: TAction;
+    fActRefreshOnFocus: TAction;
     fActAutoRefresh: TAction;
     fActSelectInSource: TAction;
     fDoc: TCESynMemo;
     fProj: TCEProject;
     fAutoRefresh: boolean;
+    fRefreshOnChange: boolean;
+    fRefreshOnFocus: boolean;
     ndAlias, ndClass, ndEnum, ndFunc: TTreeNode;
     ndImp, ndIntf, ndMix, ndStruct, ndTmp, ndVar: TTreeNode;
     procedure Rescan;
     procedure TreeDblClick(Sender: TObject);
     procedure actRefreshExecute(Sender: TObject);
     procedure actAutoRefreshExecute(Sender: TObject);
+    procedure actRefreshOnChangeExecute(Sender: TObject);
+    procedure actRefreshOnFocusExecute(Sender: TObject);
     procedure updateVisibleCat;
+    //
+    procedure optget_AutoRefresh(aWriter: TWriter);
+    procedure optset_AutoRefresh(aReader: TReader);
+    procedure optget_RefreshOnChange(aWriter: TWriter);
+    procedure optset_RefreshOnChange(aReader: TReader);
+    procedure optget_RefreshOnFocus(aWriter: TWriter);
+    procedure optset_RefreshOnFocus(aReader: TReader);
   protected
     procedure UpdateByDelay; override;
   published
     property autoRefresh: boolean read fAutoRefresh write fAutoRefresh;
+    property refreshOnChange: boolean read fRefreshOnChange write fRefreshOnChange;
+    property refreshOnFocus: boolean read fRefreshOnFocus write fRefreshOnFocus;
   public
     constructor create(aOwner: TComponent); override;
     //
@@ -54,14 +69,19 @@ type
     procedure projClose(const aProject: TCEProject); override;
     procedure projCompile(const aProject: TCEProject); override;
     procedure projRun(const aProject: TCEProject); override;
+    //
+    procedure declareProperties(aFiler: TFiler); override;
   end;
 
 implementation
 {$R *.lfm}
 
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEStaticExplorerWidget.create(aOwner: TComponent);
 begin
   fAutoRefresh := true;
+  fRefreshOnFocus := true;
+  fRefreshOnChange := true;
   fActRefresh := TAction.Create(self);
   fActRefresh.OnExecute := @actRefreshExecute;
   fActRefresh.Caption := 'Refresh';
@@ -70,12 +90,21 @@ begin
   fActAutoRefresh.Caption := 'Auto-refresh';
   fActAutoRefresh.AutoCheck := true;
   fActAutoRefresh.Checked := fAutoRefresh;
+  fActRefreshOnChange := TAction.Create(self);
+  fActRefreshOnChange.OnExecute := @actRefreshOnChangeExecute;
+  fActRefreshOnChange.Caption := 'Refresh on change';
+  fActRefreshOnChange.AutoCheck := true;
+  fActRefreshOnChange.Checked := fRefreshOnChange;
+  fActRefreshOnFocus := TAction.Create(self);
+  fActRefreshOnFocus.OnExecute := @actRefreshOnFocusExecute;
+  fActRefreshOnFocus.Caption := 'Refresh on focused';
+  fActRefreshOnFocus.AutoCheck := true;
+  fActRefreshOnFocus.Checked := fRefreshOnFocus;
   fActSelectInSource := TAction.Create(self);
   fActSelectInSource.OnExecute := @TreeDblClick;
   fActSelectInSource.Caption := 'Select in source';
   //
   inherited;
-  fID := 'ID_SEXPL';
   //
   ndAlias   := Tree.Items[0];
   ndClass   := Tree.Items[1];
@@ -90,9 +119,53 @@ begin
   //
   Tree.OnDblClick := @TreeDblClick;
   Tree.PopupMenu := contextMenu;
-  DockMaster.GetAnchorSite(Self).Name := ID;
+end;
+{$ENDREGION}
+
+{$REGION ICEWidgetPersist ------------------------------------------------------}
+procedure TCEStaticExplorerWidget.optget_AutoRefresh(aWriter: TWriter);
+begin
+  aWriter.WriteBoolean(fAutoRefresh);
 end;
 
+procedure TCEStaticExplorerWidget.optset_AutoRefresh(aReader: TReader);
+begin
+  fAutoRefresh := aReader.ReadBoolean;
+  fActAutoRefresh.Checked := fAutoRefresh;
+end;
+
+procedure TCEStaticExplorerWidget.optget_RefreshOnChange(aWriter: TWriter);
+begin
+  aWriter.WriteBoolean(fRefreshOnChange);
+end;
+
+procedure TCEStaticExplorerWidget.optset_RefreshOnChange(aReader: TReader);
+begin
+  fRefreshOnChange := aReader.ReadBoolean;
+  fActRefreshOnChange.Checked := fRefreshOnChange;
+end;
+
+procedure TCEStaticExplorerWidget.optget_RefreshOnFocus(aWriter: TWriter);
+begin
+  aWriter.WriteBoolean(fRefreshOnFocus);
+end;
+
+procedure TCEStaticExplorerWidget.optset_RefreshOnFocus(aReader: TReader);
+begin
+  fRefreshOnFocus := aReader.ReadBoolean;
+  fActRefreshOnFocus.Checked := fRefreshOnFocus;
+end;
+
+procedure TCEStaticExplorerWidget.declareProperties(aFiler: TFiler);
+begin
+  inherited;
+  aFiler.DefineProperty(Name + '_AutoRefresh', @optset_AutoRefresh, @optget_AutoRefresh, true);
+  aFiler.DefineProperty(Name + '_RefreshOnChange', @optset_RefreshOnChange, @optget_RefreshOnChange, true);
+  aFiler.DefineProperty(Name + '_RefreshOnFocus', @optset_RefreshOnFocus, @optget_RefreshOnFocus, true);
+end;
+{$ENDREGION}
+
+{$REGION ICEContextualActions---------------------------------------------------}
 function TCEStaticExplorerWidget.contextName: string;
 begin
   result := 'Static explorer';
@@ -100,15 +173,17 @@ end;
 
 function TCEStaticExplorerWidget.contextActionCount: integer;
 begin
-  result := 3;
+  result := 5;
 end;
 
 function TCEStaticExplorerWidget.contextAction(index: integer): TAction;
 begin
   case index of
-    0: result := fActSelectInSource;
-    1: result := fActRefresh;
-    2: result := fActAutoRefresh;
+    0: exit(fActSelectInSource);
+    1: exit(fActRefresh);
+    2: exit(fActAutoRefresh);
+    3: exit(fActRefreshOnChange);
+    4: exit(fActRefreshOnFocus);
     else result := nil;
   end;
 end;
@@ -121,9 +196,44 @@ end;
 
 procedure TCEStaticExplorerWidget.actAutoRefreshExecute(Sender: TObject);
 begin
-  AutoRefresh := not AutoRefresh;
+  autoRefresh := not autoRefresh;
 end;
 
+procedure TCEStaticExplorerWidget.actRefreshOnChangeExecute(Sender: TObject);
+begin
+  refreshOnChange := not refreshOnChange;
+end;
+
+procedure TCEStaticExplorerWidget.actRefreshOnFocusExecute(Sender: TObject);
+begin
+  refreshOnFocus := not refreshOnFocus;
+end;
+{$ENDREGION}
+
+{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEStaticExplorerWidget.docFocused(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+  if fAutoRefresh then beginUpdateByDelay
+  else if fRefreshOnFocus then Rescan;
+end;
+
+procedure TCEStaticExplorerWidget.docChanged(const aDoc: TCESynMemo);
+begin
+  if fDoc <> aDoc then exit;
+  if fAutoRefresh then beginUpdateByDelay
+  else if fRefreshOnChange then Rescan;
+end;
+
+procedure TCEStaticExplorerWidget.docClose(const aDoc: TCESynMemo);
+begin
+  if fDoc <> aDoc then exit;
+  fDoc := nil;
+  beginUpdateByDelay;
+end;
+{$ENDREGION}
+
+{$REGION ICEProjectMonitor -----------------------------------------------------}
 procedure TCEStaticExplorerWidget.projNew(const aProject: TCEProject);
 begin
   fProj := aProject;
@@ -139,25 +249,6 @@ begin
   fProj := nil;
 end;
 
-procedure TCEStaticExplorerWidget.docFocused(const aDoc: TCESynMemo);
-begin
-  fDoc := aDoc;
-  beginUpdateByDelay;
-end;
-
-procedure TCEStaticExplorerWidget.docChanged(const aDoc: TCESynMemo);
-begin
-  if fDoc <> aDoc then exit;
-  beginUpdateByDelay;
-end;
-
-procedure TCEStaticExplorerWidget.docClose(const aDoc: TCESynMemo);
-begin
-  if fDoc <> aDoc then exit;
-  fDoc := nil;
-  beginUpdateByDelay;
-end;
-
 procedure TCEStaticExplorerWidget.projCompile(const aProject: TCEProject);
 begin
   stopUpdateByDelay;
@@ -167,6 +258,7 @@ procedure TCEStaticExplorerWidget.projRun(const aProject: TCEProject);
 begin
   stopUpdateByDelay;
 end;
+{$ENDREGION}
 
 procedure TCEStaticExplorerWidget.UpdateByDelay;
 begin

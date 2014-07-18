@@ -240,7 +240,7 @@ begin
   for rel in fSrcs do if rel <> '' then
   begin
     abs := expandFilenameEx(fBasePath,rel);
-    aList.Add(abs); // process.inc ln 249. double quotes are added anyway if there's a space...
+    aList.Add(abs); // process.inc ln 249. double quotes are added if there's a space.
   end;
   TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts(aList);
 end;

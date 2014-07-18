@@ -17,7 +17,7 @@ type
   PTCEWidget = ^TCEWidget;
 
   { TCEWidget }
-  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocMonitor)
+  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocMonitor, ICEWidgetPersist)
     Content: TPanel;
     Back: TPanel;
     contextMenu: TPopupMenu;
@@ -32,6 +32,11 @@ type
     procedure setLoopInt(aValue: Integer);
     procedure updaterAutoProc(Sender: TObject);
     procedure updaterLatchProc(Sender: TObject);
+    //
+    procedure optget_LoopInterval(aWriter: TWriter);
+    procedure optset_LoopInterval(aReader: TReader);
+    procedure optget_UpdaterDelay(aWriter: TWriter);
+    procedure optset_UpdaterDelay(aReader: TReader);
   protected
     fID: string;
     // a descendant overrides to implementi a periodic update.
@@ -78,9 +83,13 @@ type
     function contextName: string; virtual;
     function contextActionCount: integer; virtual;
     function contextAction(index: integer): TAction; virtual;
+    //
+    procedure beforeSave(sender: TObject); virtual;
+    procedure declareProperties(aFiler: TFiler); virtual;
+    procedure afterLoad(sender: TObject); virtual;
+    //
     // returns true if one of the three updater is processing.
     property updating: boolean read fUpdating;
-    property ID: string read fID write fID;
   end;
 
   (**
@@ -110,14 +119,14 @@ implementation
 (*******************************************************************************
  * TCEWidget
  *)
+
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEWidget.create(aOwner: TComponent);
 var
   i: NativeInt;
   itm: TmenuItem;
 begin
   inherited;
-  fID := 'ID_XXXX';
-
   fUpdaterAuto := TTimer.Create(self);
   fUpdaterAuto.Interval := 70;
   fUpdaterAuto.OnTimer := @updaterAutoProc;
@@ -125,10 +134,6 @@ begin
 
   updaterByLoopInterval := 70;
   updaterByDelayDuration := 1250;
-
-  DockMaster.MakeDockable(Self, true, true, true);
-  DockMaster.GetAnchorSite(Self).Header.HeaderPosition := adlhpTop;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 
   for i := 0 to contextActionCount-1 do
   begin
@@ -144,7 +149,107 @@ destructor TCEWidget.destroy;
 begin
   inherited;
 end;
+{$ENDREGION}
 
+{$REGION ICEWidgetPersist ------------------------------------------------------}
+procedure TCEWidget.beforeSave(sender: TObject);
+begin
+end;
+
+procedure TCEWidget.declareProperties(aFiler: TFiler);
+begin
+  // override rules: inhertied must be called. No dots in the property name, property name prefixed with the widget Name
+  aFiler.DefineProperty(Name + '_updaterByLoopInterval', @optset_LoopInterval, @optget_LoopInterval, true);
+  aFiler.DefineProperty(Name + '_updaterByDelayDuration', @optset_UpdaterDelay, @optget_UpdaterDelay, true);
+end;
+
+procedure TCEWidget.afterLoad(sender: TObject);
+begin
+end;
+
+procedure TCEWidget.optget_LoopInterval(aWriter: TWriter);
+begin
+  aWriter.WriteInteger(fLoopInter);
+end;
+
+procedure TCEWidget.optset_LoopInterval(aReader: TReader);
+begin
+  updaterByLoopInterval := aReader.ReadInteger;
+end;
+
+procedure TCEWidget.optget_UpdaterDelay(aWriter: TWriter);
+begin
+  aWriter.WriteInteger(fDelayDur);
+end;
+
+procedure TCEWidget.optset_UpdaterDelay(aReader: TReader);
+begin
+  updaterByDelayDuration := aReader.ReadInteger;
+end;
+{$ENDREGION}
+
+{$REGION ICEContextualActions---------------------------------------------------}
+function TCEWidget.contextName: string;
+begin
+  result := '';
+end;
+
+function TCEWidget.contextActionCount: integer;
+begin
+  result := 0;
+end;
+
+function TCEWidget.contextAction(index: integer): TAction;
+begin
+  result := nil;
+end;
+{$ENDREGION}
+
+{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEWidget.docNew(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEWidget.docClose(const aDoc: TCESynMemo);
+begin
+end;
+{$ENDREGION}
+
+{$REGION ICEProjectMonitor -----------------------------------------------------}
+procedure TCEWidget.projNew(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projChange(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projClose(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projCompile(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projRun(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEWidget.projFocused(const aProject: TCEProject);
+begin
+end;
+{$ENDREGION}
+
+{$REGION Updaters---------------------------------------------------------------}
 procedure TCEWidget.setDelayDur(aValue: Integer);
 begin
   if aValue < 100 then aValue := 100;
@@ -227,61 +332,7 @@ end;
 procedure TCEWidget.UpdateByDelay;
 begin
 end;
-
-procedure TCEWidget.projNew(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projChange(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projClose(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projCompile(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projRun(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projFocused(const aProject: TCEProject);
-begin
-end;
-
-function TCEWidget.contextName: string;
-begin
-  result := '';
-end;
-
-function TCEWidget.contextActionCount: integer;
-begin
-  result := 0;
-end;
-
-function TCEWidget.contextAction(index: integer): TAction;
-begin
-  result := nil;
-end;
-
-procedure TCEWidget.docNew(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docClose(const aDoc: TCESynMemo);
-begin
-end;
+{$ENDREGION}
 
 (*******************************************************************************
  * TCEWidgetList

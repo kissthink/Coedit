@@ -47,9 +47,7 @@ implementation
 constructor TCEProjectConfigurationWidget.create(aOwner: TComponent);
 begin
   inherited;
-  fID := 'PROJ_CONF';
   Tree.Selected := Tree.Items.GetLastNode;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
@@ -106,7 +104,7 @@ begin
   nme := '';
   beginUpdateByEvent;
   cfg := fProj.addConfiguration;
-  // note: Cancel is actually related to the conf name not to the adding operation.
+  // note: Cancel is actually related to the conf. name not to the add operation.
   if InputQuery('Configuration name', '', nme) then cfg.name := nme;
   fProj.ConfigurationIndex := cfg.Index;
   endUpdateByEvent;

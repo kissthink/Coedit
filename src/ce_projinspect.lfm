@@ -209,7 +209,7 @@ inherited CEProjectInspectWidget: TCEProjectInspectWidget
         object btnRemFile: TSpeedButton
           Left = 28
           Height = 24
-          Hint = 'remove a source file from the project'
+          Hint = 'remove selected sources file(s) from the project'
           Top = 0
           Width = 28
           Align = alLeft

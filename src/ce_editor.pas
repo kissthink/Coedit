@@ -8,8 +8,8 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, ce_widget, ce_d2syn, ce_synmemo, ce_common, AnchorDocking,
-  ce_dlang, ce_project;
+  SynHighlighterLFM, AnchorDocking, ce_widget, ce_d2syn, ce_synmemo, ce_dlang,
+  ce_project;
 
 type
   { TCEEditorWidget }
@@ -67,7 +67,6 @@ var
   bmp: TBitmap;
 begin
   inherited;
-  fID := 'ID_EDIT';
   //
   tokLst := TLexTokenList.Create;
   errLst := TLexErrorList.Create;
@@ -80,7 +79,6 @@ begin
   finally
     bmp.Free;
   end;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 destructor TCEEditorWidget.destroy;
@@ -122,7 +120,7 @@ begin
   fSyncEdit.Editor := curr;
   //
   if pageControl.ActivePageIndex <> -1 then
-    mainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
+    CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
   //
   if (pageControl.ActivePage.Caption = '') then
   begin
@@ -139,8 +137,8 @@ end;
 
 procedure TCEEditorWidget.PageControlCloseTabClicked(Sender: TObject);
 begin
-  // closeBtn not implemented
-  mainForm.actFileClose.Execute;
+  // closeBtn not implemented (Win.)
+  CEMainForm.actFileClose.Execute;
 end;
 
 procedure TCEEditorWidget.addEditor;
@@ -158,9 +156,7 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnKeyPress := @memoKeyPress;
   memo.OnMouseDown := @memoMouseDown;
-
-  // http://forum.lazarus.freepascal.org/index.php/topic,25213.0.html
-  //memo.OnChange := @memoChange;
+  memo.OnChange := @memoChange;
 
   memo.OnMouseMove := @memoMouseMove;
   //
@@ -172,7 +168,7 @@ end;
 
 procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);
 begin
-  mainForm.MessageWidget.ClearMessages(msEditor);
+  CEMainForm.MessageWidget.ClearMessages(msEditor);
   editor[aIndex].OnChange:= nil;
   pageControl.Pages[aIndex].Free;
 end;
@@ -249,15 +245,15 @@ begin
   if not fKeyChanged then exit;
   //
   fKeyChanged := false;
-  mainForm.docChangeNotify(Self, editorIndex);
+  CEMainForm.docChangeNotify(Self, editorIndex);
   if ed.Lines.Count = 0 then exit;
   //
-  mainForm.MessageWidget.ClearMessages(msEditor);
-  lex( ed.Lines.Text, tokLst );
+  CEMainForm.MessageWidget.ClearMessages(msEditor);
+  lex(ed.Lines.Text, tokLst);
 
-  checkSyntacticErrors( tokLst, errLst);
+  checkSyntacticErrors(tokLst, errLst);
   for err in errLst do
-    mainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
+    CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
     [err.msg, err.position.y, err.position.x]), msEditor);
 
   md := '';
@@ -266,7 +262,7 @@ begin
   if md = '' then md := extractFileName(ed.fileName);
   pageControl.ActivePage.Caption := md;
 
-  mainForm.MessageWidget.scrollToBack;
+  CEMainForm.MessageWidget.scrollToBack;
   tokLst.Clear;
   errLst.Clear;
 end;

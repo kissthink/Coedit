@@ -39,9 +39,12 @@ type
     fSearchMru, fReplaceMru: TMruList;
     fCancelAll: boolean;
     fHasSearched: boolean;
+    procedure optset_SearchMru(aReader: TReader);
+    procedure optget_SearchMru(aWriter: TWriter);
+    procedure optset_ReplaceMru(aReader: TReader);
+    procedure optget_ReplaceMru(aWriter: TWriter);
     function getOptions: TSynSearchOptions;
     procedure actReplaceAllExecute(sender: TObject);
-
     procedure replaceEvent(Sender: TObject; const ASearch, AReplace:
       string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   protected
@@ -57,6 +60,8 @@ type
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
     //
+    procedure declareProperties(aFiler: TFiler); override;
+    //
     procedure actFindNextExecute(sender: TObject);
     procedure actReplaceNextExecute(sender: TObject);
   end;
@@ -64,6 +69,7 @@ type
 implementation
 {$R *.lfm}
 
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCESearchWidget.Create(aOwner: TComponent);
 begin
   fActFindNext := TAction.Create(self);
@@ -76,7 +82,6 @@ begin
   fActReplaceAll.Caption := 'Replace all';
   fActReplaceAll.OnExecute := @actReplaceAllExecute;
   inherited;
-  fID := 'ID_FIND';
   //
   btnFind.Action := fActFindNext;
   btnReplace.Action := fActReplaceNext;
@@ -84,7 +89,6 @@ begin
   //
   fSearchMru := TMruList.Create;
   fReplaceMru:= TMruList.Create;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 destructor TCESearchWidget.Destroy;
@@ -93,19 +97,39 @@ begin
   fReplaceMru.Free;
   inherited;
 end;
+{$ENDREGION}
 
-procedure TCESearchWidget.docFocused(const aDoc: TCESynMemo);
+{$REGION ICEWidgetPersist ------------------------------------------------------}
+procedure TCESearchWidget.declareProperties(aFiler: TFiler);
 begin
-  fEditor := aDoc;
-  UpdateByEvent;
+  inherited;
+  aFiler.DefineProperty(Name + '_FindMRU', @optset_SearchMru, @optget_SearchMru, true);
+  aFiler.DefineProperty(Name + '_ReplaceMRU', @optset_ReplaceMru, @optget_ReplaceMru, true);
 end;
 
-procedure TCESearchWidget.docClose(const aDoc: TCESynMemo);
+procedure TCESearchWidget.optset_SearchMru(aReader: TReader);
 begin
-  if fEditor = aDoc then fEditor := nil;
-  UpdateByEvent;
+  fSearchMru.DelimitedText := aReader.ReadString;
+  cbToFind.Items.DelimitedText := fSearchMru.DelimitedText;
 end;
 
+procedure TCESearchWidget.optget_SearchMru(aWriter: TWriter);
+begin
+  aWriter.WriteString(fSearchMru.DelimitedText);
+end;
+
+procedure TCESearchWidget.optset_ReplaceMru(aReader: TReader);
+begin
+  fReplaceMru.DelimitedText := aReader.ReadString;
+  cbReplaceWth.Items.DelimitedText := fReplaceMru.DelimitedText ;
+end;
+procedure TCESearchWidget.optget_ReplaceMru(aWriter: TWriter);
+begin
+  aWriter.WriteString(fReplaceMru.DelimitedText);
+end;
+{$ENDREGION}
+
+{$REGION ICEContextualActions---------------------------------------------------}
 function TCESearchWidget.contextName: string;
 begin
   exit('Search');
@@ -126,26 +150,6 @@ begin
   end;
 end;
 
-procedure TCESearchWidget.cbToFindChange(Sender: TObject);
-begin
-  if Updating then exit;
-  fToFind := cbToFind.Text;
-  fHasSearched := false;
-end;
-
-procedure TCESearchWidget.chkEnableRepChange(Sender: TObject);
-begin
-  if Updating then exit;
-  UpdateByEvent;
-end;
-
-procedure TCESearchWidget.cbReplaceWthChange(Sender: TObject);
-begin
-  if Updating then exit;
-  fReplaceWth := cbReplaceWth.Text;
-  fHasSearched := false;
-end;
-
 function TCESearchWidget.getOptions: TSynSearchOptions;
 begin
   result := [ssoRegExpr];
@@ -153,6 +157,28 @@ begin
   if chkBack.Checked then result += [ssoBackwards];
   if chkCaseSens.Checked then result += [ssoMatchCase];
   if chkPrompt.Checked then result += [ssoPrompt];
+end;
+
+function dlgReplaceAll: TModalResult;
+const
+  Btns = [mbYes, mbNo, mbYesToAll, mbNoToAll];
+begin
+  exit( MessageDlg('Coedit', 'Replace this match ?', mtConfirmation, Btns, ''));
+end;
+
+procedure TCESearchWidget.replaceEvent(Sender: TObject; const ASearch, AReplace:
+      string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+begin
+  case dlgReplaceAll of
+    mrYes: ReplaceAction := raReplace;
+    mrNo: ReplaceAction := raSkip;
+    mrYesToAll: ReplaceAction := raReplaceAll;
+    mrCancel, mrClose, mrNoToAll:
+      begin
+        ReplaceAction := raCancel;
+        fCancelAll := true;
+      end;
+  end;
 end;
 
 procedure TCESearchWidget.actFindNextExecute(sender: TObject);
@@ -233,27 +259,40 @@ begin
   fEditor.OnReplaceText := nil;
   UpdateByEvent;
 end;
+{$ENDREGION}
 
-function dlgReplaceAll: TModalResult;
-const
-  Btns = [mbYes, mbNo, mbYesToAll, mbNoToAll];
+{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCESearchWidget.docFocused(const aDoc: TCESynMemo);
 begin
-  exit( MessageDlg('Coedit', 'Replace this match ?', mtConfirmation, Btns, ''));
+  fEditor := aDoc;
+  UpdateByEvent;
 end;
 
-procedure TCESearchWidget.replaceEvent(Sender: TObject; const ASearch, AReplace:
-      string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+procedure TCESearchWidget.docClose(const aDoc: TCESynMemo);
 begin
-  case dlgReplaceAll of
-    mrYes: ReplaceAction := raReplace;
-    mrNo: ReplaceAction := raSkip;
-    mrYesToAll: ReplaceAction := raReplaceAll;
-    mrCancel, mrClose, mrNoToAll:
-      begin
-        ReplaceAction := raCancel;
-        fCancelAll := true;
-      end;
-  end;
+  if fEditor = aDoc then fEditor := nil;
+  UpdateByEvent;
+end;
+{$ENDREGION}
+
+procedure TCESearchWidget.cbToFindChange(Sender: TObject);
+begin
+  if Updating then exit;
+  fToFind := cbToFind.Text;
+  fHasSearched := false;
+end;
+
+procedure TCESearchWidget.chkEnableRepChange(Sender: TObject);
+begin
+  if Updating then exit;
+  UpdateByEvent;
+end;
+
+procedure TCESearchWidget.cbReplaceWthChange(Sender: TObject);
+begin
+  if Updating then exit;
+  fReplaceWth := cbReplaceWth.Text;
+  fHasSearched := false;
 end;
 
 procedure TCESearchWidget.UpdateByEvent;

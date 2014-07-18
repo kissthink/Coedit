@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
   lcltype, ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project,
-  ce_synmemo, LMessages;
+  ce_synmemo;
 
 type
 
@@ -103,11 +103,9 @@ begin
   fActSaveMsg.caption := 'Save selected message(s) to...';
   //
   inherited;
-  fID := 'ID_MSGS';
   //
   List.PopupMenu := contextMenu;
   List.OnDeletion := @ListDeletion;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 procedure TCEMessagesWidget.clearOutOfRangeMessg;

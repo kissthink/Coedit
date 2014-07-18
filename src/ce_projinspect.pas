@@ -65,13 +65,11 @@ begin
   fActSelConf.OnUpdate := @actUpdate;
   //
   inherited;
-  fID := 'ID_PROJ';
   Tree.OnDblClick := @TreeDblClick;
   fFileNode := Tree.Items[0];
   fConfNode := Tree.Items[1];
   //
   Tree.PopupMenu := contextMenu;
-  DockMaster.GetAnchorSite(Self).Name := ID;
 end;
 
 function TCEProjectInspectWidget.contextName: string;
@@ -137,7 +135,7 @@ begin
     begin
       fname := fProject.getAbsoluteSourceName(i);
       if fileExists(fname) then
-        mainForm.openFile(fname);
+        CEMainForm.openFile(fname);
     end;
   end
   else if Tree.Selected.Parent = fConfNode then
@@ -195,7 +193,7 @@ begin
   if fileExists(fProject.fileName) then
     dir := extractFilePath(fProject.fileName)
   else dir := '';
-  if selectDirectory(dir, [], 0) then
+  if selectDirectory('sources', dir, dir, true, 0) then
   begin
     if FindFirst(dir + DirectorySeparator + '*.*', faAnyFile, sr ) = 0 then
     try
@@ -218,19 +216,19 @@ begin
   if Tree.Selected = nil then exit;
   //
   if Tree.Selected.Parent = fFileNode then
-    begin
-      fname := Tree.Selected.Text;
-      i := fProject.Sources.IndexOf(fname);
-      if i > -1 then fProject.Sources.Delete(i);
-      UpdateByEvent;
-    end
+  begin
+    fname := Tree.Selected.Text;
+    i := fProject.Sources.IndexOf(fname);
+    if i > -1 then fProject.Sources.Delete(i);
+    UpdateByEvent;
+  end;
 end;
 
 procedure TCEProjectInspectWidget.FormDropFiles(Sender: TObject; const FileNames: array of String);
 var
   fname: string;
 begin
-  mainForm.FormDropFiles(Sender, Filenames);
+  CEMainForm.FormDropFiles(Sender, Filenames);
   if fProject = nil then exit;
   for fname in Filenames do fProject.addSource(fname);
 end;
