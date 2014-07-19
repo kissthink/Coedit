@@ -251,10 +251,13 @@ begin
   CEMainForm.MessageWidget.ClearMessages(msEditor);
   lex(ed.Lines.Text, tokLst);
 
-  checkSyntacticErrors(tokLst, errLst);
-  for err in errLst do
-    CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
-    [err.msg, err.position.y, err.position.x]), msEditor);
+  if ed.isDSource then
+  begin
+    checkSyntacticErrors(tokLst, errLst);
+    for err in errLst do
+      CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
+      [err.msg, err.position.y, err.position.x]), msEditor);
+  end;
 
   md := '';
   if ed.isDSource then

@@ -118,6 +118,31 @@ type
    *)
   function getDocPath: string;
 
+  (**
+   * Fills aList with the names of the files located in aPath.
+   *)
+  procedure listFiles(const aList: TStrings; const aPath: string);
+
+  (**
+   * Fills aList with the names of the folders located in aPath.
+   *)
+  procedure listFolders(const aList: TStrings; const aPath: string);
+
+  (**
+   * Checks if aPath contains at least one sub-folder
+   *)
+  function hasFolder(const aPath: string): boolean;
+
+  (**
+   * Fills aList with the system drives.
+   *)
+  procedure listDrives(const aList: TStrings);
+
+  (**
+   * Lets the shell open a file
+   *)
+  function shellOpen(const aFilename: string): boolean;
+
 implementation
 
 procedure TProcessEx.Assign(aValue: TPersistent);
@@ -429,5 +454,106 @@ begin
   {$ENDIF}
   result += directorySeparator + 'Coedit' + directorySeparator;
 end;
+
+procedure listFiles(const aList: TStrings; const aPath: string);
+var
+  sr: TSearchrec;
+procedure tryAdd;
+begin
+  if sr.Attr and faDirectory <> faDirectory then
+    aList.Add(aPath + directorySeparator + sr.Name);
+end;
+begin
+  if findFirst(aPath + directorySeparator + '*.*', faAnyFile, sr) = 0 then
+  try
+    repeat tryAdd;
+    until findNext(sr) <> 0;
+  finally
+    sysutils.FindClose(sr);
+  end;
+end;
+
+function isFolder(sr: TSearchRec): boolean;
+begin
+  result := (sr.Name <> '.') and  (sr.Name <> '..' )and  (sr.Name <> '' ) and
+    (sr.Attr and faDirectory = faDirectory);
+end;
+
+procedure listFolders(const aList: TStrings; const aPath: string);
+var
+  sr: TSearchrec;
+begin
+  if findFirst(aPath + '*.*', faDirectory, sr) = 0 then
+  try
+    repeat if isFolder(sr) then
+      aList.Add(aPath + sr.Name);
+    until findNext(sr) <> 0;
+  finally
+    sysutils.FindClose(sr);
+  end;
+end;
+
+function hasFolder(const aPath: string): boolean;
+var
+  sr: TSearchrec;
+  res: boolean;
+begin
+  res := false;
+  if findFirst(aPath + directorySeparator + '*.*', faDirectory, sr) = 0 then
+  try
+    repeat if isFolder(sr) then
+    begin
+      res := true;
+      break;
+    end;
+    until findNext(sr) <> 0;
+  finally
+    sysutils.FindClose(sr);
+  end;
+  result := res;
+end;
+
+procedure listDrives(const aList: TStrings);
+{$IFDEF WINDOWS}
+var
+  drv: char;
+  ltr: string;
+  {$ENDIF}
+begin
+  {$IFDEF WINDOWS}
+  for drv := 'A' to 'Z' do
+  begin
+    ltr := drv + ':\';
+    case GetDriveType(PChar(ltr)) of
+       DRIVE_REMOVABLE,
+       DRIVE_FIXED,
+       DRIVE_REMOTE: aList.Add(ltr);
+    end;
+  end;
+  {$ENDIF}
+  {$IFDEF LINUX}
+  // aList.LoadFromFile('/etc/fstab'); // to be parsed
+  aList.Add('/home/');
+  {$ENDIF}
+end;
+
+function shellOpen(const aFilename: string): boolean;
+begin
+  {$IFDEF WINDOWS}
+  result := ShellExecute(0, 'OPEN', PChar(aFilename), nil, nil, SW_SHOW) > 32;
+  {$ENDIF}
+  {$IFDEF LINUX}
+  with TProcess.Create(nil) do
+  try
+    Executable := 'xdg-open'
+    Parameters.Add(aFilename);
+    Execute;
+  finally
+    result := true;
+    Free;
+  end;
+  {$ENDIF}
+end;
+
 
 end.

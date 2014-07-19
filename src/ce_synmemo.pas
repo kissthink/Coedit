@@ -115,7 +115,12 @@ begin
 end;
 
 procedure TCESynMemo.loadFromFile(const aFilename: string);
+var
+  ext: string;
 begin
+  ext := extractFileExt(aFilename);
+  if (ext <> '.d') and (ext <> '.di') then
+    Highlighter := nil;
   Lines.LoadFromFile(aFilename);
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);

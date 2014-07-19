@@ -9,7 +9,7 @@ uses
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
   Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls,
   ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
-  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search;
+  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search, ce_miniexplorer;
 
 type
 
@@ -204,6 +204,7 @@ type
     fPrjCfWidg: TCEProjectConfigurationWidget;
     fStExpWidg: TCEStaticExplorerWidget;
     fFindWidg:  TCESearchWidget;
+    fExplWidg: TCEMiniExplorerWidget;
     fProjMru: TMruFileList;
     fFileMru: TMruFileList;
 
@@ -302,12 +303,13 @@ var
   itm: TMenuItem;
 begin
   fWidgList := TCEWidgetList.Create;
-  fMesgWidg := TCEMessagesWidget.create(nil);
-  fEditWidg := TCEEditorWidget.create(nil);
-  fProjWidg := TCEProjectInspectWidget.create(nil);
-  fPrjCfWidg:= TCEProjectConfigurationWidget.create(nil);
-  fStExpWidg:= TCEStaticExplorerWidget.create(nil);
-  fFindWidg := TCESearchWidget.create(nil);
+  fMesgWidg := TCEMessagesWidget.create(self);
+  fEditWidg := TCEEditorWidget.create(self);
+  fProjWidg := TCEProjectInspectWidget.create(self);
+  fPrjCfWidg:= TCEProjectConfigurationWidget.create(self);
+  fStExpWidg:= TCEStaticExplorerWidget.create(self);
+  fFindWidg := TCESearchWidget.create(self);
+  fExplWidg := TCEMiniExplorerWidget.create(self);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
@@ -315,6 +317,7 @@ begin
   fWidgList.addWidget(@fPrjCfWidg);
   fWidgList.addWidget(@fStExpWidg);
   fWidgList.addWidget(@fFindWidg);
+  fWidgList.addWidget(@fExplWidg);
 
   for widg in fWidgList do
   begin
@@ -353,16 +356,18 @@ begin
     DockMaster.GetAnchorSite(fWidgList.widget[i]).Header.HeaderPosition := adlhpTop;
   end;
 
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), DockMaster.GetSite(Self), alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), DockMaster.GetSite(Self), alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), DockMaster.GetSite(Self), alLeft);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), Self, alLeft);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fFindWidg),
     DockMaster.GetAnchorSite(fStExpWidg), alBottom, fStExpWidg);
   width := width - fProjWidg.Width;
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), DockMaster.GetSite(Self), alRight);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fPrjCfWidg),
     DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
+
+  //DockMaster.GetAnchorSite(fExplWidg).Close;
 end;
 
 procedure TCEMainForm.InitSettings;
@@ -424,12 +429,6 @@ begin
   SaveDocking;
   //
   fWidgList.Free;
-  fMesgWidg.Free;
-  fEditWidg.Free;
-  fProjWidg.Free;
-  fPrjCfWidg.Free;
-  fStExpWidg.Free;
-  fFindWidg.Free;
   fProjMru.Free;
   fFileMru.Free;
   fProject.Free;
@@ -1490,18 +1489,18 @@ begin
 end;
 
 procedure TCEOptions.defineProperties(Filer: TFiler);
+var
+  widg: TCEWidget;
 begin
   inherited;
   // Filer is either a TReader or a TWriter
-  CEMainForm.fEditWidg.declareProperties(Filer);
-  CEMainForm.fFindWidg.declareProperties(Filer);
-  CEMainForm.fMesgWidg.declareProperties(Filer);
-  CEMainForm.fPrjCfWidg.declareProperties(Filer);
-  CEMainForm.fProjWidg.declareProperties(Filer);
-  CEMainForm.fStExpWidg.declareProperties(Filer);
+  for widg in CEMainForm.WidgetList do
+    widg.declareProperties(Filer);
 end;
 
 procedure TCEOptions.beforeSave;
+var
+  widg: TCEWidget;
 begin
   fLeft   := CEMainForm.Left;
   fTop    := CEMainForm.Top;
@@ -1511,12 +1510,8 @@ begin
   fFileMru.Assign(CEMainForm.fFileMru);
   fProjMru.Assign(CEMainForm.fProjMru);
   //
-  CEMainForm.fEditWidg.beforeSave(nil);
-  CEMainForm.fFindWidg.beforeSave(nil);
-  CEMainForm.fMesgWidg.beforeSave(nil);
-  CEMainForm.fPrjCfWidg.beforeSave(nil);
-  CEMainForm.fProjWidg.beforeSave(nil);
-  CEMainForm.fStExpWidg.beforeSave(nil);
+  for widg in CEMainForm.WidgetList do
+    widg.beforeSave(nil);
 end;
 
 procedure TCEOptions.saveToFile(const aFilename: string);
@@ -1534,6 +1529,8 @@ begin
 end;
 
 procedure TCEOptions.afterLoad;
+var
+  widg: TCEWidget;
 begin
   CEMainForm.Left   := fLeft;
   CEMainForm.Top    := fTop;
@@ -1543,12 +1540,8 @@ begin
   CEMainForm.fFileMru.Assign(fFileMru);
   CEMainForm.fProjMru.Assign(fProjMru);
   //
-  CEMainForm.fEditWidg.afterLoad(nil);
-  CEMainForm.fFindWidg.afterLoad(nil);
-  CEMainForm.fMesgWidg.afterLoad(nil);
-  CEMainForm.fPrjCfWidg.afterLoad(nil);
-  CEMainForm.fProjWidg.afterLoad(nil);
-  CEMainForm.fStExpWidg.afterLoad(nil);
+  for widg in CEMainForm.WidgetList do
+    widg.afterLoad(nil);
 end;
 {$ENDREGION}
 

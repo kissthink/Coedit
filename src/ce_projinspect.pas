@@ -176,17 +176,9 @@ end;
 
 procedure TCEProjectInspectWidget.btnAddFoldClick(Sender: TObject);
 var
-  dir, fname: string;
-  sr: TSearchRec;
+  dir, fname, ext: string;
   lst: TStringList;
-procedure doFindFile;
-var
-  ext: string;
-begin
-  ext := ExtractFileExt(sr.Name);
-  if (ext = '.d') or (ext = '.di') then
-    lst.Add(dir + DirectorySeparator + sr.Name);
-end;
+  i: NativeInt;
 begin
   if fProject = nil then exit;
   //
@@ -195,12 +187,16 @@ begin
   else dir := '';
   if selectDirectory('sources', dir, dir, true, 0) then
   begin
-    if FindFirst(dir + DirectorySeparator + '*.*', faAnyFile, sr ) = 0 then
+    lst := TStringList.Create;
     try
-      lst := TStringList.Create;
-      doFindFile;
-      while FindNext(sr) = 0 do doFindFile;
-      for fname in lst do fProject.addSource(fname);
+      listFiles(lst, dir);
+      for i := 0 to lst.Count-1 do
+      begin
+        fname := lst.Strings[i];
+        ext := extractFileExt(fname);
+        if (ext = '.d') or (ext = '.di') then
+          fProject.addSource(fname);
+      end;
     finally
       lst.Free;
     end;
