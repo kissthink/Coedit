@@ -67,7 +67,7 @@ end;
 procedure TCEProjectConfigurationWidget.projClose(const aProject: TCEProject);
 begin
   Grid.TIObject := nil;
-  Grid.ItemIndex :=-1;
+  Grid.ItemIndex := -1;
   fProj := nil;
 end;
 

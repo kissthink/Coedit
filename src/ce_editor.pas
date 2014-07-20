@@ -149,7 +149,7 @@ begin
   sheet := pageControl.AddTabSheet;
   memo  := TCESynMemo.Create(sheet);
   //
-  memo.Align:=alClient;
+  memo.Align := alClient;
   memo.Parent := sheet;
   //
   memo.OnKeyDown := @memoKeyDown;

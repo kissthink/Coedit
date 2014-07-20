@@ -275,6 +275,7 @@ begin
 end;
 {$ENDREGION}
 
+{$REGION Misc. -----------------------------------------------------------------}
 procedure TCESearchWidget.cbToFindChange(Sender: TObject);
 begin
   if Updating then exit;
@@ -306,6 +307,7 @@ begin
   cbToFind.Items.Assign(fSearchMru);
   cbReplaceWth.Items.Assign(fReplaceMru);
 end;
+{$ENDREGION}
 
 end.
 

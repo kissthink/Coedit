@@ -67,8 +67,8 @@ implementation
 uses
   ce_main, ce_common;
 
-//TODO-cbugfix: click on the expander glyph, sometime the subdirs are not scanned but the
-//fake sub still displayed
+//TODO-cbugfix: click on the expander glyph, sometime the subdirs are not scanned but the fake sub item is still displayed
+//TODO-cfeature: the linux version doesnt work at all
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMiniExplorerWidget.create(aIwner: TComponent);
@@ -321,7 +321,7 @@ begin
       itm.SelectedIndex := 1;
       //
       if hasFolder(fold) then
-        Tree.Items.AddChild(itm,''); //...created here to show the expander glyph
+        Tree.Items.AddChild(itm, ''); //...created here to show the expander glyph
     end;
   finally
     lst.Free;

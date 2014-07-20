@@ -367,7 +367,7 @@ begin
     DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
 
-  //DockMaster.GetAnchorSite(fExplWidg).Close;
+  DockMaster.GetAnchorSite(fExplWidg).Close;
 end;
 
 procedure TCEMainForm.InitSettings;
@@ -1076,6 +1076,7 @@ begin
 
 
     fMesgWidg.addCeInf( 'compiling ' + aProject.fileName, msProject);
+    application.ProcessMessages;
 
     prjpath := extractFilePath(aProject.fileName);
     if directoryExists(prjpath) then chDir(prjpath);

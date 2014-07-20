@@ -14,7 +14,6 @@ type
   private
     fFilename: string;
     fModified: boolean;
-    fNoDateCheck: boolean;
     fFileDate: double;
     fAssocProject: TCEProject;
     fIsDSource: boolean;
@@ -52,7 +51,7 @@ var
 implementation
 
 uses
-  graphics, ce_main;
+  graphics, ce_main, forms, ExtendedNotebook, comctrls;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -124,7 +123,6 @@ begin
   Lines.LoadFromFile(aFilename);
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);
-  fNoDateCheck := false;
   fModified := false;
 end;
 
@@ -133,7 +131,6 @@ begin
   Lines.SaveToFile(aFilename);
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);
-  fNoDateCheck := false;
   fModified := false;
 end;
 
@@ -141,7 +138,6 @@ procedure TCESynMemo.save;
 begin
   Lines.SaveToFile(fFilename);
   FileAge(fFilename, fFileDate);
-  fNoDateCheck := false;
   fModified := false;
 end;
 
@@ -158,8 +154,8 @@ begin
     begin
       Lines.LoadFromFile(fFilename);
       fModified := false;
-    end
-    else fNoDateCheck := true;
+    end;
+    //TODO-cbugfix: the cursor is incorrectly set to crDragSomething.
   end;
   fFileDate := newDate;
 end;
@@ -173,7 +169,8 @@ end;
 procedure TCESynMemo.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
-  identifierToD2Syn;
+  if ssLeft in Shift then
+    identifierToD2Syn;
 end;
 
 procedure TCESynMemo.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y:Integer);

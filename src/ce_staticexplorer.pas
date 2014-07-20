@@ -76,6 +76,8 @@ type
 implementation
 {$R *.lfm}
 
+uses ce_main;
+
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEStaticExplorerWidget.create(aOwner: TComponent);
 begin
@@ -321,7 +323,7 @@ var
   jsf, scf: string;
   ndCat: TTreeNode;
   ln: PInt64;
-  nme: string;
+  nme, knd: string;
   i: NativeInt;
 
   // recursively display members, without master categories.
@@ -435,7 +437,8 @@ begin
       ln^ := memb.Items[i].GetPath('line').AsInt64;
       nme := memb.Items[i].GetPath('name').AsString;
 
-      case memb.Items[i].GetPath('kind').AsString of
+      knd := memb.Items[i].GetPath('kind').AsString;
+      case knd of
         'alias'     :ndCat := Tree.Items.AddChildObject(ndAlias, nme, ln);
         'class'     :ndCat := Tree.Items.AddChildObject(ndClass, nme, ln);
         'enum'      :ndCat := Tree.Items.AddChildObject(ndEnum, nme, ln);
@@ -447,6 +450,7 @@ begin
         'struct'    :ndCat := Tree.Items.AddChildObject(ndStruct, nme, ln);
         'template'  :ndCat := Tree.Items.AddChildObject(ndTmp, nme, ln);
         'variable'  :ndCat := Tree.Items.AddChildObject(ndVar, nme, ln);
+        else CEMainForm.MessageWidget.addCeWarn('static explorer does not handle this kind: ' + knd);
       end;
 
       if ndCat = nil then
