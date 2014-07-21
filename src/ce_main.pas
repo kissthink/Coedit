@@ -1084,7 +1084,7 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options := [poNewConsole, poStdErrToOutput, poUsePipes];
+    dmdproc.Options := [{$IFDEF WINDOWS}poNewConsole,{$ENDIF} poStdErrToOutput, poUsePipes];
 
     dmdproc.Executable := 'dmd';
     aProject.getOpts(dmdproc.Parameters);

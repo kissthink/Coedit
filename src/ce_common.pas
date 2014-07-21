@@ -545,7 +545,7 @@ begin
   {$IFDEF LINUX}
   with TProcess.Create(nil) do
   try
-    Executable := 'xdg-open'
+    Executable := 'xdg-open';
     Parameters.Add(aFilename);
     Execute;
   finally
