@@ -68,7 +68,6 @@ uses
   ce_main, ce_common;
 
 //TODO-cbugfix: click on the expander glyph, sometime the subdirs are not scanned but the fake sub item is still displayed
-//TODO-cfeature: the linux version doesnt work at all
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMiniExplorerWidget.create(aIwner: TComponent);

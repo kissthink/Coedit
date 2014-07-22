@@ -467,7 +467,7 @@ end;
 
 function isFolder(sr: TSearchRec): boolean;
 begin
-  result := (sr.Name <> '.') and  (sr.Name <> '..' )and  (sr.Name <> '' ) and
+  result := (sr.Name <> '.') and  (sr.Name <> '..' ) and  (sr.Name <> '' ) and
     (sr.Attr and faDirectory = faDirectory);
 end;
 
@@ -480,7 +480,7 @@ begin
     aList.Add(aPath + directorySeparator + sr.Name);
 end;
 begin
-  if findFirst(aPath + directorySeparator + '*.*', faAnyFile, sr) = 0 then
+  if findFirst(aPath + directorySeparator + '*', faAnyFile, sr) = 0 then
   try
     repeat
       tryAdd;
@@ -497,7 +497,7 @@ procedure listFolders(const aList: TStrings; const aPath: string);
 var
   sr: TSearchrec;
 begin
-  if findFirst(aPath + '*.*', faDirectory, sr) = 0 then
+  if findFirst(aPath + '*', faDirectory, sr) = 0 then
   try
     repeat if isFolder(sr) then
       aList.Add(aPath + sr.Name);
@@ -513,7 +513,7 @@ var
   res: boolean;
 begin
   res := false;
-  if findFirst(aPath + directorySeparator + '*.*', faDirectory, sr) = 0 then
+  if findFirst(aPath + directorySeparator + '*', faDirectory, sr) = 0 then
   try
     repeat if isFolder(sr) then
     begin
