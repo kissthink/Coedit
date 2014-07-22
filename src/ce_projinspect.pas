@@ -189,7 +189,7 @@ begin
   begin
     lst := TStringList.Create;
     try
-      listFiles(lst, dir);
+      listFiles(lst, dir, true);
       for i := 0 to lst.Count-1 do
       begin
         fname := lst.Strings[i];

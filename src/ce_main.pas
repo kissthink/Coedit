@@ -979,8 +979,8 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options:= [poStdErrToOutput, poUsePipes];
-    dmdproc.Executable:= 'dmd';
+    dmdproc.Options := [poStdErrToOutput, poUsePipes];
+    dmdproc.Executable := DCompiler;
     dmdproc.Parameters.Add(fname + '.d');
     dmdproc.Parameters.Add('-w');
     dmdproc.Parameters.Add('-wi');
@@ -1086,7 +1086,7 @@ begin
     {$ENDIF}
     dmdproc.Options := [{$IFDEF WINDOWS}poNewConsole,{$ENDIF} poStdErrToOutput, poUsePipes];
 
-    dmdproc.Executable := 'dmd';
+    dmdproc.Executable := DCompiler;
     aProject.getOpts(dmdproc.Parameters);
     try
       dmdproc.Execute;

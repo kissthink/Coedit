@@ -7,6 +7,8 @@ interface
 uses
   classes, sysutils, process;
 
+//TODO-cfeature: scanner for -I and -J sources is the item is a folder.
+
 (*
 
 procedure to add a new compiler option:
@@ -837,7 +839,12 @@ var
   str: string;
 begin
   for str in fSrcs do if str <> '' then
-    aList.Add(str);
+  begin
+    if not
+      listAsteriskPath(str, aList, DExtList)
+    then
+      aList.Add(str);
+  end;
   for str in fIncl do if str <> '' then
     aList.Add('-I'+ str);
   for str in fImpt do if str <> '' then

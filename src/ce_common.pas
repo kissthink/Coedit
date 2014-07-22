@@ -15,6 +15,10 @@ const
 
   DdiagFilter = 'D source|*.d|D interface|*.di|All files|*.*';
 
+var
+  DExtList: TStringList;
+  DCompiler: string = 'dmd';
+
 type
 
   (**
@@ -121,7 +125,7 @@ type
   (**
    * Fills aList with the names of the files located in aPath.
    *)
-  procedure listFiles(const aList: TStrings; const aPath: string);
+  procedure listFiles(const aList: TStrings; const aPath: string; recursive: boolean = false);
 
   (**
    * Fills aList with the names of the folders located in aPath.
@@ -129,7 +133,7 @@ type
   procedure listFolders(const aList: TStrings; const aPath: string);
 
   (**
-   * Checks if aPath contains at least one sub-folder
+   * Checks if aPath contains at least one sub-folder.
    *)
   function hasFolder(const aPath: string): boolean;
 
@@ -137,6 +141,12 @@ type
    * Fills aList with the system drives.
    *)
   procedure listDrives(const aList: TStrings);
+
+  (**
+   * If aPath ends with an asterisk then fills aList with the names of the files located in aPath.
+   * Returns true if aPath was 'asterisk-ifyed'.
+   *)
+  function listAsteriskPath(const aPath: string; const aList: TStrings; const someExts: TStrings = nil): boolean;
 
   (**
    * Lets the shell open a file
@@ -455,7 +465,13 @@ begin
   result += directorySeparator + 'Coedit' + directorySeparator;
 end;
 
-procedure listFiles(const aList: TStrings; const aPath: string);
+function isFolder(sr: TSearchRec): boolean;
+begin
+  result := (sr.Name <> '.') and  (sr.Name <> '..' )and  (sr.Name <> '' ) and
+    (sr.Attr and faDirectory = faDirectory);
+end;
+
+procedure listFiles(const aList: TStrings; const aPath: string; recursive: boolean = false);
 var
   sr: TSearchrec;
 procedure tryAdd;
@@ -466,17 +482,15 @@ end;
 begin
   if findFirst(aPath + directorySeparator + '*.*', faAnyFile, sr) = 0 then
   try
-    repeat tryAdd;
-    until findNext(sr) <> 0;
+    repeat
+      tryAdd;
+      if recursive then if isFolder(sr) then
+        listFiles(aList, aPath + directorySeparator + sr.Name, recursive);
+    until
+      findNext(sr) <> 0;
   finally
     sysutils.FindClose(sr);
   end;
-end;
-
-function isFolder(sr: TSearchRec): boolean;
-begin
-  result := (sr.Name <> '.') and  (sr.Name <> '..' )and  (sr.Name <> '' ) and
-    (sr.Attr and faDirectory = faDirectory);
 end;
 
 procedure listFolders(const aList: TStrings; const aPath: string);
@@ -511,6 +525,38 @@ begin
     sysutils.FindClose(sr);
   end;
   result := res;
+end;
+
+function listAsteriskPath(const aPath: string; const aList: TStrings; const someExts: TStrings = nil): boolean;
+var
+  pth, ext, fname: string;
+  files: TStringList;
+begin
+  if aPath[length(aPath)] = '*' then
+  begin
+    pth := aPath[1..length(aPath)-2];
+    if not directoryExists(pth) then exit(false);
+    //
+    files := TStringList.Create;
+    try
+      listFiles(files, pth, true);
+      for fname in files do
+      begin
+        if someExts = nil then
+          aList.Add(fname)
+        else
+        begin
+          ext := extractFileExt(fname);
+          if someExts.IndexOf(ext) <> -1 then
+            aList.Add(fname);
+        end;
+      end;
+    finally
+      files.Free;
+    end;
+    exit(true);
+  end;
+  exit(false);
 end;
 
 procedure listDrives(const aList: TStrings);
@@ -555,5 +601,10 @@ begin
   {$ENDIF}
 end;
 
-
+initialization
+  DExtList := TStringList.Create;
+  DExtList.Add('.d');
+  DExtList.Add('.di');
+finalization
+  DExtList.Free;
 end.
