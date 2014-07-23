@@ -15,8 +15,6 @@ type
    * Base type for an UI module.
    *)
   PTCEWidget = ^TCEWidget;
-
-  { TCEWidget }
   TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocMonitor, ICEWidgetPersist)
     Content: TPanel;
     Back: TPanel;
@@ -334,9 +332,7 @@ begin
 end;
 {$ENDREGION}
 
-(*******************************************************************************
- * TCEWidgetList
- *)
+{$REGION TCEWidgetList---------------------------------------------------------------}
 function TCEWidgetList.getWidget(index: integer): TCEWidget;
 begin
   result := PTCEWidget(Items[index])^;
@@ -364,6 +360,7 @@ begin
   result.fList := aWidgetList;
   result.fIndex := -1;
 end;
+{$ENDREGION}
 
 end.
 

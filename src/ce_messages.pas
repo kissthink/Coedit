@@ -7,22 +7,24 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
   lcltype, ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project,
-  ce_synmemo;
+  ce_synmemo, ce_dlangutils;
 
 type
 
-  TMessageContext = (msUnknown, msProject, msEditor);
+  TMessageContext = (mcUnknown, mcProject, mcEditor, mcApplication);
 
   PMessageItemData = ^TMessageItemData;
   TMessageItemData = record
     ctxt: TMessageContext;
-    data: Pointer;
+    editor: TCESynMemo;
+    project: TCEProject;
+    position: TPoint;
   end;
 
-  { TCEMessagesWidget }
   TCEMessagesWidget = class(TCEWidget)
     imgList: TImageList;
     List: TTreeView;
+    procedure ListDblClick(Sender: TObject);
     procedure ListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     fActClearAll: TAction;
@@ -30,7 +32,7 @@ type
     fActSaveMsg: TAction;
     fActCopyMsg: TAction;
     fActSelAll: TAction;
-    fProject: TCEProject;
+    fProj: TCEProject;
     fMaxMessCnt: Integer;
     fDoc: TCESynMemo;
     procedure filterMessages;
@@ -43,16 +45,22 @@ type
     procedure setMaxMessageCount(aValue: Integer);
     procedure listDeletion(Sender: TObject; Node: TTreeNode);
     function newMessageItemData(aCtxt: TMessageContext): PMessageItemData;
+    //
+    procedure optset_MaxMessageCount(aReader: TReader);
+    procedure optget_MaxMessageCount(awriter: TWriter);
   published
     property maxMessageCount: Integer read fMaxMessCnt write setMaxMessageCount default 125;
   public
     constructor create(aOwner: TComponent); override;
     //
     procedure scrollToBack;
-    procedure addMessage(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-    procedure addCeInf(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-    procedure addCeErr(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-    procedure addCeWarn(const aMsg: string; aCtxt: TMessageContext = msUnknown);
+    procedure addMessage(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+    procedure addMessage(const aMsg: string; const aData: PMessageItemData);
+    procedure addCeInf(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+    procedure addCeErr(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+    procedure addCeWarn(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+    //
+    procedure declareProperties(aFiler: TFiler); override;
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -60,6 +68,7 @@ type
     //
     procedure projNew(const aProject: TCEProject); override;
     procedure projClose(const aProject: TCEProject); override;
+    procedure projFocused(const aProject: TCEProject); override;
     //
     procedure docFocused(const aDoc: TCESynMemo); override;
     procedure docClose(const aDoc: TCESynMemo); override;
@@ -68,13 +77,12 @@ type
     procedure ClearMessages(aCtxt: TMessageContext);
   end;
 
-  PTCEMessageItem = ^TCEMessageItem;
-  TCEMessageItem = class(TListItem)
-  end;
-
   TMessageKind = (msgkUnknown, msgkInfo, msgkHint, msgkWarn, msgkError);
 
   function semanticMsgAna(const aMessg: string): TMessageKind;
+  function getLineFromDmdMessage(const aMessage: string): TPoint;
+  function getFileFromDmdMessage(const aMessage: string): TCESynMemo;
+  function newMessageData: PMessageItemData;
 
 implementation
 {$R *.lfm}
@@ -82,6 +90,7 @@ implementation
 uses
   ce_main;
 
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMessagesWidget.create(aOwner: TComponent);
 begin
   fMaxMessCnt := 125;
@@ -108,43 +117,10 @@ begin
   List.OnDeletion := @ListDeletion;
 end;
 
-procedure TCEMessagesWidget.clearOutOfRangeMessg;
-begin
-  while List.Items.Count > fMaxMessCnt do
-    List.Items.Delete(List.Items.GetFirstNode);
-end;
-
-procedure TCEMessagesWidget.setMaxMessageCount(aValue: Integer);
-begin
-  if aValue < 10 then aValue := 10;
-  if aValue > 1023 then aValue := 1023;
-  if fMaxMessCnt = aValue then exit;
-  fMaxMessCnt := aValue;
-  clearOutOfRangeMessg;
-end;
-
-function TCEMessagesWidget.newMessageItemData(aCtxt: TMessageContext): PMessageItemData;
-begin
-  result := new(PMessageItemData);
-  result^.ctxt := aCtxt;
-  case aCtxt of
-    msUnknown: result^.data := nil;
-    msProject: result^.data := Pointer(fProject);
-    msEditor: result^.data := Pointer(fDoc);
-  end;
-end;
-
 procedure TCEMessagesWidget.listDeletion(Sender: TObject; Node: TTreeNode);
 begin
   if node.Data <> nil then
     Dispose( PMessageItemData(Node.Data));
-end;
-
-procedure TCEMessagesWidget.scrollToBack;
-begin
-  if not Visible then exit;
-  if List.BottomItem <> nil then
-    List.BottomItem.MakeVisible;
 end;
 
 procedure TCEMessagesWidget.ListKeyDown(Sender: TObject; var Key: Word;
@@ -163,88 +139,36 @@ begin
     else ClearAllMessages;
   end;
 end;
+{$ENDREGION}
 
-procedure TCEMessagesWidget.filterMessages;
-var
-  itm: TTreeNode;
-  dat: PMessageItemData;
-  i: NativeInt;
+{$REGION ICEWidgetPersist ------------------------------------------------------}
+procedure TCEMessagesWidget.setMaxMessageCount(aValue: Integer);
 begin
-  for i := 0 to List.Items.Count-1 do
-  begin
-    itm := List.Items[i];
-    dat := PMessageItemData(itm.Data);
-    case dat^.ctxt of
-      msProject: itm.Visible := Pointer(fProject) = (dat^.data);
-      msEditor: itm.Visible := Pointer(fDoc) = (dat^.data);
-      else itm.Visible := true;
-    end;
-  end;
-end;
-
-procedure TCEMessagesWidget.ClearAllMessages;
-begin
-  List.Items.Clear;
-end;
-
-procedure TCEMessagesWidget.ClearMessages(aCtxt: TMessageContext);
-var
-  i: NativeInt;
-begin
-  for i := List.Items.Count-1 downto 0 do
-  begin
-    if PMessageItemData(List.Items[i].Data)^.ctxt = aCtxt then
-      List.Items.Delete(List.Items[i]);
-  end;
-end;
-
-procedure TCEMessagesWidget.addCeInf(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-var
-  item: TTreeNode;
-begin
-  item := List.Items.Add(nil, 'Coedit information: ' + aMsg);
-  item.Data := newMessageItemData(aCtxt);
-  item.ImageIndex := 1;
-  item.SelectedIndex := 1;
-  clearOutOfRangeMessg;
-  scrollToBack;
-end;
-
-procedure TCEMessagesWidget.addCeWarn(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-var
-  item: TTreeNode;
-begin
-  item := List.Items.Add(nil, 'Coedit warning: ' + aMsg);
-  item.Data := newMessageItemData(aCtxt);
-  item.ImageIndex := 3;
-  item.SelectedIndex := 3;
-  clearOutOfRangeMessg;
-  scrollToBack;
-end;
-
-procedure TCEMessagesWidget.addCeErr(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-var
-  item: TTreeNode;
-begin
-  item := List.Items.Add(nil, 'Coedit error: ' + aMsg);
-  item.Data := newMessageItemData(aCtxt);
-  item.ImageIndex := 4;
-  item.SelectedIndex := 4;
-  clearOutOfRangeMessg;
-  scrollToBack;
-end;
-
-procedure TCEMessagesWidget.addMessage(const aMsg: string; aCtxt: TMessageContext = msUnknown);
-var
-  item: TTreeNode;
-begin
-  item := List.Items.Add(nil, aMsg);
-  item.Data := newMessageItemData(aCtxt);
-  item.ImageIndex := Integer( semanticMsgAna(aMsg) );
-  item.SelectedIndex := Integer( semanticMsgAna(aMsg) );
+  if aValue < 10 then aValue := 10;
+  if aValue > 1023 then aValue := 1023;
+  if fMaxMessCnt = aValue then exit;
+  fMaxMessCnt := aValue;
   clearOutOfRangeMessg;
 end;
 
+procedure TCEMessagesWidget.optset_MaxMessageCount(aReader: TReader);
+begin
+  maxMessageCount := aReader.ReadInteger;
+end;
+
+procedure TCEMessagesWidget.optget_MaxMessageCount(aWriter: TWriter);
+begin
+  aWriter.WriteInteger(fMaxMessCnt);
+end;
+
+procedure TCEMessagesWidget.declareProperties(aFiler: TFiler);
+begin
+  inherited;
+  aFiler.DefineProperty(Name + '_MaxMessageCount', @optset_MaxMessageCount, @optget_MaxMessageCount, true);
+end;
+{$ENDREGION}
+
+{$REGION ICEContextualActions---------------------------------------------------}
 function TCEMessagesWidget.contextName: string;
 begin
   result := 'Messages';
@@ -267,31 +191,6 @@ begin
   end;
 end;
 
-procedure TCEMessagesWidget.projNew(const aProject: TCEProject);
-begin
-  fProject := aProject;
-  filterMessages;
-end;
-
-procedure TCEMessagesWidget.projClose(const aProject: TCEProject);
-begin
-  if fProject = aProject then ClearMessages(msProject);
-  fProject := nil;
-  filterMessages;
-end;
-
-procedure TCEMessagesWidget.docFocused(const aDoc: TCESynMemo);
-begin
-  fDoc := aDoc;
-  filterMessages;
-end;
-
-procedure TCEMessagesWidget.docClose(const aDoc: TCESynMemo);
-begin
-  fDoc := nil;
-  filterMessages;
-end;
-
 procedure TCEMessagesWidget.actClearAllExecute(Sender: TObject);
 begin
   ClearAllMessages;
@@ -299,7 +198,7 @@ end;
 
 procedure TCEMessagesWidget.actClearEdiExecute(Sender: TObject);
 begin
-  ClearMessages(msEditor);
+  ClearMessages(mcEditor);
 end;
 
 procedure TCEMessagesWidget.actCopyMsgExecute(Sender: TObject);
@@ -343,8 +242,191 @@ begin
     free;
   end;
 end;
+{$ENDREGION}
 
-// TODO: link to editor line when possible.
+{$REGION ICEProjectMonitor -----------------------------------------------------}
+procedure TCEMessagesWidget.projNew(const aProject: TCEProject);
+begin
+  fProj := aProject;
+  filterMessages;
+end;
+
+procedure TCEMessagesWidget.projClose(const aProject: TCEProject);
+begin
+  if fProj = aProject then ClearMessages(mcProject);
+  fProj := nil;
+  filterMessages;
+end;
+
+procedure TCEMessagesWidget.projFocused(const aProject: TCEProject);
+begin
+  fProj := aProject;
+  filterMessages;
+end;
+{$ENDREGION}
+
+{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEMessagesWidget.docFocused(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+  filterMessages;
+end;
+
+procedure TCEMessagesWidget.docClose(const aDoc: TCESynMemo);
+begin
+  fDoc := nil;
+  filterMessages;
+end;
+{$ENDREGION}
+
+{$REGION Messages --------------------------------------------------------------}
+procedure TCEMessagesWidget.clearOutOfRangeMessg;
+begin
+  while List.Items.Count > fMaxMessCnt do
+    List.Items.Delete(List.Items.GetFirstNode);
+end;
+
+function newMessageData: PMessageItemData;
+begin
+  result := new(PMessageItemData);
+  result^.ctxt := mcUnknown;
+  result^.project := nil;
+  result^.editor := nil;
+  result^.position := point(0,0);
+end;
+
+function TCEMessagesWidget.newMessageItemData(aCtxt: TMessageContext): PMessageItemData;
+begin
+  result := new(PMessageItemData);
+  result^.ctxt := aCtxt;
+  result^.project := fProj;
+  result^.editor := fDoc;
+  result^.position := point(0,0);
+end;
+
+procedure TCEMessagesWidget.scrollToBack;
+begin
+  if not Visible then exit;
+  if List.BottomItem <> nil then
+    List.BottomItem.MakeVisible;
+end;
+
+procedure TCEMessagesWidget.ListDblClick(Sender: TObject);
+var
+  dat: PMessageItemData;
+begin
+  if List.Selected = nil then exit;
+  if List.Selected.Data = nil then exit;
+  //
+  dat := PMessageItemData(List.Selected.Data);
+  if dat^.editor = nil then exit;
+  CEMainForm.openFile(dat^.editor.fileName);
+  dat^.editor.CaretXY := dat^.position;
+  dat^.editor.SelectLine;
+end;
+
+procedure TCEMessagesWidget.filterMessages;
+var
+  itm: TTreeNode;
+  dat: PMessageItemData;
+  i: NativeInt;
+begin
+  if updating then exit;
+  for i := 0 to List.Items.Count-1 do
+  begin
+    itm := List.Items[i];
+    dat := PMessageItemData(itm.Data);
+    case dat^.ctxt of
+      mcProject: itm.Visible := fProj = dat^.project;
+      mcEditor: itm.Visible := fDoc = dat^.editor;
+      else itm.Visible := true;
+    end;
+  end;
+end;
+
+procedure TCEMessagesWidget.ClearAllMessages;
+begin
+  List.Items.Clear;
+end;
+
+procedure TCEMessagesWidget.ClearMessages(aCtxt: TMessageContext);
+var
+  i: NativeInt;
+  dt: TMessageItemData;
+begin
+  for i := List.Items.Count-1 downto 0 do
+  begin
+    dt := PMessageItemData(List.Items[i].Data)^;
+    if dt.ctxt = aCtxt then case aCtxt of
+      mcEditor: if dt.editor = fDoc then List.Items.Delete(List.Items[i]);
+      mcProject: if dt.project = fProj then List.Items.Delete(List.Items[i]);
+      else List.Items.Delete(List.Items[i]);
+    end;
+  end;
+end;
+
+procedure TCEMessagesWidget.addCeInf(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+var
+  item: TTreeNode;
+begin
+  item := List.Items.Add(nil, 'Coedit information: ' + aMsg);
+  item.Data := newMessageItemData(aCtxt);
+  item.ImageIndex := 1;
+  item.SelectedIndex := 1;
+  clearOutOfRangeMessg;
+  scrollToBack;
+end;
+
+procedure TCEMessagesWidget.addCeWarn(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+var
+  item: TTreeNode;
+begin
+  item := List.Items.Add(nil, 'Coedit warning: ' + aMsg);
+  item.Data := newMessageItemData(aCtxt);
+  item.ImageIndex := 3;
+  item.SelectedIndex := 3;
+  clearOutOfRangeMessg;
+  scrollToBack;
+end;
+
+procedure TCEMessagesWidget.addCeErr(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+var
+  item: TTreeNode;
+begin
+  item := List.Items.Add(nil, 'Coedit error: ' + aMsg);
+  item.Data := newMessageItemData(aCtxt);
+  item.ImageIndex := 4;
+  item.SelectedIndex := 4;
+  clearOutOfRangeMessg;
+  scrollToBack;
+end;
+
+procedure TCEMessagesWidget.addMessage(const aMsg: string; const aData: PMessageItemData);
+var
+  item: TTreeNode;
+  imgIx: Integer;
+begin
+  item := List.Items.Add(nil, aMsg);
+  item.Data := aData;
+  imgIx := Integer(semanticMsgAna(aMsg));
+  item.ImageIndex := imgIx;
+  item.SelectedIndex := imgIx;
+  clearOutOfRangeMessg;
+end;
+
+procedure TCEMessagesWidget.addMessage(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
+var
+  item: TTreeNode;
+  imgIx: Integer;
+begin
+  item := List.Items.Add(nil, aMsg);
+  item.Data := newMessageItemData(aCtxt);
+  imgIx := Integer(semanticMsgAna(aMsg));
+  item.ImageIndex := imgIx;
+  item.SelectedIndex := imgIx;
+  clearOutOfRangeMessg;
+end;
+
 function semanticMsgAna(const aMessg: string): TMessageKind;
 var
   pos: Nativeint;
@@ -394,5 +476,71 @@ begin
     Inc(pos);
   end;
 end;
+
+function getLineFromDmdMessage(const aMessage: string): TPoint;
+var
+  i: NativeInt;
+  ident: string;
+begin
+  result.x := 0;
+  result.y := 0;
+  ident := '';
+  i := 0;
+  while (true) do
+  begin
+    inc(i);
+    if i > length(aMessage) then exit;
+    if aMessage[i] = '.' then
+    begin
+      inc(i);
+      if i > length(aMessage) then exit;
+      if aMessage[i] = 'd' then
+      begin
+        inc(i);
+        if i > length(aMessage) then exit;
+        if aMessage[i] = '(' then
+        begin
+          inc(i);
+          if i > length(aMessage) then exit;
+          while( isNumber(aMessage[i]) ) do
+          begin
+            ident += aMessage[i];
+            inc(i);
+            if i > length(aMessage) then exit;
+          end;
+          if aMessage[i] = ')' then
+          begin
+            result.y := strToInt(ident);
+            exit;
+          end;
+        end;
+      end;
+    end;
+    inc(i);
+  end;
+end;
+
+function getFileFromDmdMessage(const aMessage: string): TCESynMemo;
+var
+  i: NativeInt;
+  ident: string;
+begin
+  ident := '';
+  i := 0;
+  result := nil;
+  while(true) do
+  begin
+    inc(i);
+    if i > length(aMessage) then exit;
+    if aMessage[i] = '(' then
+    begin
+      if not fileExists(ident) then exit;
+      CEMainForm.openFile(ident);
+      result := CEMainForm.EditWidget.currentEditor;
+    end;
+    ident += aMessage[i];
+  end;
+end;
+{$ENDREGION}
 
 end.

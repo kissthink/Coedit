@@ -7,8 +7,6 @@ interface
 uses
   classes, sysutils, process;
 
-//TODO-cfeature: scanner for -I and -J sources is the item is a folder.
-
 (*
 
 procedure to add a new compiler option:
@@ -21,7 +19,7 @@ procedure to add a new compiler option:
 type
 
   (*****************************************************************************
-   * Base class for encapsulating some compiler options.
+   * Base class designed to encapsulate some compiler options.
    * A descendant must be able to generate the related options
    * as a string representing the partial switches/arguments.
    *)
@@ -362,7 +360,7 @@ begin
   if assigned(fOnChange) then fOnChange(self);
 end;
 
-{$REGION TDocOpts **************************************************************}
+{$REGION TDocOpts --------------------------------------------------------------}
 procedure TDocOpts.getOpts(const aList: TStrings);
 begin
   if fGenDoc then aList.Add('-D');
@@ -429,7 +427,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TMsgOpts **************************************************************}
+{$REGION TMsgOpts --------------------------------------------------------------}
 constructor TMsgOpts.create;
 begin
   fDepHandling := TDepHandling.warning;
@@ -520,7 +518,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TOutputOpts ***********************************************************}
+{$REGION TOutputOpts -----------------------------------------------------------}
 constructor TOutputOpts.create;
 begin
   fVerIds := TStringList.Create;
@@ -706,7 +704,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TDebugOpts ************************************************************}
+{$REGION TDebugOpts ------------------------------------------------------------}
 constructor TDebugOpts.create;
 begin
   fDbgIdents := TStringList.Create;
@@ -826,7 +824,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TPathsOpts ************************************************************}
+{$REGION TPathsOpts ------------------------------------------------------------}
 constructor TPathsOpts.create;
 begin
   fSrcs := TStringList.Create;
@@ -914,7 +912,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TOtherOpts ************************************************************}
+{$REGION TOtherOpts ------------------------------------------------------------}
 constructor TOtherOpts.create;
 begin
   fCustom := TStringList.Create;
@@ -959,7 +957,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TCustomProcOptions ****************************************************}
+{$REGION TCustomProcOptions ----------------------------------------------------}
 constructor TCustomProcOptions.create;
 begin
   fParameters := TStringList.Create;
@@ -1035,7 +1033,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TCompilerConfiguration ************************************************}
+{$REGION TCompilerConfiguration ------------------------------------------------}
 constructor TCompilerConfiguration.create(aCollection: TCollection);
 begin
   inherited create(aCollection);

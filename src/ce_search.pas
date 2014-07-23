@@ -10,8 +10,6 @@ uses
   ce_widget, ce_synmemo, AnchorDocking;
 
 type
-
-  { TCESearchWidget }
   TCESearchWidget = class(TCEWidget)
     btnFind: TBitBtn;
     btnReplace: TBitBtn;

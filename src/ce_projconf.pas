@@ -10,8 +10,6 @@ uses
   ce_dmdwrap, ce_project, ce_widget, AnchorDocking;
 
 type
-
-  { TCEProjectConfigurationWidget }
   TCEProjectConfigurationWidget = class(TCEWidget)
     imgList: TImageList;
     selConf: TComboBox;

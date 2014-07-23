@@ -9,7 +9,7 @@ uses
 
 type
 
-  // TODO-cinterface: document content access/modification
+  // TODO-cfeature: document content access/modification
 
   (**
    * An implementer can save and load some stuffs on application start/quit
@@ -25,6 +25,7 @@ type
 
   (**
    * An implementer declares some actions on demand.
+   * TODO-cfeature: improve the interface so that a widget can declare a complete main menu category.
    *)
   ICEContextualActions = interface
     // declares a context name for the actions
@@ -36,7 +37,7 @@ type
   end;
 
   (**
-   * An implementer is informed when a new document is added, focused or closed.
+   * An implementer is informed about the current file(s).
    *)
   ICEMultiDocMonitor = interface
     // the new document aDoc has been created (empty, runnable, project source, ...).
@@ -50,7 +51,7 @@ type
   end;
 
   (**
-   * An implementer is informed when a project changes.
+   * An implementer is informed about the current project(s).
    *)
   ICEProjectMonitor = interface
     // the new project aProject has been created/opened

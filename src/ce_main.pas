@@ -15,7 +15,7 @@ type
 
   TCEMainForm = class;
 
-  //TODO: options
+  //TODO-cfeature: options
   //TODO-cwidget: options editor
   (**
    * Encapsulates the options in a writable component.
@@ -221,7 +221,7 @@ type
     procedure widgetShowFromAction(sender: TObject);
 
     // run & exec sub routines
-    procedure ProcessOutputToMsg(const aProcess: TProcess;aCtxt: TMessageContext = msUnknown);
+    procedure ProcessOutputToMsg(const aProcess: TProcess;aCtxt: TMessageContext = mcUnknown);
     procedure compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
     procedure compileProject(const aProject: TCEProject);
     procedure runProject(const aProject: TCEProject; const runArgs: string = '');
@@ -921,13 +921,14 @@ end;
 {$ENDREGION}
 
 {$REGION run -------------------------------------------------------------------}
-procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess; aCtxt: TMessageContext = msUnknown);
+procedure TCEMainForm.ProcessOutputToMsg(const aProcess: TProcess; aCtxt: TMessageContext = mcUnknown);
 var
   str: TMemoryStream;
   lns: TStringList;
   readCnt: LongInt;
   readSz: LongInt;
   ioBuffSz: LongInt;
+  dt: PMessageItemData;
   msg: string;
 begin
   If not (poUsePipes in aProcess.Options) then exit;
@@ -946,7 +947,15 @@ begin
     end;
     Str.SetSize(readSz);
     lns.LoadFromStream(Str);
-    for msg in lns do fMesgWidg.addMessage(msg, aCtxt);
+    for msg in lns do begin
+      fMesgWidg.addMessage(msg, aCtxt);
+      dt := newMessageData;
+      dt^.ctxt := aCtxt;
+      dt^.position := getLineFromDmdMessage(msg);
+      dt^.editor := getFileFromDmdMessage(msg);
+      if dt^.editor = nil then
+        dt^.editor := EditWidget.currentEditor;
+    end;
   finally
     str.Free;
     lns.Free;
@@ -954,7 +963,7 @@ begin
   end;
 end;
 
-// TODO: input handling
+// TODO-cfeature: input handling
 procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
 var
   dmdproc: TProcess;
@@ -967,7 +976,7 @@ begin
   getDir(0, olddir);
   try
 
-    fMesgWidg.addCeInf( 'compiling ' + fEditWidg.editor[edIndex].fileName, msEditor );
+    fMesgWidg.addCeInf( 'compiling ' + fEditWidg.editor[edIndex].fileName, mcEditor );
 
     temppath := GetTempDir(false);
     chDir(temppath);
@@ -987,9 +996,8 @@ begin
     try
       dmdproc.Execute;
       while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(dmdproc, msEditor);
     finally
-      DeleteFile(fname + '.d');
+      ProcessOutputToMsg(dmdproc, mcEditor);
     end;
 
     {$IFDEF MSWINDOWS}
@@ -1000,7 +1008,7 @@ begin
     begin
 
       fMesgWidg.addCeInf( fEditWidg.editor[edIndex].fileName
-        + ' successfully compiled', msEditor );
+        + ' successfully compiled', mcEditor );
 
       runproc.Options:= [poStderrToOutPut, poUsePipes];
       {$IFDEF MSWINDOWS}
@@ -1010,9 +1018,11 @@ begin
       {$ELSE}
       runproc.Executable := fname;
       {$ENDIF}
-      runproc.Execute;
-      while runproc.Running do if runproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(runproc, msEditor);
+      try
+        runproc.Execute;
+        while runproc.Running do if runproc.ExitStatus <> 0 then break;
+        ProcessOutputToMsg(runproc, mcEditor);
+      finally
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');
@@ -1020,14 +1030,16 @@ begin
       DeleteFile(fname);
       DeleteFile(fname + '.o');
       {$ENDIF}
+      end;
     end
     else
       fMesgWidg.addCeErr( fEditWidg.editor[edIndex].fileName
-        + ' has not been compiled', msEditor );
+        + ' has not been compiled', mcEditor );
 
   finally
     dmdproc.Free;
     runproc.Free;
+    DeleteFile(fname + '.d');
     chDir(olddir);
   end;
 end;
@@ -1040,14 +1052,14 @@ var
   i: NativeInt;
 begin
 
-  fMesgWidg.ClearMessages(msProject);
+  fMesgWidg.ClearMessages(mcProject);
 
   for i := 0 to fWidgList.Count-1 do
     fWidgList.widget[i].projCompile(aProject);
 
   if aProject.Sources.Count = 0 then
   begin
-    fMesgWidg.addCeErr( aProject.fileName + ' has no source files', msProject);
+    fMesgWidg.addCeErr( aProject.fileName + ' has no source files', mcProject);
     exit;
   end;
 
@@ -1066,7 +1078,7 @@ begin
           ppproc.Free;
         end;
       end
-      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', msProject);
+      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', mcProject);
   end;
 
   olddir := '';
@@ -1075,7 +1087,7 @@ begin
   try
 
 
-    fMesgWidg.addCeInf( 'compiling ' + aProject.fileName, msProject);
+    fMesgWidg.addCeInf( 'compiling ' + aProject.fileName, mcProject);
     application.ProcessMessages;
 
     prjpath := extractFilePath(aProject.fileName);
@@ -1091,7 +1103,7 @@ begin
     try
       dmdproc.Execute;
       while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(dmdproc, msProject);
+      ProcessOutputToMsg(dmdproc, mcProject);
     finally
       {$IFDEF MSWINDOWS} //  STILL_ACTIVE ambiguity
       if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
@@ -1099,10 +1111,10 @@ begin
       if dmdProc.ExitStatus = 0 then
       {$ENDIF}
         fMesgWidg.addCeInf( aProject.fileName
-          + ' successfully compiled', msProject)
+          + ' successfully compiled', mcProject)
       else
         fMesgWidg.addCeErr( aProject.fileName
-          + ' has not been compiled', msProject);
+          + ' has not been compiled', mcProject);
     end;
 
     with fProject.currentConfiguration do
@@ -1120,7 +1132,7 @@ begin
             ppproc.Free;
           end;
         end
-        else fMesgWidg.addCeWarn('the post-compilation executable does not exist', msProject);
+        else fMesgWidg.addCeWarn('the post-compilation executable does not exist', mcProject);
     end;
 
   finally
@@ -1160,7 +1172,7 @@ begin
 
     if not fileExists(procname) then
     begin
-      fMesgWidg.addCeErr('output executable missing: ' + procname, msProject);
+      fMesgWidg.addCeErr('output executable missing: ' + procname, mcProject);
       exit;
     end;
 
@@ -1169,7 +1181,7 @@ begin
       runproc.CurrentDirectory := extractFilePath(runproc.Executable);
     runproc.Execute;
     while runproc.Running do if runproc.ExitStatus <> 0 then break;
-    ProcessOutputToMsg(runproc, msProject);
+    ProcessOutputToMsg(runproc, mcProject);
 
   finally
     runproc.Free;

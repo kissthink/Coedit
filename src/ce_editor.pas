@@ -12,7 +12,6 @@ uses
   ce_project;
 
 type
-  { TCEEditorWidget }
   TCEEditorWidget = class(TCEWidget)
     imgList: TImageList;
     PageControl: TExtendedNotebook;
@@ -168,7 +167,7 @@ end;
 
 procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);
 begin
-  CEMainForm.MessageWidget.ClearMessages(msEditor);
+  CEMainForm.MessageWidget.ClearMessages(mcEditor);
   editor[aIndex].OnChange:= nil;
   pageControl.Pages[aIndex].Free;
 end;
@@ -236,6 +235,7 @@ end;
 
 procedure TCEEditorWidget.UpdateByDelay;
 var
+  dt: PMessageItemData;
   ed: TCESynMemo;
   err: TLexError;
   md: string;
@@ -248,15 +248,20 @@ begin
   CEMainForm.docChangeNotify(Self, editorIndex);
   if ed.Lines.Count = 0 then exit;
   //
-  CEMainForm.MessageWidget.ClearMessages(msEditor);
+  CEMainForm.MessageWidget.ClearMessages(mcEditor);
   lex(ed.Lines.Text, tokLst);
 
   if ed.isDSource then
   begin
     checkSyntacticErrors(tokLst, errLst);
-    for err in errLst do
-      CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%4.d @char:%.4d)',
-      [err.msg, err.position.y, err.position.x]), msEditor);
+    for err in errLst do begin
+      dt := newMessageData;
+      dt^.editor := ed;
+      dt^.position := point(err.position.x, err.position.y);
+      dt^.ctxt := mcEditor;
+      CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%.4d @char:%.4d)',
+      [err.msg, err.position.y, err.position.x]), dt);
+    end;
   end;
 
   md := '';

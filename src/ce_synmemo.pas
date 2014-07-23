@@ -9,7 +9,6 @@ uses
   LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project, ce_common;
 
 type
-
   TCESynMemo = class(TSynMemo)
   private
     fFilename: string;

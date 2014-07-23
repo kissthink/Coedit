@@ -10,7 +10,6 @@ uses
   ce_common, ce_widget, AnchorDocking;
 
 type
-  { TCEProjectInspectWidget }
   TCEProjectInspectWidget = class(TCEWidget)
     imgList: TImageList;
     Panel1: TPanel;
@@ -54,6 +53,7 @@ implementation
 uses
   ce_main;
 
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEProjectInspectWidget.create(aOwner: TComponent);
 begin
   fActOpenFile := TAction.Create(self);
@@ -71,7 +71,9 @@ begin
   //
   Tree.PopupMenu := contextMenu;
 end;
+{$ENDREGION}
 
+{$REGION ICEContextualActions---------------------------------------------------}
 function TCEProjectInspectWidget.contextName: string;
 begin
   exit('Inspector');
@@ -91,6 +93,13 @@ begin
   end;
 end;
 
+procedure TCEProjectInspectWidget.actOpenFileExecute(sender: TObject);
+begin
+  TreeDblClick(sender);
+end;
+{$ENDREGION}
+
+{$REGION ICEProjectMonitor -----------------------------------------------------}
 procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
 begin
   fProject := aProject;
@@ -108,6 +117,7 @@ begin
   fProject := nil;
   UpdateByEvent;
 end;
+{$ENDREGION}
 
 procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
 begin
@@ -144,11 +154,6 @@ begin
     fProject.ConfigurationIndex := i;
     UpdateByEvent;
   end;
-end;
-
-procedure TCEProjectInspectWidget.actOpenFileExecute(sender: TObject);
-begin
-  TreeDblClick(sender);
 end;
 
 procedure TCEProjectInspectWidget.actUpdate(sender: TObject);

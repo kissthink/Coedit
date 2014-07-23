@@ -10,8 +10,6 @@ uses
   ce_synmemo, process, actnlist, ce_common, ce_project, AnchorDocking;
 
 type
-
-  { TCEStaticExplorerWidget }
   TCEStaticExplorerWidget = class(TCEWidget)
     imgList: TImageList;
     Panel1: TPanel;

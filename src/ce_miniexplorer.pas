@@ -9,8 +9,6 @@ uses
   Menus, StdCtrls, ComCtrls, Buttons, ce_widget, lcltype;
 
 type
-
-  { TCEMiniExplorerWidget }
   TCEMiniExplorerWidget = class(TCEWidget)
     Bevel1: TBevel;
     Bevel2: TBevel;
@@ -66,8 +64,6 @@ implementation
 
 uses
   ce_main, ce_common;
-
-//TODO-cbugfix: click on the expander glyph, sometime the subdirs are not scanned but the fake sub item is still displayed
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMiniExplorerWidget.create(aIwner: TComponent);
@@ -252,7 +248,7 @@ begin
   fname := PString(lstFiles.Selected.Data)^;
   if not fileExists(fname) then exit;
   if not shellOpen(fname) then CEMainForm.MessageWidget.addCeErr
-    (format('the shell failed to open "%s"',[shortenPath(fname,25)]));
+    (format('the shell failed to open "%s"', [shortenPath(fname, 25)]));
 end;
 
 {$ENDREGION}
@@ -333,6 +329,9 @@ end;
 
 procedure TCEMiniExplorerWidget.treeExpanding(Sender: TObject; Node: TTreeNode; var allow: boolean);
 begin
+  if Node <> nil then
+    treeScanSubFolders(Node);
+  allow := true;
 end;
 
 procedure TCEMiniExplorerWidget.treeCollapsed(Sender: TObject; Node: TTreeNode);
