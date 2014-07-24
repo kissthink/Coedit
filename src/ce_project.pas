@@ -274,10 +274,35 @@ end;
 
 procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;
       var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+var
+  idt: string;
+  curr: TCompilerConfiguration;
 begin
-  // continue loading: this method grants the project compat. in case of drastic changes.
-  Skip := true;
-  Handled := true;
+  // continue loading: this method ensures the project compat. in case of drastic changes.
+
+  {curr := self.configuration[OptionsCollection.Count-1];
+  if PropName = 'debugIdentifier' then
+  begin
+    idt := Reader.ReadUnicodeString; // next prop starts one char too late
+    if curr.debugingOptions.debugIdentifiers.IndexOf(idt) = -1 then
+      curr.debugingOptions.debugIdentifiers.Add(idt);
+    Skip := true;
+    Handled := true;
+  end
+  else if PropName = 'versionIdentifier' then
+  begin
+    idt := Reader.ReadString; // next prop starts one char too late
+    if curr.outputOptions.versionIdentifiers.IndexOf(idt) = -1 then
+      curr.outputOptions.versionIdentifiers.Add(idt);
+    Skip := true;
+    Handled := true;
+    exit;
+  end
+  else}
+  begin
+    Skip := true;
+    Handled := false;
+  end;
 end;
 
 procedure TCEProject.readerError(Reader: TReader; const Message: string;

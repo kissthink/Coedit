@@ -253,7 +253,8 @@ end;
 
 procedure TCEMessagesWidget.projClose(const aProject: TCEProject);
 begin
-  if fProj = aProject then ClearMessages(mcProject);
+  if fProj = aProject then
+    ClearMessages(mcProject);
   fProj := nil;
   filterMessages;
 end;
@@ -274,6 +275,8 @@ end;
 
 procedure TCEMessagesWidget.docClose(const aDoc: TCESynMemo);
 begin
+  if aDoc <> fDoc then exit;
+  ClearMessages(mcEditor);
   fDoc := nil;
   filterMessages;
 end;
@@ -524,6 +527,7 @@ function getFileFromDmdMessage(const aMessage: string): TCESynMemo;
 var
   i: NativeInt;
   ident: string;
+  ext: string;
 begin
   ident := '';
   i := 0;
@@ -535,6 +539,8 @@ begin
     if aMessage[i] = '(' then
     begin
       if not fileExists(ident) then exit;
+      ext := extractFileExt(ident);
+      if not (ext = '.d') or (ext = '.di') then exit;
       CEMainForm.openFile(ident);
       result := CEMainForm.EditWidget.currentEditor;
     end;

@@ -118,7 +118,6 @@ type
     fTrgKind: TTargetSystem;
     fBinKind: TBinaryKind;
     fUt: boolean;
-    fVerId: string;
     fVerIds: TStringList;
     fInline: boolean;
     fBoundsCheck: TBoundCheckKind;
@@ -132,7 +131,6 @@ type
     procedure depPatch;
     procedure setAllInst(const aValue: boolean);
     procedure setUt(const aValue: boolean);
-    procedure setVerId(const aValue: string);
     procedure setTrgKind(const aValue: TTargetSystem);
     procedure setBinKind(const aValue: TBinaryKind);
     procedure setInline(const aValue: boolean);
@@ -155,7 +153,6 @@ type
     property addMain: boolean read fMain write setMain default false;
     property release: boolean read fRelease write setRelease default false;
     property unittest: boolean read fUt write setUt default false;
-    property versionIdentifier: string read fVerId write setVerId; // TODO-ccleaning:remove on beta1
     property versionIdentifiers: TStringList read fVerIds write setVerIds;
     property generateAllTmpCode: boolean read fAllInst write setAllInst default false;
     property addStackStompCode: boolean read fStackStomp write setStackStomp default false;
@@ -172,17 +169,14 @@ type
   TDebugOpts = class(TOptsGroup)
   private
     fDbg: boolean;
-    fDbgIdent: string;
     fDbgD: boolean;
     fDbgC: boolean;
     fMap: boolean;
     fDbgIdents: TStringList;
     fDbgLevel: Integer;
     fForceDbgBool: boolean;
-    procedure depPatch;
     procedure updateForceDbgBool;
     procedure setDbg(const aValue: boolean);
-    procedure setDbgIdent(const aValue: string);
     procedure setDbgD(const aValue: boolean);
     procedure setDbgC(const aValue: boolean);
     procedure setMap(const aValue: boolean);
@@ -190,7 +184,6 @@ type
     procedure setDbgIdents(const aValue: TStringList);
   published
     property debug: boolean read fDbg write setDbg default false;
-    property debugIdentifier: string read fDbgIdent write setDbgIdent; // TODO-ccleaning:remove on beta1
     property debugIdentifiers: TStringList read fDbgIdents write setDbgIdents;
     property debugLevel: Integer read fDbgLevel write setDbgLevel default 0;
     property addDInformations: boolean read fDbgD write setDbgD default false;
@@ -533,12 +526,12 @@ end;
 procedure TOutputOpts.depPatch;
 begin
   // patch deprecated fields
-  if fVerId <> '' then
-  begin
-    if fVerIds.IndexOf(fVerId) = -1 then
-      fVerIds.Add(fVerId);
-    fVerId := '';
-  end;
+  //if fVerId <> '' then
+  //begin
+  //  if fVerIds.IndexOf(fVerId) = -1 then
+  //    fVerIds.Add(fVerId);
+  //  fVerId := '';
+  //end;
 end;
 
 procedure TOutputOpts.getOpts(const aList: TStrings);
@@ -588,7 +581,7 @@ begin
     fBinKind := src.fBinKind;
     fTrgKind := src.fTrgKind;
     fUt := src.fUt;
-    fVerId := src.fVerId;
+    //fVerId := src.fVerId;
     fVerIds.Assign(src.fVerIds);
     fInline := src.fInline;
     fNoBounds := src.fNoBounds;
@@ -615,13 +608,6 @@ procedure TOutputOpts.setAllInst(const aValue: boolean);
 begin
   if fAllinst = aValue then exit;
   fAllinst := aValue;
-  doChanged;
-end;
-
-procedure TOutputOpts.setVerId(const aValue: string);
-begin
-  if fVerId = aValue then exit;
-  fVerId := aValue;
   doChanged;
 end;
 
@@ -716,22 +702,10 @@ begin
   inherited;
 end;
 
-procedure TDebugOpts.depPatch;
-begin
-  // patch deprecated field
-  if fDbgIdent <> '' then
-  begin
-    if fDbgIdents.IndexOf(fDbgIdent) = -1 then
-      fDbgIdents.Add(fDbgIdent);
-    fDbgIdent := '';
-  end;
-end;
-
 procedure TDebugOpts.getOpts(const aList: TStrings);
 var
   idt: string;
 begin
-  depPatch;
   if fDbg then aList.Add('-debug');
   if fDbgLevel <> 0 then aList.Add('-debug=' + intToStr(fDbgLevel));
   for idt in fDbgIdents do
@@ -749,14 +723,11 @@ begin
   begin
     src := TDebugOpts(aValue);
     fDbg := src.fDbg;
-    fDbgIdent := src.fDbgIdent;
     fDbgIdents.Assign(src.fDbgIdents);
     fDbgLevel := src.fDbgLevel;
     fDbgD := src.fDbgD;
     fDbgC := src.fDbgC;
     fMap := src.fMap;
-    //
-    depPatch;
   end
   else inherited;
 end;
@@ -776,13 +747,6 @@ begin
   end;
   if fDbg = aValue then exit;
   fDbg := aValue;
-  doChanged;
-end;
-
-procedure TDebugOpts.setDbgIdent(const aValue: string);
-begin
-  if fDbgIdent = aValue then exit;
-  fDbgIdent := aValue;
   doChanged;
 end;
 

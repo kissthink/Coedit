@@ -3,7 +3,6 @@ object _1: TCEProject
     item
       name = 'default'
       documentationOptions.generateDocumentation = True
-      documentationOptions.generateJSON = False
       documentationOptions.DocumentationDirectory = '..\doc'
       debugingOptions.debug = True
       debugingOptions.debugIdentifiers.Strings = (
@@ -11,24 +10,9 @@ object _1: TCEProject
         'b'
       )
       debugingOptions.debugLevel = 2
-      debugingOptions.addDInformations = False
-      debugingOptions.addCInformations = False
-      debugingOptions.generateMapFile = False
-      messagesOptions.depreciationHandling = warning
-      messagesOptions.verbose = False
-      messagesOptions.warnings = True
       messagesOptions.additionalWarnings = True
-      messagesOptions.tlsInformations = False
-      messagesOptions.quiet = False
-      outputOptions.targetKind = auto
-      outputOptions.binaryKind = executable
-      outputOptions.inlining = False
       outputOptions.noBoundsCheck = False
       outputOptions.boundsCheck = onAlways
-      outputOptions.optimizations = False
-      outputOptions.generateStackFrame = False
-      outputOptions.addMain = False
-      outputOptions.release = False
       outputOptions.unittest = True
       outputOptions.versionIdentifiers.Strings = (
         'revision_1'
@@ -46,31 +30,18 @@ object _1: TCEProject
     item
       name = 'alternative'
       documentationOptions.generateDocumentation = True
-      documentationOptions.generateJSON = False
       documentationOptions.DocumentationDirectory = '..\doc'
-      debugingOptions.debug = False
-      debugingOptions.debugIdentifier = '3'
-      debugingOptions.debugLevel = 0
-      debugingOptions.addDInformations = False
-      debugingOptions.addCInformations = False
-      debugingOptions.generateMapFile = False
-      messagesOptions.depreciationHandling = warning
-      messagesOptions.verbose = False
-      messagesOptions.warnings = True
+      debugingOptions.debug = True
+      debugingOptions.debugLevel = 3
       messagesOptions.additionalWarnings = True
-      messagesOptions.tlsInformations = False
-      messagesOptions.quiet = False
-      outputOptions.targetKind = auto
-      outputOptions.binaryKind = executable
       outputOptions.inlining = True
       outputOptions.noBoundsCheck = True
       outputOptions.boundsCheck = onAlways
       outputOptions.optimizations = True
-      outputOptions.generateStackFrame = False
-      outputOptions.addMain = False
-      outputOptions.release = False
       outputOptions.unittest = True
-      outputOptions.versionIdentifier = 'revision_1'
+      outputOptions.versionIdentifiers.Strings = (
+        'revision_2'
+      )
       pathsOptions.outputFilename = '..\output\main.exe'
       preBuildProcess.options = []
       preBuildProcess.showWindow = swoNone

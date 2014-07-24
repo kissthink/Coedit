@@ -795,7 +795,7 @@ begin
       then exit;
   //
   for i := 0 to fWidgList.Count-1 do
-    fWidgList.widget[i].docClose(fEditWidg.editor[fEditWidg.editorIndex]);
+    fWidgList.widget[i].docClose(fEditWidg.currentEditor);
   //
   fEditWidg.removeEditor(fEditWidg.editorIndex);
 end;
@@ -933,28 +933,31 @@ var
 begin
   If not (poUsePipes in aProcess.Options) then exit;
   //
+  readCnt := 0;
   ioBuffSz := aProcess.PipeBufferSize;
   str := TMemorystream.Create;
   lns := TStringList.Create;
   readSz := 0;
   try
-    while true do
-    begin
+    repeat
       str.SetSize(readSz + ioBuffSz);
       readCnt := aProcess.Output.Read((str.Memory + readSz)^, ioBuffSz);
-      if readCnt = 0 then break;
       Inc(readSz, readCnt);
-    end;
+    until readCnt = 0;
     Str.SetSize(readSz);
     lns.LoadFromStream(Str);
     for msg in lns do begin
-      fMesgWidg.addMessage(msg, aCtxt);
       dt := newMessageData;
       dt^.ctxt := aCtxt;
+      dt^.project := fProject;
       dt^.position := getLineFromDmdMessage(msg);
       dt^.editor := getFileFromDmdMessage(msg);
       if dt^.editor = nil then
-        dt^.editor := EditWidget.currentEditor;
+        dt^.editor := EditWidget.currentEditor
+      else
+        dt^.ctxt := mcEditor;
+      fMesgWidg.addMessage(msg, dt);
+      application.ProcessMessages;
     end;
   finally
     str.Free;
@@ -966,6 +969,7 @@ end;
 // TODO-cfeature: input handling
 procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
 var
+  editor: TCESynMemo;
   dmdproc: TProcess;
   runproc: TProcess;
   fname, temppath, olddir: string;
@@ -973,56 +977,43 @@ begin
   olddir  := '';
   dmdproc := TProcess.Create(nil);
   runproc := TProcess.Create(nil);
+  editor  := fEditWidg.editor[edIndex];
   getDir(0, olddir);
   try
 
-    fMesgWidg.addCeInf( 'compiling ' + fEditWidg.editor[edIndex].fileName, mcEditor );
+    fMesgWidg.ClearMessages(mcEditor);
+    fMesgWidg.addCeInf('compiling ' + editor.fileName, mcEditor);
 
     temppath := GetTempDir(false);
     chDir(temppath);
     {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + 'temp_' + uniqueObjStr(dmdProc);
+    fname := temppath + 'temp_' + uniqueObjStr(editor);
     {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
-    fEditWidg.editor[edIndex].Lines.SaveToFile(fname + '.d');
+    if fileExists(editor.fileName) then editor.save
+    else editor.saveToFile(fname + '.d');
+    fname := editor.fileName[1..length(editor.fileName) - length(extractFileExt(editor.fileName))];
 
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
     dmdproc.Options := [poStdErrToOutput, poUsePipes];
     dmdproc.Executable := DCompiler;
-    dmdproc.Parameters.Add(fname + '.d');
+    dmdproc.Parameters.Add(editor.fileName);
     dmdproc.Parameters.Add('-w');
     dmdproc.Parameters.Add('-wi');
-    try
-      dmdproc.Execute;
-      while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-    finally
-      ProcessOutputToMsg(dmdproc, mcEditor);
-    end;
-
-    {$IFDEF MSWINDOWS}
-    if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
-    {$ELSE}
-    if dmdProc.ExitStatus = 0 then
-    {$ENDIF}
+    dmdproc.Parameters.Add('-of' + fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF});
+    dmdproc.Execute;
+    repeat ProcessOutputToMsg(dmdproc, mcEditor) until not dmdproc.Running;
+    if (dmdProc.ExitStatus = 0) then
     begin
-
-      fMesgWidg.addCeInf( fEditWidg.editor[edIndex].fileName
-        + ' successfully compiled', mcEditor );
-
-      runproc.Options:= [poStderrToOutPut, poUsePipes];
-      {$IFDEF MSWINDOWS}
-      runproc.Executable := fname + '.exe';
+      ProcessOutputToMsg(dmdproc, mcEditor);
+      fMesgWidg.addCeInf(editor.fileName + ' successfully compiled', mcEditor );
+      runproc.Options := [poStderrToOutPut, poUsePipes];
       runproc.CurrentDirectory := extractFilePath(runProc.Executable);
       runproc.Parameters.Text := runArgs;
-      {$ELSE}
-      runproc.Executable := fname;
-      {$ENDIF}
-      try
-        runproc.Execute;
-        while runproc.Running do if runproc.ExitStatus <> 0 then break;
-        ProcessOutputToMsg(runproc, mcEditor);
-      finally
+      runproc.Executable := fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF};
+      runproc.Execute;
+      repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
       {$IFDEF MSWINDOWS}
       DeleteFile(fname + '.exe');
       DeleteFile(fname + '.obj');
@@ -1030,16 +1021,17 @@ begin
       DeleteFile(fname);
       DeleteFile(fname + '.o');
       {$ENDIF}
-      end;
     end
-    else
-      fMesgWidg.addCeErr( fEditWidg.editor[edIndex].fileName
-        + ' has not been compiled', mcEditor );
+    else begin
+      ProcessOutputToMsg(dmdproc, mcEditor);
+      fMesgWidg.addCeErr(editor.fileName  + ' has not been compiled', mcEditor );
+    end;
 
   finally
     dmdproc.Free;
     runproc.Free;
-    DeleteFile(fname + '.d');
+    if extractFilePath(editor.fileName) = GetTempDir(false) then
+      DeleteFile(editor.fileName);
     chDir(olddir);
   end;
 end;
@@ -1086,7 +1078,6 @@ begin
   getDir(0, olddir);
   try
 
-
     fMesgWidg.addCeInf( 'compiling ' + aProject.fileName, mcProject);
     application.ProcessMessages;
 
@@ -1096,26 +1087,16 @@ begin
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
     {$ENDIF}
-    dmdproc.Options := [{$IFDEF WINDOWS}poNewConsole,{$ENDIF} poStdErrToOutput, poUsePipes];
-
+    dmdproc.Options := [poStdErrToOutput, poUsePipes];
     dmdproc.Executable := DCompiler;
     aProject.getOpts(dmdproc.Parameters);
-    try
-      dmdproc.Execute;
-      while dmdproc.Running do if dmdproc.ExitStatus <> 0 then break;
-      ProcessOutputToMsg(dmdproc, mcProject);
-    finally
-      {$IFDEF MSWINDOWS} //  STILL_ACTIVE ambiguity
-      if (dmdProc.ExitStatus = 0) or (dmdProc.ExitStatus = 259) then
-      {$ELSE}
-      if dmdProc.ExitStatus = 0 then
-      {$ENDIF}
-        fMesgWidg.addCeInf( aProject.fileName
-          + ' successfully compiled', mcProject)
-      else
-        fMesgWidg.addCeErr( aProject.fileName
-          + ' has not been compiled', mcProject);
-    end;
+    dmdproc.Execute;
+
+    repeat ProcessOutputToMsg(dmdproc, mcProject) until not dmdproc.Running;
+    if (dmdProc.ExitStatus = 0) then
+      fMesgWidg.addCeInf(aProject.fileName + ' successfully compiled', mcProject)
+    else
+      fMesgWidg.addCeErr(aProject.fileName + ' has not been compiled', mcProject);
 
     with fProject.currentConfiguration do
     begin
@@ -1176,12 +1157,18 @@ begin
       exit;
     end;
 
+    // If poWaitonExit and if there are a lot of output then Coedit hangs.
+    if poWaitonExit in runproc.Options then
+    begin
+      runproc.Options := runproc.Options - [poStderrToOutPut, poUsePipes];
+      runproc.Options := runproc.Options + [poNewConsole];
+    end;
+
     runproc.Executable := procname;
     if runproc.CurrentDirectory = '' then
       runproc.CurrentDirectory := extractFilePath(runproc.Executable);
     runproc.Execute;
-    while runproc.Running do if runproc.ExitStatus <> 0 then break;
-    ProcessOutputToMsg(runproc, mcProject);
+    repeat ProcessOutputToMsg(runproc, mcProject) until not runproc.Running;
 
   finally
     runproc.Free;
@@ -1549,6 +1536,10 @@ begin
   CEMainForm.Top    := fTop;
   CEMainForm.Width  := fWidth;
   CEMainForm.Height := fHeight;
+  if fLeft < 0 then fLeft := 0;
+  if fTop < 0 then fTop := 0;
+  if fWidth < 800 then fWidth := 800;
+  if fHeight < 600 then fWidth := 600;
   //
   CEMainForm.fFileMru.Assign(fFileMru);
   CEMainForm.fProjMru.Assign(fProjMru);
