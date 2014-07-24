@@ -24,14 +24,15 @@ Planed in version 1
 
 Project information
 -------------------
-- state: alpha 3.
+- state: alpha 4.
+- license: MIT.
 - programmed in Pascal with [Lazarus](http://www.lazarus.freepascal.org).
 - based on *dmd* (*gdc* or *lmd* characteristics are not handled).
-- no other third party dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)
+- no other third part dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)
 
 Setup & test
 ------------
-Coedit must be build from the sources.
+Coedit must be build from its sources.
 The complete procedure is described in the first section of the [wiki](https://github.com/BBasile/Coedit/wiki)
 
 Preview

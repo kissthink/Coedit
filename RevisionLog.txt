@@ -1,0 +1,54 @@
+Revision log.
+(single changes can be tracked with the GH commit messages)
+
+r24:
+- ce_messages: messages related to a project were not cleared when the project was closed.
+- ce_messages: obj files could be automatically opened in case of errors in 'compile & run'.
+- ce_messages: fix position in source code broken.
+- ce_dmdwrap: removed old project fields 'versionIdentifier' and 'debugIdentifier'.
+- ce_main: compile & run, compile, run: fixed some inaccuracies related to platform specific process options (poWaitOnExit under win).
+- ce_main, option: possible startup crash fixed when invalid height or width.
+
+r23:
+- ce_messages: position in source code.
+- ce_messages: fix filtering syntactic errors.
+- ce_miniexplorer: fix expand with glyph.
+
+r22:
+- TMRUFileList: invalid files were not removed from the list.
+- ce_widgettypes: interface for the persistence, widgets can declare their options.
+- ce_staticexplorer: persistent options to define when it refreshes.
+- ce_search: searches and replacements saved between cessions.
+- ce_main, options: options saved to userdir/Coedit, last good always saved.
+
+r21:
+- ce_dmdwrap: prepared new switches for DMD 2.066+ (-allinst, -gx, -vgc)
+- ce_synmemo: check for modification of a file by another program.
+- ce_synmemo: refactoring moved ce_editor and ce_main stuffs to ce_synmemo.
+- ce_main: and shortcuts for find, find next.
+- ce_main: warnings about mod. on close app.
+
+r20:
+- ce_staticexplorer: reset filter, empty cat. were displayed.
+- ce_main, runnable: working directory set to exepath (user temp folder).
+- ce_dmdwrap, TCustomProcOptions: pre/post build process: added workingDirectory parameter. By default it's set on the process/proj output path.
+- ce_dlang, syntactic errors: empty statement detection.
+- ce_main: messages read from the process pipe were not tagged.
+
+r19:
+- ce_messages: global improvement (categories, filtering)
+- ce_widgettypes: projRun, projCompile in projectMonitor intf.
+- ce_main, prevented compilation messages to be erased when the editor has a pending update.
+
+r18:
+- ce_project: added run options & arguments, on a per config basis.
+- ce_project: added post/pre compilation process, on a per config basis.
+- ce_project, load/save: improved project format strength over time.
+
+r17:
+- ce_dmdwrap: prepared support for the new "-boundscheck=" switch.
+- ce_dmdwrap: support for multiple debug identifiers.
+- ce_dmdwrap: deprecated single debug identifier.
+- ce_dmdwrap: debug level has its own field. the value only produces a switch when > 0.
+- ce_main: action, project, view options, displays the switches and options of the current proj. conf.
+- ce_dlang: bugfix, getModuleName could return an invalid result due to an uninitialized variable.
