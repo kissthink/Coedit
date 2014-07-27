@@ -7,7 +7,7 @@ interface
 // TODO: configuration templates
 
 uses
-  Classes, SysUtils, ce_dmdwrap;
+  Classes, SysUtils, ce_dmdwrap, ce_libman;
 
 type
 
@@ -25,11 +25,14 @@ type
     fModified: boolean;
     fFilename: string;
     fBasePath: string;
+    fLibAliases: TStringList;
     fOptsColl: TCollection;
     fSrcs, fSrcsCop: TStringList;
     fConfIx: Integer;
+    fLibMan: TLibraryManager;
     fChangedCount: NativeInt;
     procedure doChanged;
+    procedure setLibAliases(const aValue: TStringList);
     procedure subMemberChanged(sender : TObject);
     procedure setOptsColl(const aValue: TCollection);
     procedure setFname(const aValue: string);
@@ -45,6 +48,7 @@ type
     property OptionsCollection: TCollection read fOptsColl write setOptsColl;
     property Sources: TStringList read fSrcs write setSrcs; // 'read' should return a copy to avoid abs/rel errors
     property ConfigurationIndex: Integer read fConfIx write setConfIx;
+    property LibraryAliases: TStringList read fLibAliases write setLibAliases;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
@@ -59,6 +63,7 @@ type
     procedure saveToFile(const aFilename: string);
     procedure loadFromFile(const aFilename: string);
     //
+    property libraryManager: TLibraryManager read fLibMan write fLibMan;
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
     property currentConfiguration: TCompilerConfiguration read getCurrConf;
     property fileName: string read fFilename write setFname;
@@ -74,6 +79,7 @@ uses
 constructor TCEProject.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
+  fLibAliases := TStringList.Create;
   fSrcs := TStringList.Create;
   fSrcs.OnChange := @subMemberChanged;
   fSrcsCop := TStringList.Create;
@@ -85,6 +91,7 @@ end;
 destructor TCEProject.destroy;
 begin
   fOnChange := nil;
+  fLibAliases.Free;
   fSrcs.free;
   fSrcsCop.Free;
   fOptsColl.free;
@@ -138,6 +145,13 @@ begin
     fSrcs[i] := newRel;
   end;
   //
+  afterChanged;
+end;
+
+procedure TCEProject.setLibAliases(const aValue: TStringList);
+begin
+  beforeChanged;
+  fLibAliases.Assign(aValue);
   afterChanged;
 end;
 
@@ -242,6 +256,13 @@ begin
     abs := expandFilenameEx(fBasePath,rel);
     aList.Add(abs); // process.inc ln 249. double quotes are added if there's a space.
   end;
+  //
+  if fLibMan <> nil then
+  begin
+    fLibMan.getAdditionalSources(fLibAliases, aList);
+    fLibMan.getAdditionalImport(fLibAliases, aList);
+  end;
+  //
   TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts(aList);
 end;
 
@@ -274,9 +295,9 @@ end;
 
 procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;
       var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-var
-  idt: string;
-  curr: TCompilerConfiguration;
+//var
+  //idt: string;
+  //curr: TCompilerConfiguration;
 begin
   // continue loading: this method ensures the project compat. in case of drastic changes.
 

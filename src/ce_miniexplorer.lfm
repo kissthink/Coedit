@@ -1,7 +1,7 @@
 inherited CEMiniExplorerWidget: TCEMiniExplorerWidget
-  Left = 1539
+  Left = 1493
   Height = 651
-  Top = 6
+  Top = 45
   Caption = 'Mini explorer'
   ClientHeight = 651
   inherited Back: TPanel

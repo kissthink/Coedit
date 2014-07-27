@@ -134,7 +134,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="18">
+    <Units Count="21">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -252,6 +252,24 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="ce_miniexplorer"/>
       </Unit17>
+      <Unit18>
+        <Filename Value="..\src\ce_plugin.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_plugin"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\src\ce_libman.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_libman"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\src\ce_libmaneditor.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="CELibManEditorWidget"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="ce_libmaneditor"/>
+      </Unit20>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

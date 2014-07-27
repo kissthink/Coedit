@@ -455,6 +455,7 @@ const
 {$ENDIF}
 begin
   {$IFDEF WINDOWS}
+  PIDL := nil;
   SHGetSpecialFolderLocation(0, CSIDL_APPDATA, PIDL);
   SHGetPathFromIDList(PIDL, Folder);
   result:=Folder;

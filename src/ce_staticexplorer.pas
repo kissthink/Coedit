@@ -74,7 +74,7 @@ type
 implementation
 {$R *.lfm}
 
-uses ce_main;
+uses ce_main, ce_libman;
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEStaticExplorerWidget.create(aOwner: TComponent);
@@ -323,6 +323,9 @@ var
   ln: PInt64;
   nme, knd: string;
   i: NativeInt;
+  itm: TCollectionItem;
+  itmt: TLibraryItem;
+  allALiases: TStringList;
 
   // recursively display members, without master categories.
   procedure digMembers(const srcDt: TJsonData; const srcNd: TTreeNode);
@@ -378,7 +381,7 @@ begin
     //
     lines.Assign(fDoc.Lines);
     lines.SaveToFile(scf);
-    //
+    // option to gen. the Json file.
     dmdProc.ShowWindow := swoHIDE;
     dmdproc.Options := [];
     dmdproc.Executable := 'dmd';
@@ -387,6 +390,7 @@ begin
     dmdproc.Parameters.Add('-o-');
     dmdproc.Parameters.Add('-X');
     dmdproc.Parameters.Add('-Xf' + jsf);
+    // projects add.sources and I.
     if fProj <> nil then
     begin
       dmdProc.CurrentDirectory := extractFilePath(fProj.fileName);
@@ -395,6 +399,23 @@ begin
       for nme in fProj.currentConfiguration.pathsOptions.Includes do
         dmdproc.Parameters.Add('-I' + nme);
     end;
+    // add. sources and I from libman.
+    with CEMainForm do
+    begin
+      allALiases := TstringList.Create;
+      try
+        for itm in Librarymanager.libraries do
+        begin
+          itmt := TLibraryItem(itm);
+          allALiases.Add(itmt.libAlias);
+        end;
+        Librarymanager.getAdditionalSources(allALiases,dmdproc.Parameters);
+        Librarymanager.getAdditionalImport(allALiases,dmdproc.Parameters);
+      finally
+        allALiases.Free;
+      end;
+    end;
+    //
     dmdproc.Execute;
     while dmdproc.Running do;
   finally

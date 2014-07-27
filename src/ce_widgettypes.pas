@@ -9,8 +9,6 @@ uses
 
 type
 
-  // TODO-cfeature: document content access/modification
-
   (**
    * An implementer can save and load some stuffs on application start/quit
    *)
@@ -69,5 +67,6 @@ type
   end;
 
 implementation
+
 end.
 

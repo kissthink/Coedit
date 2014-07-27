@@ -1,13 +1,20 @@
 Revision log.
 (single changes can be tracked with the GH commit messages)
 
+r25:
+- ce_plugin: added a plug-in API. D example. final goal is to use it to wrap D Completion Daemon and other D libs.
+- ce_libman: library manager: additional sources and -I are automatically added to the options.
+- ce_project: added a field, General options,  for the libman aliases. An entry acts as a selector in the libman.
+- ce_libmaneditor: created a widget for the libman.
+- ce_staticexplorer: all the libman entries are added when generating the infos, which increases the success chance.
+
 r24:
 - ce_messages: messages related to a project were not cleared when the project was closed.
 - ce_messages: obj files could be automatically opened in case of errors in 'compile & run'.
 - ce_messages: fix position in source code broken.
 - ce_dmdwrap: removed old project fields 'versionIdentifier' and 'debugIdentifier'.
 - ce_main: compile & run, compile, run: fixed some inaccuracies related to platform specific process options (poWaitOnExit under win).
-- ce_main, option: possible startup crash fixed when invalid height or width.
+- ce_main: option, possible startup crash fixed when invalid height or width.
 
 r23:
 - ce_messages: position in source code.

@@ -1,0 +1,39 @@
+object CurrentProject: TCEProject
+  OptionsCollection = <  
+    item
+      name = 'toPlugDir'
+      outputOptions.binaryKind = sharedlib
+      outputOptions.noBoundsCheck = False
+      outputOptions.boundsCheck = onAlways
+      outputOptions.optimizations = True
+      outputOptions.release = True
+      pathsOptions.outputFilename = '..\..\plugins\CoeditPlug.dll'
+      preBuildProcess.options = []
+      preBuildProcess.showWindow = swoNone
+      postBuildProcess.options = []
+      postBuildProcess.showWindow = swoNone
+      runOptions.options = []
+      runOptions.showWindow = swoNone
+    end  
+    item
+      name = 'abovePlugDir'
+      outputOptions.binaryKind = sharedlib
+      outputOptions.inlining = True
+      outputOptions.noBoundsCheck = False
+      outputOptions.boundsCheck = onAlways
+      outputOptions.optimizations = True
+      outputOptions.release = True
+      pathsOptions.outputFilename = '..\..\plugins\temp\CoeditPlug.dll'
+      preBuildProcess.options = []
+      preBuildProcess.showWindow = swoNone
+      postBuildProcess.options = []
+      postBuildProcess.showWindow = swoNone
+      runOptions.options = []
+      runOptions.showWindow = swoNone
+    end>
+  Sources.Strings = (
+    '..\CoeditPlugApi.d'
+    'CoeditPlug.d'
+  )
+  ConfigurationIndex = 1
+end

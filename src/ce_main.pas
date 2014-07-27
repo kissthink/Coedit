@@ -8,13 +8,15 @@ uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
   Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls,
-  ce_common, ce_dmdwrap, ce_project, ce_synmemo, ce_widget, ce_messages,
-  ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search, ce_miniexplorer;
+  ce_common, ce_dmdwrap, ce_project, ce_plugin, ce_synmemo, ce_widget, ce_messages,
+  ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search,
+  ce_miniexplorer, dynlibs, ce_libman, ce_libmaneditor;
 
 type
 
   TCEMainForm = class;
 
+  //TODO-cfeature: switches -f<sourcefile.d>, -p<project.coedit>, -noplug
   //TODO-cfeature: options
   //TODO-cwidget: options editor
   (**
@@ -197,6 +199,7 @@ type
   private
     fUpdateCount: NativeInt;
     fProject: TCEProject;
+    fPlugList: TCEPlugDescriptorList;
     fWidgList: TCEWidgetList;
     fMesgWidg: TCEMessagesWidget;
     fEditWidg: TCEEditorWidget;
@@ -205,16 +208,21 @@ type
     fStExpWidg: TCEStaticExplorerWidget;
     fFindWidg:  TCESearchWidget;
     fExplWidg: TCEMiniExplorerWidget;
+    fLibMWidg: TCELibManEditorWidget;
     fProjMru: TMruFileList;
     fFileMru: TMruFileList;
+    fLibMan: TLibraryManager;
 
     //Init - Fina
+    procedure InitLibMan;
     procedure InitMRUs;
     procedure InitWidgets;
+    procedure InitPlugins;
     procedure InitDocking;
     procedure InitSettings;
     procedure SaveSettings;
     procedure SaveDocking;
+    procedure KillPlugs;
 
     // widget interfaces subroutines
     procedure checkWidgetActions(const aWidget: TCEWidget);
@@ -263,7 +271,10 @@ type
     property EditWidget: TCEEditorWidget read fEditWidg;
     property ProjectWidget: TCEProjectInspectWidget read fProjWidg;
     property ProjectConfWidget: TCEProjectConfigurationWidget read fPrjCfWidg;
+    property LibraryManager: TLibraryManager read fLibMan;
   end;
+
+  procedure PlugDispatchToHost(aPlugin: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;
 
 var
   CEMainForm: TCEMainForm;
@@ -279,11 +290,23 @@ constructor TCEMainForm.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
   InitMRUs;
+  InitLibMan;
   InitWidgets;
   InitDocking;
   InitSettings;
   //
   newProj;
+  InitPlugins;
+end;
+
+procedure TCEMainForm.InitLibMan;
+var
+  fname: string;
+begin
+  fLibMan := TLibraryManager.create(self);
+  fname := getDocPath + 'libraryManager.txt';
+  if fileExists(fname) then
+    fLibMan.loadFromFile(fname);
 end;
 
 procedure TCEMainForm.InitMRUs;
@@ -294,6 +317,49 @@ begin
   fFileMru.objectTag := mnuItemMruFile;
   fProjMru.OnChange := @mruChange;
   fFileMru.OnChange := @mruChange;
+end;
+
+procedure TCEMainForm.InitPlugins;
+var
+  pth: string;
+  fname: string;
+  lst: TStringList;
+  hdl: TLibHandle;
+  plg: PPlugDescriptor;
+begin
+  fPlugList := TCEPlugDescriptorList.Create;
+  pth := extractFilePath(application.ExeName) + 'plugins';
+  lst := TStringList.Create;
+  try
+    listFiles(lst, pth, false);
+    for fname in lst do
+    begin
+      if extractFileExt(fname) <> '.' + SharedSuffix then
+        continue;
+      hdl := LoadLibrary(fname);
+      if hdl = NilHandle then
+        continue;
+
+      plg := new(PPlugDescriptor);
+      plg^.Handle := hdl;
+      plg^.HostCreatePlug   := THostCreatePlug(GetProcAddress(hdl, 'createPlug'));
+      plg^.HostDestroyPlug  := THostDestroyPlug(GetProcAddress(hdl, 'destroyPlug'));
+      plg^.HostDispatchToPlug := THostDispatchToPlug(GetProcAddress(hdl, 'dispatchToPlug'));
+      if plg^.HostCreatePlug <> nil then
+        plg^.Plugin := plg^.HostCreatePlug(@PlugDispatchToHost);
+
+      if (plg^.HostCreatePlug = nil) or (plg^.HostDestroyPlug = nil) or
+        (plg^.HostDispatchToPlug = nil) then
+      begin
+        Dispose(plg);
+        //FreeLibrary(hdl);
+        continue;
+      end;
+      fPlugList.addPlugin(plg);
+    end;
+  finally
+    lst.Free;
+  end;
 end;
 
 procedure TCEMainForm.InitWidgets;
@@ -310,6 +376,7 @@ begin
   fStExpWidg:= TCEStaticExplorerWidget.create(self);
   fFindWidg := TCESearchWidget.create(self);
   fExplWidg := TCEMiniExplorerWidget.create(self);
+  fLibMWidg := TCELibManEditorWidget.create(self);
 
   fWidgList.addWidget(@fMesgWidg);
   fWidgList.addWidget(@fEditWidg);
@@ -318,6 +385,7 @@ begin
   fWidgList.addWidget(@fStExpWidg);
   fWidgList.addWidget(@fFindWidg);
   fWidgList.addWidget(@fExplWidg);
+  fWidgList.addWidget(@fLibMWidg);
 
   for widg in fWidgList do
   begin
@@ -350,7 +418,7 @@ begin
   end;
   Height := 0;
 
-    for i := 0 to fWidgList.Count-1 do
+  for i := 0 to fWidgList.Count-1 do
   begin
     DockMaster.MakeDockable(fWidgList.widget[i],true);
     DockMaster.GetAnchorSite(fWidgList.widget[i]).Header.HeaderPosition := adlhpTop;
@@ -368,6 +436,7 @@ begin
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
 
   DockMaster.GetAnchorSite(fExplWidg).Close;
+  DockMaster.GetAnchorSite(fLibMWidg).Close;
 end;
 
 procedure TCEMainForm.InitSettings;
@@ -386,9 +455,9 @@ begin
       if opts.hasLoaded then
       begin
         if fileExists(fname2) then
-          deleteFile(fname2);
+           sysutils.deleteFile(fname2);
         if not fileExists(fname2) then
-          copyFile(fname1, fname2, false);
+          fileutil.copyFile(fname1, fname2, false);
       end;
     end;
   finally
@@ -403,6 +472,7 @@ begin
   opts := TCEOptions.create(nil);
   try
     forceDirectory(getDocPath);
+    fLibMan.saveToFile(getDocPath + 'libraryManager.txt');
     opts.saveToFile(getDocPath + 'options.txt');
   finally
     opts.Free;
@@ -416,17 +486,39 @@ begin
   xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
   try
     // <Item1 Name="CEMainForm" Type="CustomSite" ChildCount="..."> is always missing
-    DockMaster.SaveLayoutToConfig(xcfg);
-    xcfg.WriteToDisk;
+    //DockMaster.SaveLayoutToConfig(xcfg);
+    //xcfg.WriteToDisk;
   finally
     xcfg.Free;
   end;
+end;
+
+procedure TCEMainForm.KillPlugs;
+var
+  descr: TPlugDescriptor;
+begin
+  if fPlugList = nil then exit;
+  for descr in fPlugList do
+  begin
+    descr.HostDestroyPlug(descr.Plugin);
+    {$IFDEF WINDOWS}
+    //FreeLibrary(descr.Handle);
+    {$ENDIF}
+  end;
+  while fPlugList.Count <> 0 do
+  begin
+    Dispose(PPlugDescriptor(fPlugList.Items[fPlugList.Count-1]));
+    fPlugList.Delete(fPlugList.Count-1);
+  end;
+  fPlugList.Free;
 end;
 
 destructor TCEMainForm.destroy;
 begin
   SaveSettings;
   SaveDocking;
+  //
+  KillPlugs;
   //
   fWidgList.Free;
   fProjMru.Free;
@@ -1015,11 +1107,11 @@ begin
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
       {$IFDEF MSWINDOWS}
-      DeleteFile(fname + '.exe');
-      DeleteFile(fname + '.obj');
+       sysutils.DeleteFile(fname + '.exe');
+       sysutils.DeleteFile(fname + '.obj');
       {$ELSE}
-      DeleteFile(fname);
-      DeleteFile(fname + '.o');
+       sysutils.DeleteFile(fname);
+       sysutils.DeleteFile(fname + '.o');
       {$ENDIF}
     end
     else begin
@@ -1031,7 +1123,7 @@ begin
     dmdproc.Free;
     runproc.Free;
     if extractFilePath(editor.fileName) = GetTempDir(false) then
-      DeleteFile(editor.fileName);
+       sysutils.DeleteFile(editor.fileName);
     chDir(olddir);
   end;
 end;
@@ -1051,7 +1143,7 @@ begin
 
   if aProject.Sources.Count = 0 then
   begin
-    fMesgWidg.addCeErr( aProject.fileName + ' has no source files', mcProject);
+    fMesgWidg.addCeWarn('the project has no source files', mcProject);
     exit;
   end;
 
@@ -1295,6 +1387,7 @@ begin
   fProject.Name := 'CurrentProject';
   for widg in WidgetList do widg.projNew(fProject);
   fProject.onChange := @projChange;
+  fProject.libraryManager := fLibMan;
 end;
 
 procedure TCEMainForm.saveProj;
@@ -1548,6 +1641,40 @@ begin
     widg.afterLoad(nil);
 end;
 {$ENDREGION}
+
+procedure PlugDispatchToHost(aPlugin: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;
+var
+  ctxt: NativeUint;
+  oper: NativeUint;
+begin
+
+  if opCode = HELLO_PLUGIN then begin
+      dlgOkInfo('Hello plugin');
+      exit;
+  end;
+
+  ctxt := opCode and $0F000000;
+  oper := opCode and $000FFFFF;
+
+  case ctxt of
+    CTXT_MSGS:
+      case oper of
+        DT_ERR:  CEMainForm.MessageWidget.addCeErr(PChar(data1));
+        DT_INF:  CEMainForm.MessageWidget.addCeInf(PChar(data1));
+        DT_WARN: CEMainForm.MessageWidget.addCeWarn(PChar(data1));
+        else CEMainForm.MessageWidget.addCeWarn('unsupported dispatcher opCode');
+      end;
+    CTXT_DLGS:
+      case oper of
+        DT_ERR: dlgOkError(PChar(data1));
+        DT_INF: dlgOkInfo(PChar(data1));
+        DT_WARN: dlgOkInfo(PChar(data1));
+        else CEMainForm.MessageWidget.addCeWarn('unsupported dispatcher opCode');
+      end;
+    else CEMainForm.MessageWidget.addCeWarn('unsupported dispatcher opCode');
+  end;
+
+end;
 
 initialization
   RegisterClasses([TCEOptions]);
