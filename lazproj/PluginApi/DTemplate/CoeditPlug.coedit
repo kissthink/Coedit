@@ -36,4 +36,7 @@ object CurrentProject: TCEProject
     'CoeditPlug.d'
   )
   ConfigurationIndex = 1
+  LibraryAliases.Strings = (
+    'iz'
+  )
 end

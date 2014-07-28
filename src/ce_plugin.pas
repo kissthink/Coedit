@@ -50,8 +50,8 @@ const
   EV_CHANGED   = $00000001;
   /// something's just been selected.
   EV_FOCUSED   = $00000002;
-  /// something's just been closed.
-  EV_CLOSED    = $00000003;
+  /// something will be closed.
+  EV_CLOSE     = $00000003;
   /// something's just been created.
   EV_NEW       = $00000004;
   /// something gonna be compiled.
@@ -130,7 +130,7 @@ type
    * Coedit events and data are passed here. data1 and data2 can be casted according to opCode.
    * In the plugin implementation, it must be named 'dispatchToPlug'.
    *)
-  THostDispatchToPlug = procedure(aTarget: TCEPlugin; data0: Integer; opCode: LongWord; data1, data2: Pointer); cdecl;
+  THostDispatchToPlug = procedure(aTarget: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;
 
 
 

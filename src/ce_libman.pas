@@ -106,7 +106,7 @@ begin
     if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
     //
     if aList.IndexOf(itmt.libFile) <> -1 then continue;
-    aList.Add('-I'+ itmt.libFile);
+    aList.Add('-I' + itmt.libFile);
   end;
 end;
 

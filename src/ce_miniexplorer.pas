@@ -41,9 +41,6 @@ type
     procedure treeScanSubFolders(aRoot: TTreeNode);
     procedure treeClick(sender: TObject);
     procedure treeChanged(Sender: TObject; Node: TTreeNode);
-    procedure treeCollapsed(Sender: TObject; Node: TTreeNode);
-    procedure treeExpanded(Sender: TObject; Node: TTreeNode);
-    procedure treeCollapsing(Sender: TObject; Node: TTreeNode; var allow: boolean);
     procedure treeExpanding(Sender: TObject; Node: TTreeNode; var allow: boolean);
     procedure treeDeletion(Sender: TObject; Item: TTreeNode);
     procedure treeSelectionChanged(sender: TObject);
@@ -74,14 +71,11 @@ begin
   lstFiles.OnDeletion := @lstDeletion;
   lstFav.OnDeletion := @lstDeletion;
   lstFav.OnSelectItem := @lstFavSelect;
-
+  //
   Tree.OnClick := @treeClick;
   Tree.OnChange := @treeChanged;
   Tree.OnDeletion := @treeDeletion;
   Tree.OnSelectionChanged := @treeSelectionChanged;
-  Tree.OnExpanded := @treeExpanded;
-  Tree.OnCollapsed := @treeCollapsed;
-  Tree.OnCollapsing := @treeCollapsing;
   Tree.OnExpanding := @treeExpanding;
   //
   treeSetRoots;
@@ -323,23 +317,11 @@ begin
   end;
 end;
 
-procedure TCEMiniExplorerWidget.treeCollapsing(Sender: TObject; Node: TTreeNode; var allow: boolean);
-begin
-end;
-
 procedure TCEMiniExplorerWidget.treeExpanding(Sender: TObject; Node: TTreeNode; var allow: boolean);
 begin
   if Node <> nil then
     treeScanSubFolders(Node);
   allow := true;
-end;
-
-procedure TCEMiniExplorerWidget.treeCollapsed(Sender: TObject; Node: TTreeNode);
-begin
-end;
-
-procedure TCEMiniExplorerWidget.treeExpanded(Sender: TObject; Node: TTreeNode);
-begin
 end;
 
 procedure TCEMiniExplorerWidget.treeChanged(Sender: TObject; Node: TTreeNode);

@@ -10,8 +10,6 @@ uses
 
 type
 
-  { TCELibManEditorWidget }
-
   TCELibManEditorWidget = class(TCEWidget)
     btnSelFile: TBitBtn;
     btnAddLib: TBitBtn;
@@ -42,7 +40,7 @@ uses
 procedure TCELibManEditorWidget.ListEdited(Sender: TObject; Item: TListItem;
   var AValue: string);
 begin
-  GridToData;
+  gridToData;
 end;
 
 procedure TCELibManEditorWidget.btnAddLibClick(Sender: TObject);
@@ -65,7 +63,7 @@ begin
   al := List.Selected.Caption;
   if inputQuery('library alias', '', al) then
     List.Selected.Caption := al;
-  GridToData;
+  gridToData;
 end;
 
 procedure TCELibManEditorWidget.btnRemLibClick(Sender: TObject);
@@ -91,11 +89,17 @@ begin
   try
     filename := ini;
     if execute then
-      List.Selected.SubItems[0] := filename;
+    begin
+      //TODO-cwiki: 'a folder containing many .lib can be added with an invalid fname'
+      if not fileExists(filename) then
+        List.Selected.SubItems[0] := extractFilePath(filename)
+      else
+        List.Selected.SubItems[0] := filename;
+    end;
   finally
     Free;
   end;
-  GridToData;
+  gridToData;
 end;
 
 procedure TCELibManEditorWidget.btnSelRootClick(Sender: TObject);
@@ -113,7 +117,7 @@ begin
   end;
   if selectDirectory('sources root', dir, outdir, true, 0) then
     List.Selected.SubItems[1] := outdir;
-  GridToData;
+  gridToData;
 end;
 
 procedure TCELibManEditorWidget.DoShow;
@@ -145,7 +149,7 @@ end;
 
 procedure TCELibManEditorWidget.gridToData;
 var
-  itmt: TLibraryItem;
+  itm: TLibraryItem;
   row: TListItem;
 begin
   with CEMainForm do
@@ -154,10 +158,10 @@ begin
     LibraryManager.libraries.Clear;
     for row in List.Items do
     begin
-      itmt := TLibraryItem(LibraryManager.libraries.Add);
-      itmt.libAlias := row.Caption;
-      itmt.libFile := row.SubItems.Strings[0];
-      itmt.libSourcePath := row.SubItems.Strings[1];
+      itm := TLibraryItem(LibraryManager.libraries.Add);
+      itm.libAlias := row.Caption;
+      itm.libFile := row.SubItems.Strings[0];
+      itm.libSourcePath := row.SubItems.Strings[1];
     end;
   end;
 end;

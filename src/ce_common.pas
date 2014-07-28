@@ -12,7 +12,6 @@ uses
   ActnList, dialogs, forms, process;
 
 const
-
   DdiagFilter = 'D source|*.d|D interface|*.di|All files|*.*';
 
 var
@@ -580,7 +579,7 @@ begin
   {$ENDIF}
   {$IFDEF LINUX}
   // aList.LoadFromFile('/etc/fstab'); // to be parsed
-  aList.Add('/home/');
+  aList.Add('/home/'); //TODO-cbugfix: AV when scanning non-users folder (e.g replace '/home/'' with '/')
   {$ENDIF}
 end;
 

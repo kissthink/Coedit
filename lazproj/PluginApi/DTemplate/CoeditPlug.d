@@ -18,6 +18,7 @@ it just instanciates fine.
 
 import std.stdio, std.string, std.conv;
 import CoeditPlugApi;
+import iz.types;
 
 version(Posix)
 {
@@ -28,17 +29,15 @@ else
     import core.sys.windows.dll;
 }
 
-    import iz.types;
-    pragma( lib, "iz");
 
 coeditPlug plugin;
 
-class coeditPlug :izObject
+class coeditPlug: izObject
 {
     protected
     {
         plugDispatchToHostProc fDispatcher;
-        Plugin_t asPlugin_t(){return cast(Plugin_t)this;}
+        Plugin_t asPlugin_t(){return cast(Plugin_t)&this;}
     }
     public
     {

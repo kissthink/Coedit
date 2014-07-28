@@ -1,6 +1,10 @@
 Revision log.
 (single changes can be tracked with the GH commit messages)
 
+r26:
+- ce_libmaneditor: added support for folder of library (e.g derelict).
+- ce_main: run project, fix, projects couldn't be executed when not saved.
+
 r25:
 - ce_plugin: added a plug-in API. D example. final goal is to use it to wrap D Completion Daemon and other D libs.
 - ce_libman: library manager: additional sources and -I are automatically added to the options.
