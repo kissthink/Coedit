@@ -17,11 +17,13 @@ it just instanciates fine.
 
 
 import std.stdio, std.string, std.conv;
+import core.runtime;
 import CoeditPlugApi;
 import iz.types;
 
 version(Posix)
 {
+
 }
 else
 {
@@ -37,16 +39,28 @@ class coeditPlug: izObject
     protected
     {
         plugDispatchToHostProc fDispatcher;
-        Plugin_t asPlugin_t(){return cast(Plugin_t)&this;}
+        Plugin_t asPlugin_t(){return cast(Plugin_t)this;}
     }
     public
     {
+        static this()
+        {
+            Runtime.initialize();
+        }
+
+        static ~this()
+        {
+            Runtime.terminate();
+        }
+
         this(plugDispatchToHostProc aDispatcher)
         {
             assert(aDispatcher, "the Coedit dispatcher is missing");
             fDispatcher = aDispatcher;
-            //fDispatcher(asPlugin_t, HELLO_PLUGIN, 0, null, null);
-
+            version(none)
+            {
+                fDispatcher(asPlugin_t, HELLO_PLUGIN, 0, null, null);
+            }
             auto msg = "simple Coedit plugin is created".toStringz;
             fDispatcher(asPlugin_t, PLUG_MSGS_INF, 0, cast(void*)msg, null);
         }
