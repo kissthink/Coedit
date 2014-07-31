@@ -111,6 +111,7 @@ type
     function readNext: Char;
     function readCurr: Char;
     function readPrev: Char;
+    function readPrevPrev: Char;
     procedure setFoldKinds(aValue: TFoldKinds);
     procedure setWhiteAttrib(aValue: TSynHighlighterAttributes);
     procedure setNumbrAttrib(aValue: TSynHighlighterAttributes);
@@ -440,15 +441,19 @@ begin
   result := fLineBuf[fTokStop-1];
 end;
 
+function TSynD2Syn.readPrevPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+begin
+  result := fLineBuf[fTokStop-2];
+end;
+
 
 //TODO-crange: asm range.
 //TODO-cnumber literals: stricter.
 //TODO-cnumber literals: binary.
 //TODO-cstring literals: delimited strings.
 //TODO-cstring literals: token strings.
-//TODO-cstring literals: escape bug: std.path/std.regex: "\\"
 //TODO-ccomments: correct nested comments handling.
-//TODO-cidea: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
+//TODO-cfeature: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
 
 {$BOOLEVAL ON}
 procedure TSynD2Syn.next;
@@ -596,7 +601,14 @@ begin
       end;
     end;
     // go to end of string/eol
-    while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
+    while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do
+    begin
+      // test special case "//"
+      if readCurr = '"' then if
+        (readPrev = '\') then if
+          (readPrevPrev = '\') then
+            break;
+    end;
     if (readCurr = #10) then fRange := rkString1
     else
     begin
@@ -610,7 +622,14 @@ begin
   end;
   if fRange = rkString1 then
   begin
-    if (readCurr <> '"') then while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
+    if (readCurr <> '"') then while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do
+    begin
+      // test special case "//"
+      if readCurr = '"' then if
+        (readPrev = '\') then if
+          (readPrevPrev = '\') then
+            break;
+    end;
     if (readCurr = #10) then
     begin
       fTokKind := tkStrng;
