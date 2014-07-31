@@ -352,7 +352,9 @@ begin
         (plg^.HostDispatchToPlug = nil) then
       begin
         Dispose(plg);
-        //FreeLibrary(hdl);
+        {$IFDEF RELEASE}
+        FreeLibrary(Hdl);
+        {$ENDIF}
         continue;
       end;
       fPlugList.addPlugin(plg);
@@ -496,13 +498,15 @@ end;
 procedure TCEMainForm.KillPlugs;
 var
   descr: TPlugDescriptor;
+  i: NativeInt;
 begin
   if fPlugList = nil then exit;
-  for descr in fPlugList do
+  for i := 0 to fPlugList.Count-1 do
   begin
+    descr := fPlugList.plugin[i];
     descr.HostDestroyPlug(descr.Plugin);
-    {$IFDEF WINDOWS}
-    //FreeLibrary(descr.Handle);
+    {$IFDEF RELEASE}
+    FreeLibrary(descr.Handle);
     {$ENDIF}
   end;
   while fPlugList.Count <> 0 do
