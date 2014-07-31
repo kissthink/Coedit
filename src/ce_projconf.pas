@@ -26,6 +26,7 @@ type
     procedure GridEditorFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
     procedure selConfChange(Sender: TObject);
     procedure TreeChange(Sender: TObject; Node: TTreeNode);
+    procedure GridFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
   private
     fProj: TCEProject;
     function getGridTarget: TPersistent;
@@ -46,6 +47,7 @@ constructor TCEProjectConfigurationWidget.create(aOwner: TComponent);
 begin
   inherited;
   Tree.Selected := Tree.Items.GetLastNode;
+  Grid.OnEditorFilter := @GridFilter;
 end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
@@ -137,6 +139,17 @@ begin
   if InputQuery('Configuration name', '', nme) then trg.name := nme;
   fProj.ConfigurationIndex := trg.Index;
   endUpdateByEvent;
+end;
+
+procedure TCEProjectConfigurationWidget.GridFilter(Sender: TObject; aEditor: TPropertyEditor;var aShow: boolean);
+begin
+  if getGridTarget = fProj then
+  begin
+    if aEditor.GetName = 'Name' then
+      aShow := false;
+    if aEditor.GetName = 'Tag' then
+      aShow := false;
+  end;
 end;
 
 function TCEProjectConfigurationWidget.getGridTarget: TPersistent;
