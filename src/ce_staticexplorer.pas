@@ -323,9 +323,6 @@ var
   ln: PInt64;
   nme, knd: string;
   i: NativeInt;
-  itm: TCollectionItem;
-  itmt: TLibraryItem;
-  allALiases: TStringList;
 
   // recursively display members, without master categories.
   procedure digMembers(const srcDt: TJsonData; const srcNd: TTreeNode);
@@ -390,7 +387,7 @@ begin
     dmdproc.Parameters.Add('-o-');
     dmdproc.Parameters.Add('-X');
     dmdproc.Parameters.Add('-Xf' + jsf);
-    // projects add.sources and I.
+    // projects additional sources and I and libman aliases
     if fProj <> nil then
     begin
       dmdProc.CurrentDirectory := extractFilePath(fProj.fileName);
@@ -398,21 +395,9 @@ begin
         dmdproc.Parameters.Add('-I' + fProj.getAbsoluteSourceName(i));
       for nme in fProj.currentConfiguration.pathsOptions.Includes do
         dmdproc.Parameters.Add('-I' + nme);
-    end;
-    // add. sources and I from libman.
-    with CEMainForm do
-    begin
-      allALiases := TstringList.Create;
-      try
-        for itm in Librarymanager.libraries do
-        begin
-          itmt := TLibraryItem(itm);
-          allALiases.Add(itmt.libAlias);
-        end;
-        Librarymanager.getAdditionalSources(allALiases,dmdproc.Parameters);
-        Librarymanager.getAdditionalImport(allALiases,dmdproc.Parameters);
-      finally
-        allALiases.Free;
+      with CEMainForm do begin
+        Librarymanager.getAdditionalSources( fProj.LibraryAliases, dmdproc.Parameters);
+        Librarymanager.getAdditionalImport( fProj.LibraryAliases, dmdproc.Parameters);
       end;
     end;
     //
