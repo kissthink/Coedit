@@ -143,4 +143,3 @@ finalization
   DCD_client.Free;
   lines.Free;
 end.
-

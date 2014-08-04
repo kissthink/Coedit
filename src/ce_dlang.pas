@@ -867,4 +867,3 @@ initialization
 finalization
   D2Dictionary.destroy;
 end.
-

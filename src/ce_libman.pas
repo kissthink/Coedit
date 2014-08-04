@@ -155,4 +155,3 @@ end;
 initialization
   registerClasses([TLibraryManager, TLibraryItem]);
 end.
-
