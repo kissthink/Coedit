@@ -172,12 +172,13 @@ begin
   if not Selected then exit;
   //
   fLastFold := PString(Item.Data)^;
-  lstFiles.Clear;
   lst := TStringList.Create;
   try
+    lstFiles.Items.Clear;
     listFiles(lst, fLastFold);
     fillLstFiles(lst);
   finally
+    lst.Free;
   end;
 end;
 
@@ -191,11 +192,6 @@ begin
   lstFiles.Clear;
 end;
 
-procedure TCEMiniExplorerWidget.lstFilesDblClick(Sender: TObject);
-begin
-  shellOpenSelected;
-end;
-
 procedure TCEMiniExplorerWidget.btnAddFavClick(Sender: TObject);
 begin
   if Tree.Selected = nil then exit;
@@ -205,9 +201,9 @@ end;
 procedure TCEMiniExplorerWidget.lstFavDblClick(Sender: TObject);
 begin
   if lstFav.Selected = nil then exit;
+  lstFiles.Items.Clear;
   expandPath(lstFav.Selected.Caption);
 end;
-
 {$ENDREGION}
 
 {$REGION Files -----------------------------------------------------------------}
@@ -242,6 +238,11 @@ begin
   fname := PString(lstFiles.Selected.Data)^;
   if not fileExists(fname) then exit;
   CEMainForm.openFile(fname);
+end;
+
+procedure TCEMiniExplorerWidget.lstFilesDblClick(Sender: TObject);
+begin
+  shellOpenSelected;
 end;
 
 procedure TCEMiniExplorerWidget.shellOpenSelected;
@@ -355,7 +356,6 @@ begin
   treeScanSubFolders(Tree.Selected);
 end;
 
-//TODO-cbugfix: it leaks expanded nodes data.
 procedure TCEMiniExplorerWidget.expandPath(const aPath: string);
 var
   i: NativeInt;
