@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  Menus, StdCtrls, ComCtrls, Buttons, ce_widget, lcltype;
+  Menus, ComCtrls, Buttons, ce_widget, lcltype, strutils;
 
 type
   TCEMiniExplorerWidget = class(TCEWidget)
@@ -31,6 +31,7 @@ type
   private
     fFavorites: TStringList;
     fLastFold: string;
+    procedure lstFavDblClick(Sender: TObject);
     procedure optset_LastFold(aReader: TReader);
     procedure optget_LastFold(aWriter: TWriter);
     procedure optset_Favs(aReader: TReader);
@@ -54,6 +55,8 @@ type
     destructor destroy; override;
     //
     procedure declareProperties(aFiler: TFiler); override;
+    //
+    procedure expandPath(const aPath: string);
   end;
 
 implementation
@@ -71,6 +74,7 @@ begin
   lstFiles.OnDeletion := @lstDeletion;
   lstFav.OnDeletion := @lstDeletion;
   lstFav.OnSelectItem := @lstFavSelect;
+  lstFav.OnDblClick := @lstFavDblClick;
   //
   Tree.OnClick := @treeClick;
   Tree.OnChange := @treeChanged;
@@ -197,6 +201,13 @@ begin
   if Tree.Selected = nil then exit;
   fFavorites.Add(PString(Tree.Selected.Data)^);
 end;
+
+procedure TCEMiniExplorerWidget.lstFavDblClick(Sender: TObject);
+begin
+  if lstFav.Selected = nil then exit;
+  expandPath(lstFav.Selected.Caption);
+end;
+
 {$ENDREGION}
 
 {$REGION Files -----------------------------------------------------------------}
@@ -342,6 +353,44 @@ begin
   if Tree.Selected = nil then exit;
   if Tree.Selected.Expanded then exit;
   treeScanSubFolders(Tree.Selected);
+end;
+
+//TODO-cbugfix: it leaks expanded nodes data.
+procedure TCEMiniExplorerWidget.expandPath(const aPath: string);
+var
+  i: NativeInt;
+  node : TTreeNode;
+function dig(const aRoot: TTreenode): boolean;
+var
+  i: NativeInt;
+  str: string;
+begin
+  result := false;
+  for i := 0 to aRoot.Count-1 do
+  begin
+    str := PString(aRoot.Items[i].Data)^;
+    if LeftStr(aPath, length(str)) = str then
+    begin
+      result := true;
+      Tree.Selected := aRoot.Items[i];
+      Tree.Selected.Expand(false);
+      //
+      if str = aPath then break;
+      if dig(Tree.Selected) then break;
+    end;
+  end;
+end;
+begin
+  for i := 0 to Tree.Items.Count-1 do
+  begin
+    node := Tree.Items[i];
+    if node.Level = 0 then
+    begin
+      node.Selected := true;
+      node.Expand(false);
+    end;
+    if dig(node) then break;
+  end;
 end;
 {$ENDREGION}
 

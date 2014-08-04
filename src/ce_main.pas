@@ -70,6 +70,8 @@ type
     actFileCompAndRunWithArgs: TAction;
     actEdFind: TAction;
     actEdFindNext: TAction;
+    actFileOpenContFold: TAction;
+    actProjOpenContFold: TAction;
     actProjOptView: TAction;
     actProjSource: TAction;
     actProjRun: TAction;
@@ -148,6 +150,9 @@ type
     MenuItem56: TMenuItem;
     MenuItem57: TMenuItem;
     MenuItem58: TMenuItem;
+    MenuItem59: TMenuItem;
+    MenuItem60: TMenuItem;
+    MenuItem61: TMenuItem;
     mnuItemMruFile: TMenuItem;
     mnuItemMruProj: TMenuItem;
     mnuItemWin: TMenuItem;
@@ -164,6 +169,7 @@ type
     procedure actFileCloseExecute(Sender: TObject);
     procedure actFileCompAndRunExecute(Sender: TObject);
     procedure actFileCompAndRunWithArgsExecute(Sender: TObject);
+    procedure actFileOpenContFoldExecute(Sender: TObject);
     procedure actFileSaveAllExecute(Sender: TObject);
     procedure actEdIndentExecute(Sender: TObject);
     procedure actProjCompAndRunWithArgsExecute(Sender: TObject);
@@ -178,6 +184,7 @@ type
     procedure actProjNewExecute(Sender: TObject);
     procedure actFileNewRunExecute(Sender: TObject);
     procedure actFileOpenExecute(Sender: TObject);
+    procedure actProjOpenContFoldExecute(Sender: TObject);
     procedure actProjOpenExecute(Sender: TObject);
     procedure actEdPasteExecute(Sender: TObject);
     procedure actProjCloseExecute(Sender: TObject);
@@ -829,6 +836,15 @@ begin
   end;
 end;
 
+procedure TCEMainForm.actProjOpenContFoldExecute(Sender: TObject);
+begin
+  if fProject = nil then exit;
+  if not fileExists(fProject.fileName) then exit;
+  //
+  DockMaster.GetAnchorSite(fExplWidg).Show;
+  fExplWidg.expandPath(extractFilePath(fProject.fileName));
+end;
+
 procedure TCEMainForm.actFileNewExecute(Sender: TObject);
 begin
   newFile;
@@ -1303,6 +1319,18 @@ begin
   runargs := '';
   if InputQuery('Execution arguments', '', runargs) then
     compileAndRunFile(fEditWidg.editorIndex, runargs);
+end;
+
+procedure TCEMainForm.actFileOpenContFoldExecute(Sender: TObject);
+var
+  curr: TCESynMemo;
+begin
+  curr := EditWidget.currentEditor;
+  if curr = nil then exit;
+  if not fileExists(curr.fileName) then exit;
+  //
+  DockMaster.GetAnchorSite(fExplWidg).Show;
+  fExplWidg.expandPath(extractFilePath(curr.fileName));
 end;
 
 procedure TCEMainForm.actProjCompileExecute(Sender: TObject);
