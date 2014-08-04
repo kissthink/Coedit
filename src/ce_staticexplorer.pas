@@ -395,10 +395,11 @@ begin
         dmdproc.Parameters.Add('-I' + fProj.getAbsoluteSourceName(i));
       for nme in fProj.currentConfiguration.pathsOptions.Includes do
         dmdproc.Parameters.Add('-I' + nme);
-      with CEMainForm do begin
-        Librarymanager.getAdditionalSources( fProj.LibraryAliases, dmdproc.Parameters);
-        Librarymanager.getAdditionalImport( fProj.LibraryAliases, dmdproc.Parameters);
-      end;
+    end;
+    //adds all the libman entries
+    with CEMainForm do begin
+      Librarymanager.getAdditionalSources(nil, dmdproc.Parameters);
+      Librarymanager.getAdditionalImport(nil, dmdproc.Parameters);
     end;
     //
     dmdproc.Execute;

@@ -163,6 +163,7 @@ begin
       itm.libFile := row.SubItems.Strings[0];
       itm.libSourcePath := row.SubItems.Strings[1];
     end;
+    LibraryManager.updateDCD;
   end;
 end;
 

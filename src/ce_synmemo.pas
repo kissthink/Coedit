@@ -50,7 +50,7 @@ var
 implementation
 
 uses
-  graphics, ce_main, forms, ExtendedNotebook, comctrls;
+  graphics, ce_main, forms;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -74,7 +74,7 @@ begin
   //
   fFilename := '<new document>';
   fModified := false;
-
+  ShowHint := true;
   TextBuffer.AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
 end;
 

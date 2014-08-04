@@ -95,4 +95,17 @@ inherited CEEditorWidget: TCEEditorWidget
       0000000000000000000000000000
     }
   end
+  object completion: TSynCompletion[4]
+    OnExecute = completionExecute
+    Position = 0
+    LinesInWindow = 6
+    SelectedColor = clHighlight
+    CaseSensitive = True
+    Width = 262
+    ShortCut = 16416
+    EndOfTokenChr = '()[].'
+    OnCodeCompletion = completionCodeCompletion
+    ExecCommandID = ecSynCompletionExecute
+    left = 96
+  end
 end

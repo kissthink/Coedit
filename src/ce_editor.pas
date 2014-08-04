@@ -8,15 +8,23 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, AnchorDocking, ce_widget, ce_d2syn, ce_synmemo, ce_dlang,
-  ce_project;
+  SynHighlighterLFM, SynCompletion, AnchorDocking, ce_widget, ce_d2syn,
+  ce_synmemo, ce_dlang, ce_project, ce_common, types, ce_dcd;
 
 type
+
+  { TCEEditorWidget }
+
   TCEEditorWidget = class(TCEWidget)
     imgList: TImageList;
     PageControl: TExtendedNotebook;
     macRecorder: TSynMacroRecorder;
     editorStatus: TStatusBar;
+    completion: TSynCompletion;
+    procedure completionCodeCompletion(var Value: string; SourceValue: string;
+      var SourceStart, SourceEnd: TPoint; KeyChar: TUTF8Char; Shift: TShiftState
+      );
+    procedure completionExecute(Sender: TObject);
     procedure PageControlChange(Sender: TObject);
     procedure PageControlCloseTabClicked(Sender: TObject);
   protected
@@ -39,12 +47,14 @@ type
     function getEditor(index: NativeInt): TCESynMemo;
     function getEditorCount: NativeInt;
     function getEditorIndex: NativeInt;
+    procedure getCompletionList;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     procedure addEditor;
     procedure removeEditor(const aIndex: NativeInt);
     procedure focusedEditorChanged;
+    function getEditorHint: string;
     //
     procedure projCompile(const aProject: TCEProject); override;
     procedure projRun(const aProject: TCEProject); override;
@@ -54,6 +64,7 @@ type
     property editorCount: NativeInt read getEditorCount;
     property editorIndex: NativeInt read getEditorIndex;
   end;
+
 
 implementation
 {$R *.lfm}
@@ -117,6 +128,7 @@ begin
   curr := getCurrentEditor;
   macRecorder.Editor := curr;
   fSyncEdit.Editor := curr;
+  completion.Editor := curr;
   //
   if pageControl.ActivePageIndex <> -1 then
     CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
@@ -132,6 +144,19 @@ procedure TCEEditorWidget.PageControlChange(Sender: TObject);
 begin
   //http://bugs.freepascal.org/view.php?id=26320
   focusedEditorChanged;
+end;
+
+procedure TCEEditorWidget.completionExecute(Sender: TObject);
+begin
+  getCompletionList
+end;
+
+procedure TCEEditorWidget.completionCodeCompletion(var Value: string;
+  SourceValue: string; var SourceStart, SourceEnd: TPoint; KeyChar: TUTF8Char;
+  Shift: TShiftState);
+begin
+  // warning: '20' depends on ce_dcd, case knd of...
+  Value := Value[1..length(Value)-20];
 end;
 
 procedure TCEEditorWidget.PageControlCloseTabClicked(Sender: TObject);
@@ -219,6 +244,84 @@ begin
   stopUpdateByDelay;
 end;
 
+procedure TCEEditorWidget.getCompletionList;
+var
+  curr: TCESynMemo;
+  str: TMemoryStream;
+  srcpos, i: NativeInt;
+  fname: string;
+begin
+  if not dcdOn then exit;
+  //
+  curr := getCurrentEditor;
+  if curr = nil then exit;
+  //
+  str := TMemoryStream.Create;
+  try
+    completion.Position := 0; // previous index could cause an error here.
+    fname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    curr.Lines.SaveToStream(str);
+    str.SaveToFile(fname);
+    try
+      srcpos := 0;
+      for i := 0 to curr.LogicalCaretXY.y-2 do
+      begin
+        srcPos += length(curr.Lines.Strings[i]);
+        if curr.LogicalCaretXY.y <> 0 then
+          srcPos += length(LineEnding);
+      end;
+      srcpos += curr.LogicalCaretXY.x -1;
+      completion.ItemList.Clear;
+      ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
+    finally
+      DeleteFile(fname);
+    end;
+  finally
+    str.Free;
+  end;
+end;
+
+function TCEEditorWidget.getEditorHint: string;
+var
+  curr: TCESynMemo;
+  str: TMemoryStream;
+  lst: TStringList;
+  srcpos, i: NativeInt;
+  fname: string;
+begin
+  result := '';
+  if not dcdOn then exit;
+  //
+  curr := getCurrentEditor;
+  if curr = nil then exit;
+  //
+  str := TMemoryStream.Create;
+  lst := TStringList.Create;
+  try
+    fname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    curr.Lines.SaveToStream(str);
+    try
+      str.SaveToFile(fname);
+      srcpos := 0;
+      for i := 0 to curr.LogicalCaretXY.y-2 do
+      begin
+        srcPos += length(curr.Lines.Strings[i]);
+        if curr.LogicalCaretXY.y <> 0 then
+          srcPos += length(LineEnding);
+      end;
+      srcpos += curr.LogicalCaretXY.x -1;
+      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+        ce_dcd.getHint(fname, srcpos, lst);
+      result := lst.Text;
+    finally
+      DeleteFile(fname);
+    end;
+  finally
+    str.Free;
+    lst.Free;
+  end;
+end;
+
 procedure TCEEditorWidget.UpdateByEvent;
 const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
@@ -276,4 +379,3 @@ begin
 end;
 
 end.
-

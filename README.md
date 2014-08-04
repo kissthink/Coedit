@@ -12,23 +12,24 @@ Current features
 - instant run (without saving, script-like).
 - synchronized edition in a block.
 - D syntax highlighter, folding, identifier markup.
-- current module member list.
+- member list of the current module.
+- manager for the static libraries.
 - search and replace.
+- [D Completion Daemon](https://github.com/Hackerpilot/DCD) integration for completion proposal and source code hints.
+- mini file browser.
 
-Planed in version 1
--------------------
-- project configurations templates (release, debug, etc.).
-- basic auto completion (brackets, key-words, ...).
-- console input handling.
-- static library explorer (using JSON infos).
+Missing features before the first beta
+--------------------------------------
+- Options editor. (the big missing stuff)
+- console input handling. (workarounds exists)
+- project configurations templates (release, debug, etc.). (detail)
 
 Project information
 -------------------
 - state: alpha 4.
 - license: MIT.
-- programmed in Pascal with [Lazarus](http://www.lazarus.freepascal.org).
-- based on *dmd* (*gdc* or *lmd* characteristics are not handled).
-- no other third part dependencies (so far...but using *dscanner* and/or *dcd* is envisaged.)
+- programmed in Pascal with [Lazarus](http://www.lazarus.freepascal.org) as IDE.
+- based on *dmd* (*gdc* or *lmd* switches are not handled).
 
 Setup & test
 ------------
@@ -37,7 +38,8 @@ The complete procedure is described in the first section of the [wiki](https://g
 
 Preview
 -------
-Windows version:
+Windows version (Windows 7, x86):
 ![Win screen-cap](lazproj/Gui.tease.png "Coedit GUI preview")
-Linux version:
+
+Linux version (OpenSuse 13.1, x86_64):
 ![Nux screen-cap](lazproj/Gui.tease.kde.png "Coedit GUI preview")

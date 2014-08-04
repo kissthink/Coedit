@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, Forms, lazcontrols, runtimetypeinfocontrols, anchordockpkg,
-  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, ce_main;
+  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, ce_main, ce_dcd;
 
 {$R *.res}
 

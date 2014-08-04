@@ -5,7 +5,7 @@ unit ce_libman;
 interface
 
 uses
-  Classes, SysUtils, ce_common;
+  Classes, SysUtils, ce_common, ce_dcd;
 
 type
 
@@ -25,7 +25,7 @@ type
   end;
 
   (**
-   * Represents all the D library present on this system.
+   * Represents all the D libraries present on this system.
    *)
   TLibraryManager = class(TComponent)
   private
@@ -46,6 +46,8 @@ type
     //
     procedure loadFromFile(const aFilename: string);
     procedure saveToFile(const aFilename: string);
+    //
+    procedure updateDCD;
   end;
 
 implementation
@@ -67,6 +69,20 @@ begin
   fCol.assign(aValue);
 end;
 
+procedure TLibraryManager.updateDCD;
+var
+  itm: TCollectionItem;
+  itmt: TLibraryItem;
+begin
+  if not dcdOn then exit;
+  //
+  for itm in fCol do
+  begin
+    itmt := TLibraryItem(itm);
+    ce_dcd.addDcdImport(itmt.libSourcePath);
+  end;
+end;
+
 procedure TLibraryManager.getAdditionalSources(const someAliases, aList: TStrings);
 var
   itm: TCollectionItem;
@@ -77,7 +93,8 @@ begin
   for itm in fCol do
   begin
     itmt := TLibraryItem(itm);
-    if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
+    if someAliases <> nil then
+      if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
     //
     srcs := TStringList.Create;
     try
@@ -103,7 +120,8 @@ begin
   for itm in fCol do
   begin
     itmt := TLibraryItem(itm);
-    if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
+    if someAliases <> nil then
+      if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
     //
     if aList.IndexOf(itmt.libFile) <> -1 then continue;
     aList.Add('-I' + itmt.libFile);
@@ -126,6 +144,7 @@ end;
 procedure TLibraryManager.loadFromFile(const aFilename: string);
 begin
   loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
+  updateDCD;
 end;
 
 procedure TLibraryManager.saveToFile(const aFilename: string);

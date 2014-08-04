@@ -7,10 +7,10 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEditKeyCmds, SynHighlighterLFM, Forms,
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
-  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls,
-  ce_common, ce_dmdwrap, ce_project, ce_plugin, ce_synmemo, ce_widget, ce_messages,
-  ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_staticexplorer, ce_search,
-  ce_miniexplorer, dynlibs, ce_libman, ce_libmaneditor;
+  Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls, dynlibs,
+  ce_common, ce_dmdwrap, ce_project, ce_dcd, ce_plugin, ce_synmemo, ce_widget,
+  ce_messages, ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_search,
+  ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor;
 
 type
 
@@ -194,6 +194,8 @@ type
     procedure actProjSourceExecute(Sender: TObject);
     procedure actEdUnIndentExecute(Sender: TObject);
     procedure ApplicationProperties1Exception(Sender: TObject; E: Exception);
+    procedure ApplicationProperties1ShowHint(var HintStr: string;
+      var CanShow: Boolean; var HintInfo: THintInfo);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
@@ -708,6 +710,15 @@ begin
   //
   srcLst.Clear;
 end;
+
+procedure TCEMainForm.ApplicationProperties1ShowHint(var HintStr: string;
+  var CanShow: Boolean; var HintInfo: THintInfo);
+begin
+  CanShow := true;
+  if EditWidget.currentEditor <> nil then
+    if EditWidget.currentEditor.Focused then
+      HintStr := EditWidget.getEditorHint;
+end;
 {$ENDREGION}
 
 {$REGION file ------------------------------------------------------------------}
@@ -1098,6 +1109,8 @@ begin
     dmdproc.Parameters.Add('-w');
     dmdproc.Parameters.Add('-wi');
     dmdproc.Parameters.Add('-of' + fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF});
+    LibraryManager.getAdditionalSources(nil, dmdproc.Parameters);
+    LibraryManager.getAdditionalImport(nil, dmdproc.Parameters);
     dmdproc.Execute;
     repeat ProcessOutputToMsg(dmdproc, mcEditor) until not dmdproc.Running;
     if (dmdProc.ExitStatus = 0) then
