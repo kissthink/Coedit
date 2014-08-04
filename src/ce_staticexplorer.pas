@@ -371,13 +371,18 @@ begin
   dmdproc := TProcess.Create(nil);
   lines := TStringList.Create;
   try
+    // json file
     jsf := GetTempDir(false);
     jsf += uniqueObjStr(dmdProc) + '.json';
-    scf := GetTempDir(false);
-    scf += uniqueObjStr(dmdProc) + '.d';
-    //
-    lines.Assign(fDoc.Lines);
-    lines.SaveToFile(scf);
+    // main source file
+    scf := fDoc.fileName;
+    if not fileExists(scf) then
+    begin
+      scf := GetTempDir(false);
+      scf += uniqueObjStr(dmdProc) + '.d';
+      lines.Assign(fDoc.Lines);
+      lines.SaveToFile(scf);
+    end;
     // option to gen. the Json file.
     dmdProc.ShowWindow := swoHIDE;
     dmdproc.Options := [];
@@ -387,28 +392,31 @@ begin
     dmdproc.Parameters.Add('-o-');
     dmdproc.Parameters.Add('-X');
     dmdproc.Parameters.Add('-Xf' + jsf);
-    // projects additional sources and I and libman aliases
+    // projects sources folders ,-I, -J
     if fProj <> nil then
     begin
       dmdProc.CurrentDirectory := extractFilePath(fProj.fileName);
       if fProj <> nil then for i := 0 to fProj.Sources.Count-1 do
-        dmdproc.Parameters.Add('-I' + fProj.getAbsoluteSourceName(i));
+        dmdproc.Parameters.Add('-I' + extractFilePath(fProj.getAbsoluteSourceName(i)));
       for nme in fProj.currentConfiguration.pathsOptions.Includes do
         dmdproc.Parameters.Add('-I' + nme);
+      for nme in fProj.currentConfiguration.pathsOptions.Imports do
+        dmdproc.Parameters.Add('-J' + nme);
     end;
-    //adds all the libman entries
+    //adds the libman entries
     with CEMainForm do begin
       Librarymanager.getAdditionalSources(nil, dmdproc.Parameters);
       Librarymanager.getAdditionalImport(nil, dmdproc.Parameters);
     end;
     //
     dmdproc.Execute;
-    while dmdproc.Running do;
+    while dmdproc.Running do (**);
   finally
     i := dmdproc.ExitStatus;
     dmdproc.Free;
     lines.Free;
-    DeleteFile(scf);
+    if not fileExists(scf) then
+      DeleteFile(scf);
   end;
 
   if i <> 0 then
@@ -482,4 +490,3 @@ begin
 end;
 
 end.
-
