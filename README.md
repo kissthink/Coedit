@@ -21,7 +21,7 @@ Current features
 Missing features before the first beta
 --------------------------------------
 - Options editor. (the big missing stuff)
-- console input handling. (workarounds exists)
+- console input handling. (a workaround exists: external console in run options).
 - project configurations templates (release, debug, etc.). (detail)
 
 Project information
@@ -41,5 +41,5 @@ Preview
 Windows version (Windows 7, x86):
 ![Win screen-cap](lazproj/Gui.tease.png "Coedit GUI preview")
 
-Linux version (OpenSuse 13.1, x86_64):
+Linux version (OpenSuse 13.1, Kde, x86_64):
 ![Nux screen-cap](lazproj/Gui.tease.kde.png "Coedit GUI preview")

@@ -206,7 +206,10 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
+
+    // oh no...a field which is not a class.^^
     fUpdateCount: NativeInt;
+
     fProject: TCEProject;
     fPlugList: TCEPlugDescriptorList;
     fWidgList: TCEWidgetList;
