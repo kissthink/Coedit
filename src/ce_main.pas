@@ -335,6 +335,7 @@ procedure TCEMainForm.InitPlugins;
 var
   pth: string;
   fname: string;
+  i: NativeInt;
   lst: TStringList;
   hdl: TLibHandle;
   plg: PPlugDescriptor;
@@ -344,8 +345,9 @@ begin
   lst := TStringList.Create;
   try
     listFiles(lst, pth, false);
-    for fname in lst do
+    for i := 0 to lst.Count-1 do
     begin
+      fname := lst.Strings[i];
       if extractFileExt(fname) <> '.' + SharedSuffix then
         continue;
       hdl := LoadLibrary(fname);
@@ -674,6 +676,7 @@ var
   itm: TMenuItem;
   fname: string;
   clickTrg: TNotifyEvent;
+  i: NativeInt;
 begin
   srcLst := TMruFileList(Sender);
   if srcLst = nil then exit;
@@ -697,8 +700,9 @@ begin
     trgMnu.Add(itm);
     trgMnu.AddSeparator;
 
-    for fname in srcLst do
+    for i:= 0 to srcLst.Count-1 do
     begin
+      fname := srcLst.Strings[i];
       itm := TMenuItem.Create(trgMnu);
       itm.Hint := fname;
       itm.Caption := shortenPath(fname, 50);
@@ -935,10 +939,10 @@ end;
 
 procedure TCEMainForm.FormDropFiles(Sender: TObject;const FileNames: array of String);
 var
-  fname: string;
+  i: NativeInt;
 begin
-  for fname in FileNames do
-    openFile(fname);
+  for i:= low(FileNames) to high(FileNames) do
+    openFile(FileNames[i]);
 end;
 {$ENDREGION}
 
@@ -1055,6 +1059,7 @@ var
   readSz: LongInt;
   ioBuffSz: LongInt;
   dt: PMessageItemData;
+  i: NativeInt;
   msg: string;
 begin
   If not (poUsePipes in aProcess.Options) then exit;
@@ -1072,7 +1077,8 @@ begin
     until readCnt = 0;
     Str.SetSize(readSz);
     lns.LoadFromStream(Str);
-    for msg in lns do begin
+    for i:= 0 to lns.Count-1 do begin
+      msg := lns.Strings[i];
       dt := newMessageData;
       dt^.ctxt := aCtxt;
       dt^.project := fProject;
@@ -1403,10 +1409,10 @@ end;
 {$REGION project ---------------------------------------------------------------}
 procedure TCEMainForm.projChange(sender: TObject);
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
-  for widg in WidgetList do
-    widg.projChange(fProject);
+  for i := 0 to WidgetList.Count-1 do
+    WidgetList.widget[i].projChange(fProject);
 end;
 
 procedure TCEMainForm.saveProjSource(const aEditor: TCESynMemo);
@@ -1420,20 +1426,22 @@ end;
 
 procedure TCEMainForm.closeProj;
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
-  for widg in WidgetList do widg.projClose(fProject);
+  for i := 0 to WidgetList.Count-1 do
+    WidgetList.widget[i].projClose(fProject);
   fProject.Free;
   fProject := nil;
 end;
 
 procedure TCEMainForm.newProj;
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
   fProject := TCEProject.Create(nil);
   fProject.Name := 'CurrentProject';
-  for widg in WidgetList do widg.projNew(fProject);
+  for i := 0 to WidgetList.Count-1 do
+    WidgetList.widget[i].projNew(fProject);
   fProject.onChange := @projChange;
   fProject.libraryManager := fLibMan;
 end;
@@ -1631,17 +1639,17 @@ end;
 
 procedure TCEOptions.defineProperties(Filer: TFiler);
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
   inherited;
   // Filer is either a TReader or a TWriter
-  for widg in CEMainForm.WidgetList do
-    widg.declareProperties(Filer);
+  for i := 0 to CEMainForm.WidgetList.Count-1 do
+    CEMainForm.WidgetList.widget[i].declareProperties(Filer);
 end;
 
 procedure TCEOptions.beforeSave;
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
   fLeft   := CEMainForm.Left;
   fTop    := CEMainForm.Top;
@@ -1651,8 +1659,8 @@ begin
   fFileMru.Assign(CEMainForm.fFileMru);
   fProjMru.Assign(CEMainForm.fProjMru);
   //
-  for widg in CEMainForm.WidgetList do
-    widg.beforeSave(nil);
+  for i := 0 to CEMainForm.WidgetList.Count-1 do
+    CEMainForm.WidgetList.widget[i].beforeSave(nil);
 end;
 
 procedure TCEOptions.saveToFile(const aFilename: string);
@@ -1671,7 +1679,7 @@ end;
 
 procedure TCEOptions.afterLoad;
 var
-  widg: TCEWidget;
+  i: NativeInt;
 begin
   CEMainForm.Left   := fLeft;
   CEMainForm.Top    := fTop;
@@ -1685,8 +1693,8 @@ begin
   CEMainForm.fFileMru.Assign(fFileMru);
   CEMainForm.fProjMru.Assign(fProjMru);
   //
-  for widg in CEMainForm.WidgetList do
-    widg.afterLoad(nil);
+  for i := 0 to CEMainForm.WidgetList.Count-1 do
+    CEMainForm.WidgetList.widget[i].afterLoad(nil);
 end;
 {$ENDREGION}
 
