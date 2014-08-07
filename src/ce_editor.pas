@@ -48,6 +48,7 @@ type
     function getEditorCount: NativeInt;
     function getEditorIndex: NativeInt;
     procedure getCompletionList;
+    procedure getSymbolLoc;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
@@ -131,12 +132,13 @@ begin
   completion.Editor := curr;
   //
   if pageControl.ActivePageIndex <> -1 then
-    CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
-  //
-  if (pageControl.ActivePage.Caption = '') then
   begin
-    fKeyChanged := true;
-    beginUpdateByDelay;
+    CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
+    if (pageControl.ActivePage.Caption = '') then
+    begin
+      fKeyChanged := true;
+      beginUpdateByDelay;
+    end;
   end;
 end;
 
@@ -148,7 +150,7 @@ end;
 
 procedure TCEEditorWidget.completionExecute(Sender: TObject);
 begin
-  getCompletionList
+  getCompletionList;
 end;
 
 procedure TCEEditorWidget.completionCodeCompletion(var Value: string;
@@ -205,11 +207,23 @@ begin
   end;
   if fKeyChanged then
     beginUpdateByDelay;
+  //
+  if (Key = VK_UP) and (shift = [ssShift,ssCtrl]) then
+    getSymbolLoc;
 end;
 
 procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: char);
+var
+  pt: Tpoint;
+  curr: TCESynMemo;
 begin
   fKeyChanged := true;
+  if Key = '.' then
+  begin
+    curr := TCESynMemo(Sender);
+    pt := ClientToScreen(point(curr.CaretXPix, curr.CaretYPix));
+    completion.Execute(curr.LineText[1..curr.CaretX] + '.', pt);
+  end;
   beginUpdateByDelay;
 end;
 
@@ -244,11 +258,47 @@ begin
   stopUpdateByDelay;
 end;
 
+procedure TCEEditorWidget.getSymbolLoc;
+var
+  curr: TCESynMemo;
+  str: TMemoryStream;
+  srcpos: NativeInt;
+  ftempname, fname: string;
+begin
+  if not dcdOn then exit;
+  //
+  curr := getCurrentEditor;
+  if curr = nil then exit;
+  //
+  str := TMemoryStream.Create;
+  try
+    ftempname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    curr.Lines.SaveToStream(str);
+    str.SaveToFile(ftempname);
+    try
+      fname := ftempname;
+      srcpos := curr.SelStart;
+      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+        ce_dcd.getSymbolLoc(fname, srcpos);
+      CEMainForm.MessageWidget.addCeInf(fname);
+      CEMainForm.MessageWidget.addCeInf(intToStr(srcpos));
+      if fname <> ftempname then if fileExists(fname) then
+        CEMainForm.openFile(fname);
+      if srcpos <> -1 then
+        getCurrentEditor.SelStart := srcpos;
+    finally
+      DeleteFile(ftempname);
+    end;
+  finally
+    str.Free;
+  end;
+end;
+
 procedure TCEEditorWidget.getCompletionList;
 var
   curr: TCESynMemo;
   str: TMemoryStream;
-  srcpos, i: NativeInt;
+  srcpos: NativeInt;
   fname: string;
 begin
   if not dcdOn then exit;
@@ -263,16 +313,10 @@ begin
     curr.Lines.SaveToStream(str);
     str.SaveToFile(fname);
     try
-      srcpos := 0;
-      for i := 0 to curr.LogicalCaretXY.y-2 do
-      begin
-        srcPos += length(curr.Lines.Strings[i]);
-        if curr.LogicalCaretXY.y <> 0 then
-          srcPos += length(LineEnding);
-      end;
-      srcpos += curr.LogicalCaretXY.x -1;
+      srcpos := curr.SelStart;
       completion.ItemList.Clear;
-      ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
+      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+        ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
     finally
       DeleteFile(fname);
     end;
@@ -286,7 +330,7 @@ var
   curr: TCESynMemo;
   str: TMemoryStream;
   lst: TStringList;
-  srcpos, i: NativeInt;
+  srcpos: NativeInt;
   fname: string;
 begin
   result := '';
@@ -302,14 +346,7 @@ begin
     curr.Lines.SaveToStream(str);
     try
       str.SaveToFile(fname);
-      srcpos := 0;
-      for i := 0 to curr.LogicalCaretXY.y-2 do
-      begin
-        srcPos += length(curr.Lines.Strings[i]);
-        if curr.LogicalCaretXY.y <> 0 then
-          srcPos += length(LineEnding);
-      end;
-      srcpos += curr.LogicalCaretXY.x -1;
+      srcpos := curr.SelStart;
       if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
         ce_dcd.getHint(fname, srcpos, lst);
       result := lst.Text;

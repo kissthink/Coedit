@@ -6,18 +6,32 @@ interface
 uses
   Classes, SysUtils, process, forms, strutils;
 
+
+(**
+ * Stops the server: e.g: to remove some bugy imports from the libman.
+ *)
+procedure stopServer;
+
 (**
  * Adds a folder of d sources for DCD.
  *)
 procedure addDcdImport(const aFilename: string);
+
 (**
  * gets a list of propositions for the identifier at aPosition in aFilename.
  *)
 procedure getCompletion(const aFilename: string; aPosition: Integer; const list: TStrings);
+
 (**
  * tries to get the DDoc comment for the identifier at aPosition in aFilename.
  *)
 procedure getHint(const aFilename: string; aPosition: Integer; const list: TStrings);
+
+(**
+ * tries to get the symbol location of the identifier at aPosition in aFilename.
+ * after the call aFilename and aPosition contains the location filename and position.
+ *)
+procedure getSymbolLoc(var aFilename: string; var aPosition: Integer);
 
 var
   DCD_server: TProcess;
@@ -33,6 +47,17 @@ begin
     DCD_server.Execute;
 end;
 
+procedure stopServer;
+begin
+  if not DCD_server.Running then
+    exit;
+  while DCD_client.Running do;
+  DCD_client.Parameters.Clear;
+  DCD_client.Parameters.Add(--shutdown);
+  DCD_client.Execute;
+end;
+
+//TODO-cfeature:remove import, e.g: when libman entries are modified.
 procedure addDcdImport(const aFilename: string);
 begin
   if not dcdOn then exit;
@@ -100,7 +125,7 @@ begin
   lazyServerStart;
   //
   if DCD_client.Running then exit;
-
+  //
   DCD_client.Parameters.Clear;
   DCD_client.Parameters.Add('-c');
   DCD_client.Parameters.Add(intToStr(aPosition));
@@ -116,6 +141,38 @@ begin
   end;
 end;
 
+procedure getSymbolLoc(var aFilename: string; var aPosition: Integer);
+var
+  i: Integer;
+  str, loc: string;
+begin
+  if not dcdOn then exit;
+  lazyServerStart;
+  //
+  if DCD_client.Running then exit;
+  //
+  DCD_client.Parameters.Clear;
+  DCD_client.Parameters.Add('-l');
+  DCD_client.Parameters.Add('-c');
+  DCD_client.Parameters.Add(intToStr(aPosition));
+  DCD_client.Parameters.Add(aFilename);
+  DCD_client.Execute;
+  //
+  str := 'a';
+  setlength(str, 384);
+  i := DCD_client.Output.Read(str[1], 384);
+  setLength(str, i);
+  if str <> '' then
+  begin
+    i := Pos(#9, str);
+    if i = -1 then exit;
+    loc := str[i+1..length(str)];
+    str := str[1..i-1];
+    aFilename := str;
+    loc := ReplaceStr(loc, LineEnding, '');
+    aPosition := strToIntDef(loc, -1);
+  end;
+end;
 
 initialization
   DCD_server := TProcess.Create(nil);
