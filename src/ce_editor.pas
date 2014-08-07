@@ -220,9 +220,9 @@ begin
   fKeyChanged := true;
   if Key = '.' then
   begin
-    curr := TCESynMemo(Sender);
-    pt := ClientToScreen(point(curr.CaretXPix, curr.CaretYPix));
-    completion.Execute(curr.LineText[1..curr.CaretX] + '.', pt);
+    //curr := TCESynMemo(Sender);
+    //pt := ClientToScreen(point(curr.CaretXPix, curr.CaretYPix));
+    //completion.Execute(curr.LineText[1..curr.CaretX] + '.', pt);
   end;
   beginUpdateByDelay;
 end;
