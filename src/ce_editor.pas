@@ -280,8 +280,6 @@ begin
       srcpos := curr.SelStart;
       if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
         ce_dcd.getSymbolLoc(fname, srcpos);
-      CEMainForm.MessageWidget.addCeInf(fname);
-      CEMainForm.MessageWidget.addCeInf(intToStr(srcpos));
       if fname <> ftempname then if fileExists(fname) then
         CEMainForm.openFile(fname);
       if srcpos <> -1 then

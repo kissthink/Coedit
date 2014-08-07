@@ -76,6 +76,7 @@ var
 begin
   if not dcdOn then exit;
   //
+  //ce_dcd.stopServer;
   for i := 0 to fCol.Count-1 do
   begin
     itm := TLibraryItem(fCol.Items[i]);

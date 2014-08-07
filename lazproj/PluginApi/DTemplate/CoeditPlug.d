@@ -1,4 +1,4 @@
-module CoeditPlug;      
+module CoeditPlug;
 
 /*
 Under linux:

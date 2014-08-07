@@ -53,7 +53,7 @@ begin
     exit;
   while DCD_client.Running do;
   DCD_client.Parameters.Clear;
-  DCD_client.Parameters.Add(--shutdown);
+  DCD_client.Parameters.Add('--shutdown');
   DCD_client.Execute;
 end;
 
