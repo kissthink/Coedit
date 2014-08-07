@@ -41,8 +41,8 @@ type
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     //
-    procedure getAdditionalSources(const someAliases, aList: TStrings);
-    procedure getAdditionalImport(const someAliases, aList: TStrings);
+    procedure getLibFiles(const someAliases, aList: TStrings);
+    procedure getLibSources(const someAliases, aList: TStrings);
     //
     procedure loadFromFile(const aFilename: string);
     procedure saveToFile(const aFilename: string);
@@ -71,60 +71,47 @@ end;
 
 procedure TLibraryManager.updateDCD;
 var
-  itm: TCollectionItem;
-  itmt: TLibraryItem;
+  itm: TLibraryItem;
+  i: NativeInt;
 begin
   if not dcdOn then exit;
   //
-  for itm in fCol do
+  for i := 0 to fCol.Count-1 do
   begin
-    itmt := TLibraryItem(itm);
-    ce_dcd.addDcdImport(itmt.libSourcePath);
+    itm := TLibraryItem(fCol.Items[i]);
+    ce_dcd.addDcdImport(itm.libSourcePath);
   end;
 end;
 
-procedure TLibraryManager.getAdditionalSources(const someAliases, aList: TStrings);
+procedure TLibraryManager.getLibFiles(const someAliases, aList: TStrings);
 var
-  itm: TCollectionItem;
-  itmt: TLibraryItem;
-  ext, src: string;
-  srcs: TStringList;
+  itm: TLibraryItem;
+  i: NativeInt;
 begin
-  for itm in fCol do
+  for i := 0 to fCol.Count-1 do
   begin
-    itmt := TLibraryItem(itm);
+    itm := TLibraryItem(fCol.Items[i]);
     if someAliases <> nil then
-      if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
+      if someAliases.IndexOf(itm.libAlias) = -1 then continue;
     //
-    srcs := TStringList.Create;
-    try
-      listFiles(srcs, itmt.libSourcePath, true);
-      for src in srcs do
-      begin
-        ext := extractFileExt(src);
-        if DExtList.IndexOf(ext) = -1 then continue;
-        if aList.IndexOf(src) <> -1 then continue;
-        aList.Add(src);
-      end;
-    finally
-      srcs.Free;
-    end;
+    if aList.IndexOf(itm.libFile) <> -1 then continue;
+    aList.Add(itm.libFile);
   end;
 end;
 
-procedure TLibraryManager.getAdditionalImport(const someAliases, aList: TStrings);
+procedure TLibraryManager.getLibSources(const someAliases, aList: TStrings);
 var
-  itm: TCollectionItem;
-  itmt: TLibraryItem;
+  itm: TLibraryItem;
+  i: NativeInt;
 begin
-  for itm in fCol do
+  for i := 0 to fCol.Count-1 do
   begin
-    itmt := TLibraryItem(itm);
+    itm := TLibraryItem(fCol.Items[i]);
     if someAliases <> nil then
-      if someAliases.IndexOf(itmt.libAlias) = -1 then continue;
+      if someAliases.IndexOf(itm.libAlias) = -1 then continue;
     //
-    if aList.IndexOf(itmt.libFile) <> -1 then continue;
-    aList.Add('-I' + itmt.libFile);
+    if aList.IndexOf(itm.libSourcePath) <> -1 then continue;
+    aList.Add('-I' + itm.libSourcePath);
   end;
 end;
 

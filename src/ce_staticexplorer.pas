@@ -405,8 +405,8 @@ begin
     end;
     //adds the libman entries
     with CEMainForm do begin
-      Librarymanager.getAdditionalSources(nil, dmdproc.Parameters);
-      Librarymanager.getAdditionalImport(nil, dmdproc.Parameters);
+      Librarymanager.getLibFiles(nil, dmdproc.Parameters);
+      Librarymanager.getLibSources(nil, dmdproc.Parameters);
     end;
     //
     dmdproc.Execute;

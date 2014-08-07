@@ -1128,8 +1128,8 @@ begin
     dmdproc.Parameters.Add('-w');
     dmdproc.Parameters.Add('-wi');
     dmdproc.Parameters.Add('-of' + fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF});
-    LibraryManager.getAdditionalSources(nil, dmdproc.Parameters);
-    LibraryManager.getAdditionalImport(nil, dmdproc.Parameters);
+    LibraryManager.getLibFiles(nil, dmdproc.Parameters);
+    LibraryManager.getLibSources(nil, dmdproc.Parameters);
     dmdproc.Execute;
     repeat ProcessOutputToMsg(dmdproc, mcEditor) until not dmdproc.Running;
     if (dmdProc.ExitStatus = 0) then
@@ -1143,8 +1143,8 @@ begin
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
       {$IFDEF MSWINDOWS}
-       sysutils.DeleteFile(fname + '.exe');
-       sysutils.DeleteFile(fname + '.obj');
+       //sysutils.DeleteFile(fname + '.exe');
+       //sysutils.DeleteFile(fname + '.obj');
       {$ELSE}
        sysutils.DeleteFile(fname);
        sysutils.DeleteFile(fname + '.o');

@@ -259,8 +259,8 @@ begin
   //
   if fLibMan <> nil then
   begin
-    fLibMan.getAdditionalSources(fLibAliases, aList);
-    fLibMan.getAdditionalImport(fLibAliases, aList);
+    fLibMan.getLibFiles(fLibAliases, aList);
+    fLibMan.getLibSources(fLibAliases, aList);
   end;
   //
   TCompilerConfiguration(fOptsColl.Items[fConfIx]).getOpts(aList);
