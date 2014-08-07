@@ -497,7 +497,7 @@ procedure listFolders(const aList: TStrings; const aPath: string);
 var
   sr: TSearchrec;
 begin
-  if findFirst(aPath + '*', faDirectory, sr) = 0 then
+  if findFirst(aPath + '*', faAnyFile, sr) = 0 then
   try
     repeat if isFolder(sr) then
       aList.Add(aPath + sr.Name);
