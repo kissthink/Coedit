@@ -488,10 +488,9 @@ begin
   result.x := 0;
   result.y := 0;
   ident := '';
-  i := 0;
+  i := 1;
   while (true) do
   begin
-    inc(i);
     if i > length(aMessage) then exit;
     if aMessage[i] = '.' then
     begin
@@ -513,7 +512,7 @@ begin
           end;
           if aMessage[i] = ')' then
           begin
-            result.y := strToInt(ident);
+            result.y := strToIntDef(ident, -1);
             exit;
           end;
         end;
