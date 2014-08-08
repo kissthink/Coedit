@@ -262,7 +262,7 @@ procedure TCEEditorWidget.getSymbolLoc;
 var
   curr: TCESynMemo;
   str: TMemoryStream;
-  srcpos: NativeInt;
+  srcpos: Integer;
   ftempname, fname: string;
 begin
   if not dcdOn then exit;
