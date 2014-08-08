@@ -250,12 +250,12 @@ end;
 
 procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
 begin
-  stopUpdateByDelay;
+  endUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.projRun(const aProject: TCEProject);
 begin
-  stopUpdateByDelay;
+  endUpdateByDelay;
 end;
 
 procedure TCEEditorWidget.getSymbolLoc;

@@ -729,9 +729,9 @@ procedure TCEMainForm.ApplicationProperties1ShowHint(var HintStr: string;
   var CanShow: Boolean; var HintInfo: THintInfo);
 begin
   CanShow := true;
-  if EditWidget.currentEditor <> nil then
+  {if EditWidget.currentEditor <> nil then
     if EditWidget.currentEditor.Focused then
-      HintStr := EditWidget.getEditorHint;
+      HintStr := EditWidget.getEditorHint;}
 end;
 {$ENDREGION}
 
@@ -1088,6 +1088,7 @@ begin
         dt^.editor := EditWidget.currentEditor
       else
         dt^.ctxt := mcEditor;
+      fEditWidg.endUpdatebyDelay; // messages would be cleared by the delayed module name detection.
       fMesgWidg.addMessage(msg, dt);
       application.ProcessMessages;
     end;
