@@ -37,6 +37,7 @@ type
     fSearchMru, fReplaceMru: TMruList;
     fCancelAll: boolean;
     fHasSearched: boolean;
+    fHasRestarted: boolean;
     procedure optset_SearchMru(aReader: TReader);
     procedure optget_SearchMru(aWriter: TWriter);
     procedure optset_ReplaceMru(aReader: TReader);
@@ -189,7 +190,11 @@ begin
     if chkBack.Checked then
       fEditor.CaretXY := Point(high(Integer), high(Integer))
     else
-      fEditor.CaretXY := Point(0,0);
+    begin
+      if not fHasRestarted then
+        fEditor.CaretXY := Point(0,0);
+      fHasRestarted := true;
+    end;
   end
   else if fHasSearched then
   begin
@@ -200,7 +205,12 @@ begin
   end;
   if fEditor.SearchReplace(fToFind, '', getOptions) = 0 then
     dlgOkInfo('the expression cannot be found')
-  else fHasSearched := true;
+  else
+  begin
+    fHasSearched := true;
+    fHasRestarted := false;
+    chkFromCur.Checked := true;
+  end;
   UpdateByEvent;
 end;
 
