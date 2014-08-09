@@ -1047,7 +1047,6 @@ procedure TCEMainForm.actEdFindNextExecute(Sender: TObject);
 begin
   ffindwidg.actFindNextExecute(nil);
 end;
-
 {$ENDREGION}
 
 {$REGION run -------------------------------------------------------------------}
@@ -1179,7 +1178,7 @@ var
   i: NativeInt;
 begin
 
-  fMesgWidg.ClearMessages(mcProject);
+  fMesgWidg.ClearAllMessages;
 
   for i := 0 to fWidgList.Count-1 do
     fWidgList.widget[i].projCompile(aProject);

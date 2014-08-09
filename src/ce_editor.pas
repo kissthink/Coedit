@@ -32,6 +32,7 @@ type
     procedure UpdateByEvent; override;
   private
     fKeyChanged: boolean;
+    fProj: TCEProject;
 
     // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
@@ -57,6 +58,9 @@ type
     procedure focusedEditorChanged;
     function getEditorHint: string;
     //
+    procedure projNew(const aProject: TCEProject); override;
+    procedure projClose(const aProject: TCEProject); override;
+    procedure projFocused(const aProject: TCEProject); override;
     procedure projCompile(const aProject: TCEProject); override;
     procedure projRun(const aProject: TCEProject); override;
     //
@@ -248,6 +252,21 @@ begin
   UpdateByEvent;
 end;
 
+procedure TCEEditorWidget.projNew(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEEditorWidget.projClose(const aProject: TCEProject);
+begin
+  fProj := nil;
+end;
+
+procedure TCEEditorWidget.projFocused(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
 procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
 begin
   endUpdateByDelay;
@@ -386,7 +405,12 @@ begin
   CEMainForm.docChangeNotify(Self, editorIndex);
   if ed.Lines.Count = 0 then exit;
   //
-  CEMainForm.MessageWidget.ClearMessages(mcEditor);
+  if fProj = nil then
+    CEMainForm.MessageWidget.ClearMessages(mcEditor)
+  else begin
+    // if the source is in proj then we want to keep messages to correct mistakes.
+  end;
+
   lex(ed.Lines.Text, tokLst);
 
   if ed.isDSource then
