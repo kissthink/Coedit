@@ -90,7 +90,6 @@ begin
     filename := ini;
     if execute then
     begin
-      //TODO-cwiki: 'a folder containing many .lib can be added with an invalid fname'
       if not fileExists(filename) then
         List.Selected.SubItems[0] := extractFilePath(filename)
       else

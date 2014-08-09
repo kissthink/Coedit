@@ -87,16 +87,40 @@ end;
 procedure TLibraryManager.getLibFiles(const someAliases, aList: TStrings);
 var
   itm: TLibraryItem;
-  i: NativeInt;
+  lst: TStringList;
+  i, j: NativeInt;
 begin
   for i := 0 to fCol.Count-1 do
   begin
     itm := TLibraryItem(fCol.Items[i]);
     if someAliases <> nil then
       if someAliases.IndexOf(itm.libAlias) = -1 then continue;
-    //
-    if aList.IndexOf(itm.libFile) <> -1 then continue;
-    aList.Add(itm.libFile);
+    // single lib files
+    if fileExists(itm.libFile) then
+    begin
+      if aList.IndexOf(itm.libFile) <> -1 then continue;
+      aList.Add(itm.libFile);
+    end
+    // folder of lib file
+    else if directoryExists(itm.libFile) then
+    begin
+      lst := TStringList.Create;
+      try
+        listFiles(lst, itm.libFile);
+        for j:= 0 to lst.Count-1 do
+        begin
+          {$IFDEF WINDOWS}
+          if extractFileExt(lst.Strings[j]) = '.lib' then
+          {$ELSE}
+          if extractFileExt(lst.Strings[j]) = '.a' then
+          {$ENDIF}
+            if aList.IndexOf(lst.Strings[j]) = -1 then
+              aList.Add(lst.Strings[j]);
+        end;
+      finally
+        lst.Free;
+      end;
+    end;
   end;
 end;
 
