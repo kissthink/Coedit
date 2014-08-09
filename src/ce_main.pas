@@ -1183,12 +1183,6 @@ begin
   for i := 0 to fWidgList.Count-1 do
     fWidgList.widget[i].projCompile(aProject);
 
-  if aProject.Sources.Count = 0 then
-  begin
-    fMesgWidg.addCeWarn('the project has no source files', mcProject);
-    exit;
-  end;
-
   with fProject.currentConfiguration do
   begin
     if preBuildProcess.executable <> '' then
@@ -1207,6 +1201,12 @@ begin
       else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', mcProject);
   end;
 
+  if aProject.Sources.Count = 0 then
+  begin
+    fMesgWidg.addCeWarn('the project has no source files', mcProject);
+    exit;
+  end;
+
   olddir := '';
   dmdproc := TProcess.Create(nil);
   getDir(0, olddir);
@@ -1216,7 +1216,11 @@ begin
     application.ProcessMessages;
 
     prjpath := extractFilePath(aProject.fileName);
-    if directoryExists(prjpath) then chDir(prjpath);
+    if directoryExists(prjpath) then
+    begin
+      chDir(prjpath);
+      dmdProc.CurrentDirectory := prjpath;
+    end;
 
     {$IFDEF RELEASE}
     dmdProc.ShowWindow := swoHIDE;
