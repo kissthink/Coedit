@@ -152,6 +152,11 @@ type
    *)
   function shellOpen(const aFilename: string): boolean;
 
+  (**
+   * Returns true if anExeName can be spawn without its full path.
+   *)
+  function exeInSysPath(anExeName: string): boolean;
+
 implementation
 
 procedure TProcessEx.Assign(aValue: TPersistent);
@@ -599,6 +604,20 @@ begin
     Free;
   end;
   {$ENDIF}
+end;
+
+function exeInSysPath(anExeName: string): boolean;
+{$IFDEF WINDOWS}
+var
+  ext: string;
+{$ENDIF}
+begin
+  {$IFDEF WINDOWS}
+  ext := extractFileExt(anExeName);
+  if ext = '' then
+    anExeName += '.exe';
+  {$ENDIF}
+  exit(ExeSearch(anExeName, '') <> '');
 end;
 
 initialization

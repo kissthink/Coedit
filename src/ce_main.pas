@@ -226,6 +226,7 @@ type
     fLibMan: TLibraryManager;
 
     //Init - Fina
+    procedure checkCompilo;
     procedure InitLibMan;
     procedure InitMRUs;
     procedure InitWidgets;
@@ -300,6 +301,7 @@ uses
 constructor TCEMainForm.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
+  //
   InitMRUs;
   InitLibMan;
   InitWidgets;
@@ -308,6 +310,18 @@ begin
   //
   newProj;
   InitPlugins;
+  checkCompilo;
+end;
+
+procedure TCEMainForm.checkCompilo;
+const
+  msg = 'Coedit recquires DMD or DUB to be setup on this system' + LineEnding +
+    'If DMD is setup please add it to the system PATH variable before using Coedit';
+begin
+  if exeInSysPath('dmd') or exeInSysPath('dub') then
+    exit;
+  ce_common.dlgOkError(msg);
+  close;
 end;
 
 procedure TCEMainForm.InitLibMan;
@@ -1212,7 +1226,7 @@ begin
   with fProject.currentConfiguration do
   begin
     if preBuildProcess.executable <> '' then
-      if ExeSearch(preBuildProcess.executable, '') <> '' then
+      if exeInSysPath(preBuildProcess.executable) then
       begin
         ppproc := TProcess.Create(nil);
         try
@@ -1267,7 +1281,7 @@ begin
     with fProject.currentConfiguration do
     begin
       if postBuildProcess.executable <> '' then
-        if ExeSearch(postBuildProcess.executable, '') <> '' then
+        if exeInSysPath(postBuildProcess.executable) then
         begin
           ppproc := TProcess.Create(nil);
           try
