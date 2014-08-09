@@ -6,13 +6,12 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Interfaces, Forms, lazcontrols, runtimetypeinfocontrols, anchordockpkg,
-  AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, ce_main, ce_dcd;
+  Interfaces, Forms, lazcontrols, runtimetypeinfocontrols,
+  ce_main, ce_dcd;
 
 {$R *.res}
 
 begin
-  RequireDerivedFormResource := True;
   Application.Initialize;
   Application.CreateForm(TCEMainForm, CEMainForm);
   Application.Run;

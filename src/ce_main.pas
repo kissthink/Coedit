@@ -233,6 +233,7 @@ type
     procedure InitDocking;
     procedure InitSettings;
     procedure SaveSettings;
+    procedure LoadDocking;
     procedure SaveDocking;
     procedure KillPlugs;
 
@@ -271,8 +272,6 @@ type
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
-    procedure DockMasterCreateControl(Sender: TObject; aName: string; var
-      AControl: TControl; DoDisableAutoSizing: boolean);
     //
     procedure openFile(const aFilename: string);
     procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
@@ -424,7 +423,6 @@ var
   aManager: TAnchorDockManager;
 begin
   DockMaster.MakeDockSite(Self, [akBottom], admrpChild);
-  DockMaster.OnCreateControl := @DockMasterCreateControl;
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
 
@@ -440,19 +438,21 @@ begin
     DockMaster.GetAnchorSite(fWidgList.widget[i]).Header.HeaderPosition := adlhpTop;
   end;
 
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), Self, alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), Self, alBottom);
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), Self, alLeft);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fEditWidg), DockMaster.GetSite(Self), alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fMesgWidg), DockMaster.GetSite(Self), alBottom);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fStExpWidg), DockMaster.GetSite(Self), alLeft);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fFindWidg),
     DockMaster.GetAnchorSite(fStExpWidg), alBottom, fStExpWidg);
   width := width - fProjWidg.Width;
-  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), Self, alRight);
+  DockMaster.ManualDock(DockMaster.GetAnchorSite(fProjWidg), DockMaster.GetSite(Self), alRight);
   DockMaster.ManualDock(DockMaster.GetAnchorSite(fPrjCfWidg),
     DockMaster.GetAnchorSite(fProjWidg), alBottom, fProjWidg);
   DockMaster.GetAnchorSite(fEditWidg).Header.HeaderPosition := adlhpTop;
 
   DockMaster.GetAnchorSite(fExplWidg).Close;
   DockMaster.GetAnchorSite(fLibMWidg).Close;
+
+  LoadDocking;
 end;
 
 procedure TCEMainForm.InitSettings;
@@ -501,9 +501,34 @@ var
 begin
   xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
   try
-    // <Item1 Name="CEMainForm" Type="CustomSite" ChildCount="..."> is always missing
-    //DockMaster.SaveLayoutToConfig(xcfg);
-    //xcfg.WriteToDisk;
+    DockMaster.SaveLayoutToConfig(xcfg);
+    xcfg.WriteToDisk;
+  finally
+    xcfg.Free;
+  end;
+end;
+
+procedure TCEMainForm.LoadDocking;
+var
+  xcfg: TXMLConfigStorage;
+  str: TMemoryStream;
+begin
+  if not fileExists(getDocPath + 'docking.xml') then
+    exit;
+  xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml', true);
+  try
+    try
+      DockMaster.LoadLayoutFromConfig(xcfg, false);
+    except
+      exit;
+    end;
+    str := TMemoryStream.Create;
+    try
+      xcfg.SaveToStream(str);
+      str.saveToFile(getDocPath + 'docking.bak')
+    finally
+      str.Free;
+    end;
   finally
     xcfg.Free;
   end;
@@ -534,7 +559,6 @@ end;
 destructor TCEMainForm.destroy;
 begin
   SaveSettings;
-  SaveDocking;
   //
   KillPlugs;
   //
@@ -570,6 +594,8 @@ begin
         [shortenPath(ed.fileName, 25)])) <> mrOK then exit;
   end;
   canClose := true;
+  // saving doesnt work when csDestroying in comp.state.
+  SaveDocking;
 end;
 
 procedure TCEMainForm.ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
@@ -1400,17 +1426,7 @@ begin
   win.BringToFront;
 end;
 
-procedure TCEMainForm.DockMasterCreateControl(Sender: TObject; aName: string; var
-  AControl: TControl; DoDisableAutoSizing: boolean);
-var
-  i: NativeInt;
-begin
-  for i := 0 to fWidgList.Count-1 do if fWidgList.widget[i].Name = aName then
-  begin
-    AControl := fWidgList.widget[i];
-    if DoDisableAutoSizing then AControl.DisableAutoSizing;
-  end;
-end;
+
 {$ENDREGION}
 
 {$REGION project ---------------------------------------------------------------}

@@ -1,7 +1,7 @@
 object CEMainForm: TCEMainForm
-  Left = 1064
+  Left = 645
   Height = 49
-  Top = 186
+  Top = 204
   Width = 745
   AllowDropFiles = True
   Caption = 'Coedit'
