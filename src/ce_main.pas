@@ -1194,6 +1194,9 @@ begin
           if ppproc.CurrentDirectory = '' then
             ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
           ppproc.Execute;
+          if not (poWaitOnExit in ppproc.Options) then
+            if poUsePipes in ppproc.Options then
+              repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
         finally
           ppproc.Free;
         end;
@@ -1247,6 +1250,9 @@ begin
             if ppproc.CurrentDirectory = '' then
               ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
             ppproc.Execute;
+            if not (poWaitOnExit in ppproc.Options) then
+              if poUsePipes in ppproc.Options then
+                repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
           finally
             ppproc.Free;
           end;
