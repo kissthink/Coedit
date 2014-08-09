@@ -1212,21 +1212,22 @@ begin
   with fProject.currentConfiguration do
   begin
     if preBuildProcess.executable <> '' then
-    begin
-      ppproc := TProcess.Create(nil);
-      try
-        preBuildProcess.setProcess(ppproc);
-        if ppproc.CurrentDirectory = '' then
-          ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
-        ppproc.Execute;
-        if not (poWaitOnExit in ppproc.Options) then
-          if poUsePipes in ppproc.Options then
-            repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
-      finally
-        ppproc.Free;
-      end;
-    end
-    else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', mcProject);
+      if ExeSearch(preBuildProcess.executable, '') <> '' then
+      begin
+        ppproc := TProcess.Create(nil);
+        try
+          preBuildProcess.setProcess(ppproc);
+          if ppproc.CurrentDirectory = '' then
+            ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
+          ppproc.Execute;
+          if not (poWaitOnExit in ppproc.Options) then
+            if poUsePipes in ppproc.Options then
+              repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
+        finally
+          ppproc.Free;
+        end;
+      end
+      else fMesgWidg.addCeWarn('the pre-compilation executable does not exist', mcProject);
   end;
 
   if aProject.Sources.Count = 0 then
@@ -1266,21 +1267,22 @@ begin
     with fProject.currentConfiguration do
     begin
       if postBuildProcess.executable <> '' then
-      begin
-        ppproc := TProcess.Create(nil);
-        try
-          postBuildProcess.setProcess(ppproc);
-          if ppproc.CurrentDirectory = '' then
-            ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
-          ppproc.Execute;
-          if not (poWaitOnExit in ppproc.Options) then
-            if poUsePipes in ppproc.Options then
-              repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
-        finally
-          ppproc.Free;
-        end;
-      end
-      else fMesgWidg.addCeWarn('the post-compilation executable does not exist', mcProject);
+        if ExeSearch(postBuildProcess.executable, '') <> '' then
+        begin
+          ppproc := TProcess.Create(nil);
+          try
+            postBuildProcess.setProcess(ppproc);
+            if ppproc.CurrentDirectory = '' then
+              ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
+            ppproc.Execute;
+            if not (poWaitOnExit in ppproc.Options) then
+              if poUsePipes in ppproc.Options then
+                repeat ProcessOutputToMsg(ppproc, mcProject) until not ppproc.Running;
+          finally
+            ppproc.Free;
+          end;
+        end
+        else fMesgWidg.addCeWarn('the post-compilation executable does not exist', mcProject);
     end;
 
   finally
