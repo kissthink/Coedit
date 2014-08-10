@@ -71,6 +71,7 @@ begin
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
+  D2Syn.FoldKinds := [fkBrackets, fkComments1, fkStrings];
   //
   fFilename := '<new document>';
   fModified := false;
