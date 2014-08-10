@@ -475,6 +475,22 @@ begin
       continue;
     end;
 
+    // token string
+    if (reader.head^ = 'q') and (reader.next^ = '{') then
+    begin
+      reader.next;
+      if isOutOfBound then exit;
+      while (reader.head^ <> '}') do
+      begin
+        identifier += reader.head^;
+        reader.next;
+        if isOutOfBound then exit;
+      end;
+      reader.next;
+      addToken(ltkString);
+      continue;
+    end else reader.previous;
+
     //chars, note: same escape error as in SynD2Syn
     if (reader.head^ = #39) then
     begin

@@ -83,7 +83,7 @@ type
 
   TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI, tkDDocs);
 
-  TRangeKind = (rkNone, rkString1, rkString2, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
+  TRangeKind = (rkNone, rkString1, rkString2, rkTokString, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
 
   TFoldKind = (fkBrackets, fkComments1, fkComments2);
   TFoldKinds = set of TFoldKind;
@@ -451,7 +451,6 @@ end;
 //TODO-cnumber literals: stricter.
 //TODO-cnumber literals: binary.
 //TODO-cstring literals: delimited strings.
-//TODO-cstring literals: token strings.
 //TODO-ccomments: correct nested comments handling.
 //TODO-cfeature: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
 
@@ -680,6 +679,32 @@ begin
       // check postfix
       if isStringPostfix(readCurr) then
         readNext;
+      exit;
+    end;
+  end;
+
+  //token string
+  if fRange = rkNone then if (readCurr = 'q') and (readNext = '{') then
+  begin
+    // go to end of string/eol
+    while ((readNext <> '}') and (not (readCurr = #10))) do (*!*);
+    if (readCurr = #10) then fRange := rkTokString else readNext;
+    fTokKind := tkStrng;
+    exit;
+  end else Dec(fTokStop);
+  if fRange = rkTokString then
+  begin
+    if (readCurr <> '}') then while ((readNext <> '}') and (not (readCurr = #10))) do (*!*);
+    if (readCurr = #10) then
+    begin
+      fTokKind := tkStrng;
+      exit;
+    end;
+    if (readCurr = '}') then
+    begin
+      fTokKind := tkStrng;
+      fRange := rkNone;
+      readNext;
       exit;
     end;
   end;
