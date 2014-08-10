@@ -512,8 +512,16 @@ end;
 procedure TCEMainForm.SaveDocking;
 var
   xcfg: TXMLConfigStorage;
+  i: NativeInt;
 begin
-  WindowState := wsNormal;
+  if WindowState = wsMinimized then
+    WindowState := wsNormal;
+  for i:= 0 to fWidgList.Count-1 do
+  begin
+    if DockMaster.GetAnchorSite(fWidgList.widget[i]).WindowState = wsMinimized then
+      DockMaster.GetAnchorSite(fWidgList.widget[i]).WindowState := wsNormal;
+    DockMaster.GetAnchorSite(fWidgList.widget[i]).Show;
+  end;
   if not Visible then exit;
   //
   xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
