@@ -513,6 +513,9 @@ procedure TCEMainForm.SaveDocking;
 var
   xcfg: TXMLConfigStorage;
 begin
+  WindowState := wsNormal;
+  if not Visible then exit;
+  //
   xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
   try
     DockMaster.SaveLayoutToConfig(xcfg);
