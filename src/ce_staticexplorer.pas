@@ -7,14 +7,19 @@ interface
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, Menus, ComCtrls, ce_widget, jsonparser, fpjson,
-  ce_synmemo, process, actnlist, ce_common, ce_project, AnchorDocking;
+  ce_synmemo, process, actnlist, Buttons, ce_common, ce_project, AnchorDocking;
 
 type
+
+  { TCEStaticExplorerWidget }
+
   TCEStaticExplorerWidget = class(TCEWidget)
+    btnRefresh: TBitBtn;
     imgList: TImageList;
     Panel1: TPanel;
     Tree: TTreeView;
     TreeFilterEdit1: TTreeFilterEdit;
+    procedure btnRefreshClick(Sender: TObject);
     procedure TreeDeletion(Sender: TObject; Node: TTreeNode);
     procedure TreeFilterEdit1AfterFilter(Sender: TObject);
     procedure TreeKeyPress(Sender: TObject; var Key: char);
@@ -270,6 +275,11 @@ procedure TCEStaticExplorerWidget.TreeDeletion(Sender: TObject; Node: TTreeNode)
 begin
   if (node.Data <> nil) then
     Dispose(PInt64(node.Data));
+end;
+
+procedure TCEStaticExplorerWidget.btnRefreshClick(Sender: TObject);
+begin
+  fActRefresh.Execute;
 end;
 
 procedure TCEStaticExplorerWidget.updateVisibleCat;
