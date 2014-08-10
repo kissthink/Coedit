@@ -482,7 +482,7 @@ var
 procedure tryAdd;
 begin
   if sr.Attr and faDirectory <> faDirectory then
-    aList.Add(aPath + sr.Name);
+    aList.Add(aPath+ directorySeparator + sr.Name);
 end;
 begin
   if findFirst(aPath + directorySeparator + '*', faAnyFile, sr) = 0 then

@@ -81,7 +81,7 @@ type
   {$ENDIF}
   {$ENDIF}
 
-  TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI, tkDDocs);
+  TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI, tkDDocs, tkAsblr);
 
   TRangeKind = (rkNone, rkString1, rkString2, rkTokString, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
 
@@ -99,6 +99,7 @@ type
     fKeywdAttrib: TSynHighlighterAttributes;
     fCurrIAttrib: TSynHighlighterAttributes;
     fDDocsAttrib: TSynHighlighterAttributes;
+    fAsblrAttrib: TSynHighlighterAttributes;
     fKeyWords: TD2Dictionary;
     fCurrIdent: string;
     fLineBuf: string;
@@ -122,6 +123,7 @@ type
     procedure setKeywdAttrib(aValue: TSynHighlighterAttributes);
     procedure setCurrIAttrib(aValue: TSynHighlighterAttributes);
     procedure setDDocsAttrib(aValue: TSynHighlighterAttributes);
+    procedure setAsblrAttrib(aValue: TSynHighlighterAttributes);
     procedure doAttribChange(sender: TObject);
     procedure setCurrIdent(const aValue: string);
     procedure doChanged;
@@ -137,6 +139,7 @@ type
     property KeywdAttrib: TSynHighlighterAttributes read fKeywdAttrib write setKeywdAttrib;
     property CurrIAttrib: TSynHighlighterAttributes read fCurrIAttrib write setCurrIAttrib;
     property DDocsAttrib: TSynHighlighterAttributes read fDDocsAttrib write setDDocsAttrib;
+    property AsblrAttrib: TSynHighlighterAttributes read fAsblrAttrib write setAsblrAttrib;
 	public
 		constructor create(aOwner: TComponent); override;
     destructor destroy; override;
@@ -291,6 +294,7 @@ begin
   fKeywdAttrib := TSynHighlighterAttributes.Create('Keyword','Keyword');
   fCurrIAttrib := TSynHighlighterAttributes.Create('CurrentIdentifier','CurrentIdentifier');
   fDDocsAttrib := TSynHighlighterAttributes.Create('DDoc','DDoc');
+  fAsblrAttrib := TSynHighlighterAttributes.Create('Asm','Asm');
 
   fNumbrAttrib.Foreground := $000079F2;
   fSymblAttrib.Foreground := clMaroon;
@@ -298,6 +302,7 @@ begin
   fCommtAttrib.Foreground := clGreen;
   fStrngAttrib.Foreground := clBlue;
   fKeywdAttrib.Foreground := clNavy;
+  fAsblrAttrib.Foreground := clGray;
 
   fCurrIAttrib.Foreground := clBlack;
   fCurrIAttrib.FrameEdges := sfeAround;
@@ -308,6 +313,7 @@ begin
 
   fCommtAttrib.Style := [fsItalic];
   fKeywdAttrib.Style := [fsBold];
+  fAsblrAttrib.Style := [fsBold];
 
   AddAttribute(fWhiteAttrib);
   AddAttribute(fNumbrAttrib);
@@ -318,6 +324,7 @@ begin
   AddAttribute(fKeywdAttrib);
   AddAttribute(fCurrIAttrib);
   AddAttribute(fDDocsAttrib);
+  AddAttribute(fAsblrAttrib);
 
   fAttribLut[TTokenKind.tkident] := fIdentAttrib;
   fAttribLut[TTokenKind.tkBlank] := fWhiteAttrib;
@@ -328,6 +335,7 @@ begin
   fAttribLut[TTokenKind.tksymbl] := fSymblAttrib;
   fAttribLut[TTokenKind.tkCurrI] := fCurrIAttrib;
   fAttribLut[TTokenKind.tkDDocs] := fDDocsAttrib;
+  fAttribLut[TTokenKind.tkAsblr] := fAsblrAttrib;
 
   SetAttributesOnChange(@doAttribChange);
   fTokStop := 1;
@@ -406,6 +414,12 @@ begin
   fDDocsAttrib.Assign(aValue);
 end;
 
+procedure TSynD2Syn.setAsblrAttrib(aValue: TSynHighlighterAttributes);
+begin
+  fAsblrAttrib.Assign(aValue);
+end;
+
+
 procedure TSynD2Syn.setCurrIdent(const aValue: string);
 begin
   if aValue = '' then exit;
@@ -447,11 +461,9 @@ begin
 end;
 
 
-//TODO-crange: asm range.
-//TODO-cnumber literals: stricter.
-//TODO-cnumber literals: binary.
+//TODO-cnumber literals: stricter, separate parser for each form (bin,dec,hex,float,etc)
 //TODO-cstring literals: delimited strings.
-//TODO-ccomments: correct nested comments handling.
+//TODO-ccomments: correct nested comments handling (inc/dec)
 //TODO-cfeature: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
 
 {$BOOLEVAL ON}
@@ -758,7 +770,7 @@ begin
     fTokKind := tkSymbl;
     if (fkBrackets in fFoldKinds) then case readCurr of
       '{': StartCodeFoldBlock(nil);
-      '}': EndCodeFoldBlock;
+      '}': begin EndCodeFoldBlock; if (readCurr = '}')and (fRange = rkAsm) then fRange := rkNone;end;
       end;
     readNext;
     exit;
@@ -811,6 +823,12 @@ begin
     else
       if fLineBuf[FTokStart..fTokStop-1]  = fCurrIdent then
         fTokKind := tkCurrI;
+
+    //check asm range
+    if fLineBuf[FTokStart..fTokStop-1] = 'asm' then
+      fRange := rkAsm;
+
+
     exit;
   end;
 
@@ -828,7 +846,10 @@ end;
 
 function TSynD2Syn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
-  result := fAttribLut[fTokKind];
+  if (fRange = rkAsm) and (fTokKind <> tkSymbl) and (fTokKind <> tkKeywd) then
+    result := fAttribLut[tkAsblr]
+  else
+    result := fAttribLut[fTokKind];
 end;
 
 {$WARNINGS OFF} {$HINTS OFF}
