@@ -85,7 +85,7 @@ type
 
   TRangeKind = (rkNone, rkString1, rkString2, rkTokString, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
 
-  TFoldKind = (fkBrackets, fkComments1, fkComments2);
+  TFoldKind = (fkBrackets, fkComments1, fkComments2, fkStrings);
   TFoldKinds = set of TFoldKind;
 
 	TSynD2Syn = class (TSynCustomFoldHighlighter)
@@ -608,7 +608,12 @@ begin
           (readPrevPrev = '\') then
             break;
     end;
-    if (readCurr = #10) then fRange := rkString1
+    if (readCurr = #10) then
+    begin
+      fRange := rkString1;
+      if fkStrings in fFoldKinds then
+        StartCodeFoldBlock(nil);
+    end
     else
     begin
       readNext;
@@ -637,6 +642,8 @@ begin
     if (readCurr = '"') then
     begin
       fTokKind := tkStrng;
+      if fkStrings in fFoldKinds then
+        EndCodeFoldBlock;
       fRange := rkNone;
       readNext;
       // check postfix
@@ -652,7 +659,12 @@ begin
   begin
     // go to end of string/eol
     while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then fRange := rkString2
+    if (readCurr = #10) then
+    begin
+      fRange := rkString2;
+      if fkStrings in fFoldKinds then
+        StartCodeFoldBlock(nil);
+    end
     else
     begin
       readNext;
@@ -674,6 +686,8 @@ begin
     if (readCurr = '`') then
     begin
       fTokKind := tkStrng;
+      if fkStrings in fFoldKinds then
+        EndCodeFoldBlock;
       fRange := rkNone;
       readNext;
       // check postfix
@@ -688,7 +702,13 @@ begin
   begin
     // go to end of string/eol
     while ((readNext <> '}') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then fRange := rkTokString else readNext;
+    if (readCurr = #10) then
+    begin
+      fRange := rkTokString;
+      if fkStrings in fFoldKinds then
+        StartCodeFoldBlock(nil);
+    end
+    else readNext;
     fTokKind := tkStrng;
     exit;
   end else Dec(fTokStop);
@@ -703,6 +723,8 @@ begin
     if (readCurr = '}') then
     begin
       fTokKind := tkStrng;
+      if fkStrings in fFoldKinds then
+        EndCodeFoldBlock;
       fRange := rkNone;
       readNext;
       exit;
