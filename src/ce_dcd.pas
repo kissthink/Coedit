@@ -10,7 +10,12 @@ uses
 (**
  * Stops the server: e.g: to remove some bugy imports from the libman.
  *)
-procedure stopServer;
+procedure freeServer;
+
+(**
+ * Starts the server immediatly and not lazily.
+ *)
+procedure createServer;
 
 (**
  * Adds a folder of d sources for DCD.
@@ -34,8 +39,8 @@ procedure getHint(const aFilename: string; aPosition: Integer; const list: TStri
 procedure getSymbolLoc(var aFilename: string; var aPosition: Integer);
 
 var
-  DCD_server: TProcess;
-  DCD_client: TProcess;
+  DCD_server: TProcess = nil;
+  DCD_client: TProcess = nil;
   lines: TStringList;
   dcdOn: boolean;
 
@@ -47,14 +52,25 @@ begin
     DCD_server.Execute;
 end;
 
-procedure stopServer;
+procedure freeServer;
 begin
-  if not DCD_server.Running then
-    exit;
   while DCD_client.Running do;
   DCD_client.Parameters.Clear;
   DCD_client.Parameters.Add('--shutdown');
   DCD_client.Execute;
+  if DCD_server <> nil then
+    FreeAndNil(DCD_server);
+end;
+
+procedure createServer;
+begin
+  if DCD_server <> nil then
+    FreeAndNil(DCD_server);
+  DCD_server := TProcess.Create(nil);
+  DCD_server.Executable := extractFilePath(application.ExeName) + directorySeparator
+    + 'dcd-server'{$IFDEF WINDOWS}+ '.exe'{$ENDIF};
+  DCD_server.Options := [poUsePipes{$IFDEF WINDOWS}, poNewConsole{$ENDIF}];
+  DCD_server.ShowWindow := swoHIDE;
 end;
 
 //TODO-cfeature:remove import, e.g: when libman entries are modified.
@@ -175,16 +191,12 @@ begin
 end;
 
 initialization
-  DCD_server := TProcess.Create(nil);
+  createServer;
   DCD_client := TProcess.Create(nil);
-  DCD_server.Executable := extractFilePath(application.ExeName) + directorySeparator
-    + 'dcd-server'{$IFDEF WINDOWS}+ '.exe'{$ENDIF};
   DCD_client.Executable := extractFilePath(application.ExeName) + directorySeparator
     + 'dcd-client'{$IFDEF WINDOWS}+ '.exe'{$ENDIF};
   DCD_client.Options := [poUsePipes{$IFDEF WINDOWS}, poNewConsole{$ENDIF}];
-  DCD_server.Options := [poUsePipes{$IFDEF WINDOWS}, poNewConsole{$ENDIF}];
   DCD_client.ShowWindow := swoHIDE;
-  DCD_server.ShowWindow := swoHIDE;
   dcdOn := fileExists(DCD_server.Executable) and fileExists(DCD_client.Executable);
   lines := TStringList.Create;
   {$IFDEF WINDOWS}

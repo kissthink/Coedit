@@ -76,12 +76,14 @@ var
 begin
   if not dcdOn then exit;
   //
-  //ce_dcd.stopServer;
+  ce_dcd.freeServer;
+  ce_dcd.createServer;
   for i := 0 to fCol.Count-1 do
   begin
     itm := TLibraryItem(fCol.Items[i]);
     ce_dcd.addDcdImport(itm.libSourcePath);
   end;
+
 end;
 
 procedure TLibraryManager.getLibFiles(const someAliases, aList: TStrings);
