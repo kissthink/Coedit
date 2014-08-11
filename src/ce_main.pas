@@ -1163,25 +1163,18 @@ var
   editor: TCESynMemo;
   dmdproc: TProcess;
   runproc: TProcess;
-  fname, temppath, olddir: string;
+  fname: string;
 begin
-  olddir  := '';
   dmdproc := TProcess.Create(nil);
   runproc := TProcess.Create(nil);
   editor  := fEditWidg.editor[edIndex];
-  getDir(0, olddir);
   try
 
     fMesgWidg.ClearMessages(mcEditor);
     fMesgWidg.addCeInf('compiling ' + editor.fileName, mcEditor);
 
-    temppath := GetTempDir(false);
-    chDir(temppath);
-    {$IFDEF DEBUG}{$WARNINGS OFF}{$HINTS OFF}{$ENDIF}
-    fname := temppath + 'temp_' + uniqueObjStr(editor);
-    {$IFDEF DEBUG}{$WARNINGS ON}{$HINTS ON}{$ENDIF}
     if fileExists(editor.fileName) then editor.save
-    else editor.saveToFile(fname + '.d');
+    else editor.saveToFile(editor.tempFilename);
     fname := editor.fileName[1..length(editor.fileName) - length(extractFileExt(editor.fileName))];
 
     {$IFDEF RELEASE}
@@ -1208,8 +1201,8 @@ begin
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
       {$IFDEF MSWINDOWS}
-       //sysutils.DeleteFile(fname + '.exe');
-       //sysutils.DeleteFile(fname + '.obj');
+       sysutils.DeleteFile(fname + '.exe');
+       sysutils.DeleteFile(fname + '.obj');
       {$ELSE}
        sysutils.DeleteFile(fname);
        sysutils.DeleteFile(fname + '.o');
@@ -1223,9 +1216,6 @@ begin
   finally
     dmdproc.Free;
     runproc.Free;
-    if extractFilePath(editor.fileName) = GetTempDir(false) then
-       sysutils.DeleteFile(editor.fileName);
-    chDir(olddir);
   end;
 end;
 

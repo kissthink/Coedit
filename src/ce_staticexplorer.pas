@@ -382,14 +382,12 @@ begin
   lines := TStringList.Create;
   try
     // json file
-    jsf := GetTempDir(false);
-    jsf += uniqueObjStr(dmdProc) + '.json';
+    jsf := fDoc.tempFilename + '.json';
     // main source file
     scf := fDoc.fileName;
     if not fileExists(scf) then
     begin
-      scf := GetTempDir(false);
-      scf += uniqueObjStr(dmdProc) + '.d';
+      scf := fDoc.tempFilename;
       lines.Assign(fDoc.Lines);
       lines.SaveToFile(scf);
     end;
@@ -425,8 +423,6 @@ begin
     i := dmdproc.ExitStatus;
     dmdproc.Free;
     lines.Free;
-    if not fileExists(scf) then
-      DeleteFile(scf);
   end;
 
   if i <> 0 then

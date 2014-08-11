@@ -18,6 +18,7 @@ type
     fIsDSource: boolean;
     fIsConfig: boolean;
     fIdentifier: string;
+    fTempFileName: string;
     procedure changeNotify(Sender: TObject);
     procedure identifierToD2Syn;
   protected
@@ -27,6 +28,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y:Integer); override;
   public
     constructor Create(aOwner: TComponent); override;
+    destructor destroy; override;
     procedure setFocus; override;
     procedure UpdateShowing; override;
     //
@@ -39,6 +41,7 @@ type
     property fileName: string read fFilename;
     property modified: boolean read fModified;
     property project: TCEProject read fAssocProject write fAssocProject;
+    property tempFilename: string read fTempFileName;
     //
     property isDSource: boolean read fIsDSource;
     property isProjectSource: boolean read fIsConfig;
@@ -77,6 +80,16 @@ begin
   fModified := false;
   ShowHint := true;
   TextBuffer.AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
+
+  // avoid many call to get envir.string
+  fTempFileName := GetTempDir(false) + 'temp_' + uniqueObjStr(self) + '.d';
+end;
+
+destructor TCESynMemo.destroy;
+begin
+  if fileExists(fTempFileName) then
+    sysutils.DeleteFile(fTempFileName);
+  inherited;
 end;
 
 procedure TCESynMemo.setFocus;

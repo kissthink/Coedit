@@ -291,21 +291,17 @@ begin
   //
   str := TMemoryStream.Create;
   try
-    ftempname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    ftempname := curr.tempFilename;
     curr.Lines.SaveToStream(str);
     str.SaveToFile(ftempname);
-    try
-      fname := ftempname;
-      srcpos := curr.SelStart;
-      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
-        ce_dcd.getSymbolLoc(fname, srcpos);
-      if fname <> ftempname then if fileExists(fname) then
-        CEMainForm.openFile(fname);
-      if srcpos <> -1 then
-        getCurrentEditor.SelStart := srcpos;
-    finally
-      DeleteFile(ftempname);
-    end;
+    fname := ftempname;
+    srcpos := curr.SelStart;
+    if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+      ce_dcd.getSymbolLoc(fname, srcpos);
+    if fname <> ftempname then if fileExists(fname) then
+      CEMainForm.openFile(fname);
+    if srcpos <> -1 then
+      getCurrentEditor.SelStart := srcpos;
   finally
     str.Free;
   end;
@@ -326,16 +322,12 @@ begin
   str := TMemoryStream.Create;
   try
     completion.Position := 0; // previous index could cause an error here.
-    fname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    fname := curr.tempFilename;
     curr.Lines.SaveToStream(str);
     str.SaveToFile(fname);
-    try
-      srcpos := curr.SelStart;
-      completion.ItemList.Clear;
-      ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
-    finally
-      DeleteFile(fname);
-    end;
+    srcpos := curr.SelStart;
+    completion.ItemList.Clear;
+    ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
   finally
     str.Free;
   end;
@@ -358,17 +350,13 @@ begin
   str := TMemoryStream.Create;
   lst := TStringList.Create;
   try
-    fname := GetTempDir(false) + 'temp_' + uniqueObjStr(curr) + '.d';
+    fname := curr.tempFilename;
     curr.Lines.SaveToStream(str);
-    try
-      str.SaveToFile(fname);
-      srcpos := curr.SelStart;
-      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
-        ce_dcd.getHint(fname, srcpos, lst);
-      result := lst.Text;
-    finally
-      DeleteFile(fname);
-    end;
+    str.SaveToFile(fname);
+    srcpos := curr.SelStart;
+    if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+      ce_dcd.getHint(fname, srcpos, lst);
+    result := lst.Text;
   finally
     str.Free;
     lst.Free;
