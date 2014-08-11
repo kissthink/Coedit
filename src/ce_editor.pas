@@ -332,8 +332,7 @@ begin
     try
       srcpos := curr.SelStart;
       completion.ItemList.Clear;
-      if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
-        ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
+      ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
     finally
       DeleteFile(fname);
     end;
