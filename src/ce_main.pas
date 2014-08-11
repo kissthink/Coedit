@@ -278,6 +278,7 @@ type
     procedure openFile(const aFilename: string);
     procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
     procedure docFocusedNotify(Sender: TObject; const aIndex: Integer);
+    function expandSymbolicString(const symString: string): string;
     //
     property WidgetList: TCEWidgetList read fWidgList;
     property MessageWidget: TCEMessagesWidget read fMesgWidg;
@@ -441,7 +442,6 @@ begin
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
   DockMaster.HideHeaderCaptionFloatingControl := true;
-  DockMaster.ShowHeaderCaption := false;
 
   if DockManager is TAnchorDockManager then begin
     aManager:=TAnchorDockManager(DockManager);
@@ -1745,6 +1745,12 @@ begin
     CEMainForm.WidgetList.widget[i].afterLoad(nil);
 end;
 {$ENDREGION}
+
+function TCEMainForm.expandSymbolicString(const symString: string): string;
+begin
+  // expands some symbolic constant, e.g: project path, current file name, etc.
+  result := '';
+end;
 
 procedure PlugDispatchToHost(aPlugin: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;
 var
