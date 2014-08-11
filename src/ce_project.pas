@@ -4,8 +4,6 @@ unit ce_project;
 
 interface
 
-// TODO: configuration templates
-
 uses
   Classes, SysUtils, ce_dmdwrap, ce_libman;
 
@@ -55,6 +53,7 @@ type
     procedure beforeChanged;
     procedure afterChanged;
     procedure reset;
+    procedure addDefaults;
     function getAbsoluteSourceName(const aIndex: integer): string;
     function getAbsoluteFilename(const aFilename: string): string;
     procedure addSource(const aFilename: string);
@@ -85,6 +84,7 @@ begin
   fSrcsCop := TStringList.Create;
   fOptsColl := TCollection.create(TCompilerConfiguration);
   reset;
+  addDefaults;
   fModified := false;
 end;
 
@@ -229,6 +229,29 @@ end;
 function TCEProject.getCurrConf: TCompilerConfiguration;
 begin
   result := TCompilerConfiguration(fOptsColl.Items[fConfIx]);
+end;
+
+procedure TCEProject.addDefaults;
+begin
+  with TCompilerConfiguration(fOptsColl.Add) do
+  begin
+    Name := 'debug';
+    debugingOptions.debug := true;
+    debugingOptions.addCInformations := true;
+  end;
+  with TCompilerConfiguration(fOptsColl.Add) do
+  begin
+    Name := 'unittest';
+    outputOptions.unittest := true;
+  end;
+  with TCompilerConfiguration(fOptsColl.Add) do
+  begin
+    Name := 'release';
+    outputOptions.release := true;
+    outputOptions.inlining := true;
+    outputOptions.boundsCheck := offAlways;
+    outputOptions.optimizations := true;
+  end;
 end;
 
 procedure TCEProject.reset;
