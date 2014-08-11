@@ -60,6 +60,7 @@ begin
   inherited;
   Font.Quality := fqProof;
   TabWidth := 4;
+  BlockIndent := 4;
   Options :=
     [ eoAutoIndent, eoBracketHighlight, eoGroupUndo, eoTabsToSpaces,
       eoTrimTrailingSpaces, eoDragDropEditing, eoShowCtrlMouseLinks,
@@ -74,7 +75,7 @@ begin
   Gutter.CodeFoldPart.MarkupInfo.Foreground := clGray;
   //
   Highlighter := D2Syn;
-  D2Syn.FoldKinds := [fkBrackets, fkComments1, fkStrings];
+  D2Syn.FoldKinds := [fkBrackets, fkComments1, fkComments2, fkStrings];
   //
   fFilename := '<new document>';
   fModified := false;
