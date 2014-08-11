@@ -273,6 +273,7 @@ type
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
+    procedure UpdateDockCaption(Exclude: TControl = nil); override;
     //
     procedure openFile(const aFilename: string);
     procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
@@ -439,6 +440,8 @@ begin
   DockMaster.MakeDockSite(Self, [akBottom], admrpChild);
   DockMaster.OnShowOptions := @ShowAnchorDockOptions;
   DockMaster.HeaderStyle := adhsPoints;
+  DockMaster.HideHeaderCaptionFloatingControl := true;
+  DockMaster.ShowHeaderCaption := false;
 
   if DockManager is TAnchorDockManager then begin
     aManager:=TAnchorDockManager(DockManager);
@@ -465,7 +468,6 @@ begin
 
   DockMaster.GetAnchorSite(fExplWidg).Close;
   DockMaster.GetAnchorSite(fLibMWidg).Close;
-
   LoadDocking;
 end;
 
@@ -593,6 +595,12 @@ begin
   fProject.Free;
   //
   inherited;
+end;
+
+procedure TCEMainForm.UpdateDockCaption(Exclude: TControl = nil);
+begin
+  // otherwise dockmaster puts the widget list.
+  Caption := 'Coedit';
 end;
 
 procedure TCEMainForm.ApplicationProperties1Exception(Sender: TObject;E: Exception);
