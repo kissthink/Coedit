@@ -61,6 +61,7 @@ type
     procedure getOpts(const aList: TStrings);
     procedure saveToFile(const aFilename: string);
     procedure loadFromFile(const aFilename: string);
+    function outputFilename: string;
     //
     property libraryManager: TLibraryManager read fLibMan write fLibMan;
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
@@ -267,6 +268,23 @@ begin
   fFilename := '';
   afterChanged;
   fModified := false;
+end;
+
+function TCEProject.outputFilename: string;
+begin
+  result := currentConfiguration.pathsOptions.outputFilename;
+  if result <> '' then
+  begin
+    if not fileExists(result) then
+      result := getAbsoluteFilename(result);
+    exit;
+  end;
+  result := extractFilename(Sources.Strings[0]);
+  result := result[1..length(result) - length(extractFileExt(result))];
+  result := extractFilePath(fileName) + DirectorySeparator + result;
+  {$IFDEF MSWINDOWS}
+  result += '.exe';
+  {$ENDIF}
 end;
 
 procedure TCEProject.getOpts(const aList: TStrings);

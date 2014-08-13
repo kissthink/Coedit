@@ -1330,18 +1330,7 @@ begin
   try
     aProject.currentConfiguration.runOptions.setProcess(runProc);
     runproc.Parameters.AddText(runArgs);
-    procname := aProject.currentConfiguration.pathsOptions.outputFilename;
-    if procname <> '' then procname := aProject.getAbsoluteFilename(procname)
-    else if aProject.Sources.Count > 0 then
-    begin
-      procname := extractFilename(aProject.Sources.Strings[0]);
-      procname := procname[1..length(procname)-2];
-      procname := extractFilePath(aProject.fileName) +
-        DirectorySeparator + procname;
-      {$IFDEF MSWINDOWS}
-      procname += '.exe';
-      {$ENDIF}
-    end;
+    procname := aProject.outputFilename;
 
     if not fileExists(procname) then
     begin
@@ -1423,8 +1412,41 @@ begin
 end;
 
 procedure TCEMainForm.actProjRunExecute(Sender: TObject);
+var
+  i: Integer;
+  dt: double;
+label
+  _rbld,
+  _run;
 begin
-  runProject(fProject);
+  if fProject.currentConfiguration.outputOptions.binaryKind <> executable then
+  begin
+    // TODO:-cfeature: define an alternative exe name for shared lib:
+    // e.g: the dll produced by the proj. is the input filename of an host app.
+    dlgOkInfo('Non executable project cant be run');
+    exit;
+  end;
+  if not fileExists(fProject.outputFilename) then
+  begin
+    if dlgOkCancel('The project output is missing, build ?') <> mrOK then
+      exit;
+    goto _rbld;
+  end;
+  dt := fileAge(fProject.outputFilename);
+  for i := 0 to fProject.Sources.Count-1 do
+  begin
+    if fileAge(fProject.getAbsoluteSourceName(i)) > dt then
+      if dlgOkCancel('The project sources have changed since last build, rebuild ?') = mrOK then
+        goto _rbld
+      else
+        break;
+  end;
+  goto _run;
+  _rbld:
+    compileProject(fProject);
+  _run:
+    if fileExists(fProject.outputFilename) then
+      runProject(fProject);
 end;
 
 procedure TCEMainForm.actProjRunWithArgsExecute(Sender: TObject);
