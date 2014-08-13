@@ -297,7 +297,7 @@ implementation
 {$R *.lfm}
 
 uses
-  SynMacroRecorder;
+  SynMacroRecorder, strutils;
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMainForm.create(aOwner: TComponent);
@@ -1317,7 +1317,7 @@ end;
 procedure TCEMainForm.runProject(const aProject: TCEProject; const runArgs: string = '');
 var
   runproc: TProcess;
-  procname: string;
+  procname, prm: string;
   i: NativeInt;
 begin
   if aProject.currentConfiguration.outputOptions.binaryKind <>
@@ -1329,7 +1329,13 @@ begin
   runproc := TProcess.Create(nil);
   try
     aProject.currentConfiguration.runOptions.setProcess(runProc);
-    runproc.Parameters.AddText(runArgs);
+    prm := ''; i := 1;
+    repeat
+        prm := ExtractDelimited(i, runArgs, [' ']);
+        if prm <> '' then
+          runProc.Parameters.AddText(prm);
+        Inc(i);
+    until prm = '';
     procname := aProject.outputFilename;
 
     if not fileExists(procname) then
