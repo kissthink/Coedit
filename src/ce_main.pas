@@ -580,6 +580,14 @@ begin
   finally
     xcfg.Free;
   end;
+  //
+  xcfg := TXMLConfigStorage.Create(getDocPath + 'dockingopts.xml',false);
+  try
+    DockMaster.SaveSettingsToConfig(xcfg);
+    xcfg.WriteToDisk;
+  finally
+    xcfg.Free;
+  end;
 end;
 
 procedure TCEMainForm.LoadDocking;
@@ -587,24 +595,45 @@ var
   xcfg: TXMLConfigStorage;
   str: TMemoryStream;
 begin
-  if not fileExists(getDocPath + 'docking.xml') then
-    exit;
-  xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml', true);
-  try
+  if fileExists(getDocPath + 'docking.xml') then
+  begin
+    xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml', true);
     try
-      DockMaster.LoadLayoutFromConfig(xcfg, false);
-    except
-      exit;
-    end;
-    str := TMemoryStream.Create;
-    try
-      xcfg.SaveToStream(str);
-      str.saveToFile(getDocPath + 'docking.bak')
+      try
+        DockMaster.LoadLayoutFromConfig(xcfg, false);
+      except
+        exit;
+      end;
+      str := TMemoryStream.Create;
+      try
+        xcfg.SaveToStream(str);
+        str.saveToFile(getDocPath + 'docking.bak')
+      finally
+        str.Free;
+      end;
     finally
-      str.Free;
+      xcfg.Free;
     end;
-  finally
-    xcfg.Free;
+  end;
+  if fileExists(getDocPath + 'dockingopts.xml') then
+  begin
+    xcfg := TXMLConfigStorage.Create(getDocPath + 'dockingopts.xml', true);
+    try
+      try
+        DockMaster.LoadSettingsFromConfig(xcfg);
+      except
+        exit;
+      end;
+      str := TMemoryStream.Create;
+      try
+        xcfg.SaveToStream(str);
+        str.saveToFile(getDocPath + 'dockingopts.bak')
+      finally
+        str.Free;
+      end;
+    finally
+      xcfg.Free;
+    end;
   end;
 end;
 
@@ -1525,8 +1554,6 @@ begin
   win.Show;
   win.BringToFront;
 end;
-
-
 {$ENDREGION}
 
 {$REGION project ---------------------------------------------------------------}
