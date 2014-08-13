@@ -16,7 +16,6 @@ type
 
   TCEMainForm = class;
 
-  //TODO-cfeature: switches -f<sourcefile.d>, -p<project.coedit>, -noplug
   //TODO-cfeature: options
   //TODO-cwidget: options editor
   (**
@@ -226,6 +225,7 @@ type
     fLibMan: TLibraryManager;
 
     //Init - Fina
+    procedure getCMdParams;
     procedure checkCompilo;
     procedure InitLibMan;
     procedure InitMRUs;
@@ -311,8 +311,9 @@ begin
   InitSettings;
   //
   newProj;
-  InitPlugins;
   checkCompilo;
+  getCMdParams;
+
 end;
 
 procedure TCEMainForm.checkCompilo;
@@ -324,6 +325,52 @@ begin
     exit;
   ce_common.dlgOkError(msg);
   close;
+end;
+
+procedure TCEMainForm.getCMdParams;
+var
+  value: string;
+  str: TStringList;
+begin
+  if application.ParamCount > 0 then
+  begin
+    value := application.Params[1];
+    if value <> '' then
+    begin
+      str := TStringList.Create;
+      try
+        str.DelimitedText := value;
+        for value in str do
+        begin
+          if fileExists(value) then
+            openFile(value);
+        end;
+      finally
+        str.Free;
+      end;
+    end;
+  end;
+  value := application.GetOptionValue('plugs');
+  if value <> 'OFF' then
+    InitPlugins;
+  value := application.GetOptionValue('p', 'project');
+  if (value <> '') and fileExists(value) then
+    openProj(value);
+  value := application.GetOptionValue('f', 'files');
+  if value <> '' then
+  begin
+    str := TStringList.Create;
+    try
+      str.DelimitedText := value;
+      for value in str do
+      begin
+        if fileExists(value) then
+          openFile(value);
+      end;
+    finally
+      str.Free;
+    end;
+  end;
 end;
 
 procedure TCEMainForm.InitLibMan;
@@ -1427,9 +1474,9 @@ label
 begin
   if fProject.currentConfiguration.outputOptions.binaryKind <> executable then
   begin
-    // TODO:-cfeature: define an alternative exe name for shared lib:
+    // TODO-cfeature: define an alternative exe name for shared lib:
     // e.g: the dll produced by the proj. is the input filename of an host app.
-    dlgOkInfo('Non executable project cant be run');
+    dlgOkInfo('Non executable projects cant be run');
     exit;
   end;
   if not fileExists(fProject.outputFilename) then

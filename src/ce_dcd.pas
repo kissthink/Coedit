@@ -8,12 +8,12 @@ uses
 
 
 (**
- * Stops the server: e.g: to remove some bugy imports from the libman.
+ * frees the server: e.g: to remove some bugy imports from the libman.
  *)
 procedure freeServer;
 
 (**
- * Starts the server immediatly and not lazily.
+ * recreates the server.
  *)
 procedure createServer;
 

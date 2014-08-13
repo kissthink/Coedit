@@ -135,7 +135,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="22">
+    <Units Count="23">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -276,6 +276,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="ce_dcd"/>
       </Unit21>
+      <Unit22>
+        <Filename Value="..\src\ce_customtools.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_customtools"/>
+      </Unit22>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
