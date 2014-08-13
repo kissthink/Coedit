@@ -926,9 +926,9 @@ begin
   '' + LineEnding +
   'void main(string args[])' + LineEnding +
   '{' + LineEnding +
-  '    writeln("this is just a `toy feature`");' + LineEnding +
-  '    writeln;' + LineEnding +
-  '    writeln("coedit saves a temp d module before compiling it and running it...");' + LineEnding +
+  '    // this file can be directly executed using menu file/compile & run' + LineEnding +
+  '    // phobos and libman imports are allowed' + LineEnding +
+  '    writeln("hello runnable module");' + LineEnding +
   '}';
 end;
 
@@ -1196,7 +1196,7 @@ begin
       fMesgWidg.addCeInf(editor.fileName + ' successfully compiled', mcEditor );
       runproc.Options := [poStderrToOutPut, poUsePipes];
       runproc.CurrentDirectory := extractFilePath(runProc.Executable);
-      runproc.Parameters.Text := runArgs;
+      runproc.Parameters.DelimitedText := runArgs;
       runproc.Executable := fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF};
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
