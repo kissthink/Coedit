@@ -159,6 +159,7 @@ procedure TCESynMemo.checkFileDate;
 var
   newDate: double;
 begin
+  if fFilename = fTempFileName then exit;
   if not FileAge(fFilename, newDate) then exit;
   if fFileDate = newDate then exit;
   if fFileDate <> 0.0 then
