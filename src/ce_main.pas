@@ -1863,6 +1863,9 @@ var
   begs, ends: boolean;
   i: integer;
 begin
+  if symString = '' then
+    exit(symString);
+
   result := '';
   elems := TStringList.Create;
   try
