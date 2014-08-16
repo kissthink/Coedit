@@ -98,12 +98,13 @@ inherited CEEditorWidget: TCEEditorWidget
   object completion: TSynCompletion[4]
     OnExecute = completionExecute
     Position = 0
-    LinesInWindow = 6
+    LinesInWindow = 8
     SelectedColor = clHighlight
     CaseSensitive = True
     Width = 262
+    ShowSizeDrag = True
     ShortCut = 16416
-    EndOfTokenChr = '()[].'
+    EndOfTokenChr = '()[].!+"''(-*/\$:;?<>'
     OnCodeCompletion = completionCodeCompletion
     ExecCommandID = ecSynCompletionExecute
     left = 96

@@ -866,7 +866,10 @@ begin
   CanShow := true;
   {if EditWidget.currentEditor <> nil then
     if EditWidget.currentEditor.Focused then
-      HintStr := EditWidget.getEditorHint;}
+    begin
+      HintStr := EditWidget.getEditorHint;
+      CanShow := HintStr <> '';
+    end;}
 end;
 {$ENDREGION}
 
@@ -1272,7 +1275,7 @@ begin
       fMesgWidg.addCeInf(editor.fileName + ' successfully compiled', mcEditor );
       runproc.Options := [poStderrToOutPut, poUsePipes];
       runproc.CurrentDirectory := extractFilePath(runProc.Executable);
-      runproc.Parameters.DelimitedText := runArgs;
+      runproc.Parameters.DelimitedText := expandSymbolicString(runArgs);
       runproc.Executable := fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF};
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
@@ -1316,6 +1319,8 @@ begin
         ppproc := TProcess.Create(nil);
         try
           preBuildProcess.setProcess(ppproc);
+          for i:= 0 to ppproc.Parameters.Count-1 do
+            ppproc.Parameters.Strings[i] := expandSymbolicString(ppproc.Parameters.Strings[i]);
           if ppproc.CurrentDirectory = '' then
             ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
           ppproc.Execute;
@@ -1371,6 +1376,8 @@ begin
           ppproc := TProcess.Create(nil);
           try
             postBuildProcess.setProcess(ppproc);
+            for i:= 0 to ppproc.Parameters.Count-1 do
+              ppproc.Parameters.Strings[i] := expandSymbolicString(ppproc.Parameters.Strings[i]);
             if ppproc.CurrentDirectory = '' then
               ppproc.CurrentDirectory := extractFilePath(ppproc.Executable);
             ppproc.Execute;
@@ -1408,6 +1415,7 @@ begin
     prm := ''; i := 1;
     repeat
         prm := ExtractDelimited(i, runArgs, [' ']);
+        prm := expandSymbolicString(prm);
         if prm <> '' then
           runProc.Parameters.AddText(prm);
         Inc(i);
@@ -1849,9 +1857,94 @@ end;
 {$ENDREGION}
 
 function TCEMainForm.expandSymbolicString(const symString: string): string;
+var
+  elems: TStringList;
+  elem: string;
+  begs, ends: boolean;
+  i: integer;
 begin
-  // expands some symbolic constant, e.g: project path, current file name, etc.
   result := '';
+  elems := TStringList.Create;
+  try
+    i := 0;
+    elem := '';
+    repeat
+      inc(i);
+      if not (symString[i] in ['<', '>']) then
+        elem += symString[i]
+      else
+      begin
+        if symString[i] = '<' then
+          begs := true;
+        ends := symString[i] = '>';
+        elems.Add(elem);
+        elem := '';
+        if begs and ends then
+        begin
+          begs := false;
+          ends := false;
+          elems.Objects[elems.Count-1] := Self;
+        end;
+      end;
+    until
+      i = length(symString);
+    elems.Add(elem);
+    elem := '';
+    for i:= 0 to elems.Count-1 do
+    begin
+      if elems.Objects[i] = nil then
+        result += elems.Strings[i]
+      else case elems.Strings[i] of
+        '<','>' :
+          continue;
+        'CPF', 'CurrentProjectFile':
+          begin
+            result += '`';
+            if fProject <> nil then
+              if fileExists(fProject.fileName) then
+                result += fProject.fileName;
+            result += '`';
+          end;
+        'CPP', 'CurrentProjectPath':
+          begin
+            result += '`';
+            if fProject <> nil then
+              if fileExists(fProject.fileName) then
+                result += extractFilePath(fProject.fileName);
+            result += '`';
+          end;
+        'CFF', 'CurrentFileFile':
+          begin
+            result += '`';
+            if EditWidget.currentEditor <> nil then
+              if fileExists(EditWidget.currentEditor.fileName) then
+                result += EditWidget.currentEditor.fileName;
+            result += '`';
+          end;
+        'CFP', 'CurrentFilePath':
+          begin
+            result += '`';
+            if EditWidget.currentEditor <> nil then
+              if fileExists(EditWidget.currentEditor.fileName) then
+                result += extractFilePath(EditWidget.currentEditor.fileName);
+            result += '`';
+          end;
+        'CI', 'CurrentIdentifier':
+          begin
+            result += '`';
+            if EditWidget.currentEditor <> nil then
+              result += EditWidget.currentEditor.Identifier;
+            result += '`';
+          end;
+        'CAF', 'CoeditApplicationFile':
+          result += '`' + application.ExeName + '`';
+        'CAP', 'CoeditApplicationPath':
+          result += '`' + extractFilePath(Application.ExeName) + '`';
+      end;
+    end;
+  finally
+    elems.Free;
+  end;
 end;
 
 procedure PlugDispatchToHost(aPlugin: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;

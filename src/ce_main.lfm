@@ -1936,6 +1936,7 @@ object CEMainForm: TCEMainForm
       Caption = 'Compile and run file...'
       ImageIndex = 22
       OnExecute = ActFileCompAndRunWithArgsExecute
+      ShortCut = 24695
     end
     object actFileSaveAll: TAction
       Category = 'File'
@@ -3039,9 +3040,6 @@ object CEMainForm: TCEMainForm
     }
   end
   object ApplicationProperties1: TApplicationProperties
-    HintHidePause = 4000
-    HintPause = 100
-    HintShortPause = 50
     OnException = ApplicationProperties1Exception
     OnShowHint = ApplicationProperties1ShowHint
     left = 96
