@@ -1916,6 +1916,16 @@ begin
                 result += extractFilePath(fProject.fileName);
             result += '`';
           end;
+        'CPR', 'CurrentProjectRoot':
+          begin
+            result += '`';
+            if fProject <> nil then
+              if directoryExists(fProject.getAbsoluteFilename(fProject.RootFolder)) then
+                result += fProject.getAbsoluteFilename(fProject.RootFolder)
+              else if directoryExists(fProject.RootFolder) then
+                result += fProject.RootFolder;
+            result += '`';
+          end;
         'CFF', 'CurrentFileFile':
           begin
             result += '`';

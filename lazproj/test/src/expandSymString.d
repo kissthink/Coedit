@@ -3,7 +3,7 @@ module runnable;
 import std.stdio;
 import std.getopt;
 
-// pass --a=<CPF> --b=<CPP> --c=<CFF> --d=<CFP> --e=<CI> --f=<CAF> --g=<CAP> as parameters in "Run file..."
+// pass --a=<CPF> --b=<CPP> --c=<CPR> --d=<CFF> --e=<CFP> --f=<CI> --g=<CAF> --h=<CAP> as parameters in "Run file..."
 void main(string args[])
 {
 

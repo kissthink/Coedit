@@ -21,6 +21,7 @@ type
   private
     fOnChange: TNotifyEvent;
     fModified: boolean;
+    fRootFolder: string;
     fFilename: string;
     fBasePath: string;
     fLibAliases: TStringList;
@@ -34,6 +35,7 @@ type
     procedure subMemberChanged(sender : TObject);
     procedure setOptsColl(const aValue: TCollection);
     procedure setFname(const aValue: string);
+    procedure setRoot(const aValue: string);
     procedure setSrcs(const aValue: TStringList);
     procedure setConfIx(aValue: Integer);
     function getConfig(const ix: integer): TCompilerConfiguration;
@@ -43,6 +45,7 @@ type
     procedure readerError(Reader: TReader; const Message: string;
       var Handled: Boolean);
   published
+    property RootFolder: string read fRootFolder write setRoot;
     property OptionsCollection: TCollection read fOptsColl write setOptsColl;
     property Sources: TStringList read fSrcs write setSrcs; // 'read' should return a copy to avoid abs/rel errors
     property ConfigurationIndex: Integer read fConfIx write setConfIx;
@@ -124,6 +127,14 @@ begin
     if aFilename = absSrc then exit;
   end;
   fSrcs.Add(ExtractRelativepath(fBasePath,aFilename));
+end;
+
+procedure TCEProject.setRoot(const aValue: string);
+begin
+  if fRootFolder = aValue then exit;
+  beforeChanged;
+  fRootFolder := aValue;
+  afterChanged;
 end;
 
 procedure TCEProject.setFname(const aValue: string);
