@@ -70,8 +70,7 @@ begin
   Options2 := [eoEnhanceEndKey, eoFoldedCopyPaste, eoOverwriteBlock];
 
   MouseOptions := MouseOptions +
-    [ emAltSetsColumnMode, emDragDropEditing,
-      emDoubleClickSelectsLine, emCtrlWheelZoom];
+    [ emAltSetsColumnMode, emDragDropEditing, emCtrlWheelZoom];
   Gutter.LineNumberPart.ShowOnlyLineNumbersMultiplesOf := 5;
   Gutter.LineNumberPart.MarkupInfo.Foreground := clGray;
   Gutter.SeparatorPart.LineOffset := 1;
