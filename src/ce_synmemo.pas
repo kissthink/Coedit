@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditHighlighter, controls,
-  LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project, ce_common;
+  lcltype, LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project,
+  SynEditMouseCmds, ce_common;
 
 type
   TCESynMemo = class(TSynMemo)
@@ -31,6 +32,7 @@ type
     destructor destroy; override;
     procedure setFocus; override;
     procedure UpdateShowing; override;
+    procedure DoEnter; override;
     //
     procedure checkFileDate;
     procedure loadFromFile(const aFilename: string);
@@ -66,7 +68,10 @@ begin
       eoTrimTrailingSpaces, eoDragDropEditing, eoShowCtrlMouseLinks,
       eoEnhanceHomeKey, eoTabIndent];
   Options2 := [eoEnhanceEndKey, eoFoldedCopyPaste, eoOverwriteBlock];
-  //
+
+  MouseOptions := MouseOptions +
+    [ emAltSetsColumnMode, emDragDropEditing,
+      emDoubleClickSelectsLine, emCtrlWheelZoom];
   Gutter.LineNumberPart.ShowOnlyLineNumbersMultiplesOf := 5;
   Gutter.LineNumberPart.MarkupInfo.Foreground := clGray;
   Gutter.SeparatorPart.LineOffset := 1;
@@ -104,6 +109,12 @@ procedure TCESynMemo.UpdateShowing;
 begin
   inherited;
   if not Visible then exit;
+  identifierToD2Syn;
+end;
+
+procedure TCESynMemo.DoEnter;
+begin
+  Inherited;
   checkFileDate;
   identifierToD2Syn;
 end;
@@ -170,7 +181,6 @@ begin
       Lines.LoadFromFile(fFilename);
       fModified := false;
     end;
-    //TODO-cbugfix: the cursor is incorrectly set to crDragSomething.
   end;
   fFileDate := newDate;
 end;
