@@ -73,7 +73,6 @@ begin
   DCD_server.ShowWindow := swoHIDE;
 end;
 
-//TODO-cfeature:remove import, e.g: when libman entries are modified.
 procedure addDcdImport(const aFilename: string);
 begin
   if not dcdOn then exit;

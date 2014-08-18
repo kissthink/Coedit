@@ -10,14 +10,17 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls, dynlibs,
   ce_common, ce_dmdwrap, ce_project, ce_dcd, ce_plugin, ce_synmemo, ce_widget,
   ce_messages, ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_search,
-  ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor;
+  ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor, ce_customtools;
 
 type
 
   TCEMainForm = class;
 
-  //TODO-cfeature: options
-  //TODO-cwidget: options editor
+  // TODO-cfeature: input handling
+  // TODO-cfeature: options
+  // TODO-cwidget: options editor
+  // TODO-cwidget: custom tools editor
+  // TODO-cfeature: tools menu
   (**
    * Encapsulates the options in a writable component.
    *)
@@ -223,11 +226,13 @@ type
     fProjMru: TMruFileList;
     fFileMru: TMruFileList;
     fLibMan: TLibraryManager;
+    fTools: TCETools;
 
     //Init - Fina
     procedure getCMdParams;
     procedure checkCompilo;
     procedure InitLibMan;
+    procedure InitTools;
     procedure InitMRUs;
     procedure InitWidgets;
     procedure InitPlugins;
@@ -306,6 +311,7 @@ begin
   //
   InitMRUs;
   InitLibMan;
+  InitTools;
   InitWidgets;
   InitDocking;
   InitSettings;
@@ -313,7 +319,6 @@ begin
   newProj;
   checkCompilo;
   getCMdParams;
-
 end;
 
 procedure TCEMainForm.checkCompilo;
@@ -381,6 +386,16 @@ begin
   fname := getDocPath + 'libraryManager.txt';
   if fileExists(fname) then
     fLibMan.loadFromFile(fname);
+end;
+
+procedure TCEMainForm.InitTools;
+var
+  fname: string;
+begin
+  fTools := TCETools.create(self);
+  fname := getDocPath + 'tools.txt';
+  if fileExists(fname) then
+    fTools.loadFromFile(fname);
 end;
 
 procedure TCEMainForm.InitMRUs;
@@ -552,6 +567,7 @@ begin
   try
     forceDirectory(getDocPath);
     fLibMan.saveToFile(getDocPath + 'libraryManager.txt');
+    fTools.saveToFile(getDocPath + 'tools.txt');
     opts.saveToFile(getDocPath + 'options.txt');
   finally
     opts.Free;
@@ -1236,7 +1252,6 @@ begin
   end;
 end;
 
-// TODO-cfeature: input handling
 procedure TCEMainForm.compileAndRunFile(const edIndex: NativeInt; const runArgs: string = '');
 var
   editor: TCESynMemo;

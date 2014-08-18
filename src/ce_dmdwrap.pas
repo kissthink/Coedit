@@ -707,7 +707,8 @@ var
   idt: string;
 begin
   if fDbg then aList.Add('-debug');
-  if fDbgLevel <> 0 then aList.Add('-debug=' + intToStr(fDbgLevel));
+  if fDbgLevel <> 0 then
+    aList.Add('-debug=' + intToStr(fDbgLevel));
   for idt in fDbgIdents do
     aList.Add('-debug=' + idt);
   if fDbgD then aList.Add('-g');
@@ -811,8 +812,10 @@ begin
     aList.Add('-I'+ str);
   for str in fImpt do if str <> '' then
     aList.Add('-J'+ str);
-  if fFname <> '' then aList.Add('-of' + fFname);
-  if fObjDir <> '' then aList.Add('-od' + fObjDir);
+  if fFname <> '' then
+    aList.Add('-of' + fFname);
+  if fObjDir <> '' then
+    aList.Add('-od' + fObjDir);
 end;
 
 procedure TPathsOpts.assign(aValue: TPersistent);
@@ -1077,9 +1080,11 @@ end;
 
 procedure TCompilerConfiguration.setName(const aValue: string);
 begin
-  if fName = aValue then exit;
+  if fName = aValue then
+    exit;
   fName := aValue;
-  if fName = '' then fName := nameFromID;
+  if fName = '' then
+    fName := nameFromID;
   Changed(true);
   doChanged;
 end;
