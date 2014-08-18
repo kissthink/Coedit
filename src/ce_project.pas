@@ -6,7 +6,7 @@ unit ce_project;
 interface
 
 uses
-  Classes, SysUtils, ce_dmdwrap, ce_libman, ce_observer;
+  Classes, SysUtils, ce_common, ce_dmdwrap, ce_libman, ce_observer;
 
 type
 
@@ -79,7 +79,7 @@ type
 implementation
 
 uses
-  ce_common, ce_interfaces, dialogs;
+  ce_interfaces;
 
 constructor TCEProject.create(aOwner: TComponent);
 begin
@@ -91,8 +91,6 @@ begin
   fSrcs.OnChange := @subMemberChanged;
   fSrcsCop := TStringList.Create;
   fOptsColl := TCollection.create(TCompilerConfiguration);
-  //
-  //subjProjNew(TCEProjectSubject(fProjectSubject), self);
   //
   reset;
   addDefaults;

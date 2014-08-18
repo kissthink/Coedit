@@ -190,50 +190,6 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEMultiDocObserver ----------------------------------------------------}
-//procedure TCEWidget.docNew(const aDoc: TCESynMemo);
-//begin
-//end;
-//
-//procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
-//begin
-//end;
-//
-//procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
-//begin
-//end;
-//
-//procedure TCEWidget.docClose(const aDoc: TCESynMemo);
-//begin
-//end;
-{$ENDREGION}
-
-{$REGION ICEProjectObserver -----------------------------------------------------}
-//procedure TCEWidget.projNew(const aProject: TCEProject);
-//begin
-//end;
-//
-//procedure TCEWidget.projChange(const aProject: TCEProject);
-//begin
-//end;
-//
-//procedure TCEWidget.projClose(const aProject: TCEProject);
-//begin
-//end;
-//
-//procedure TCEWidget.projCompile(const aProject: TCEProject);
-//begin
-//end;
-//
-//procedure TCEWidget.projRun(const aProject: TCEProject);
-//begin
-//end;
-//
-//procedure TCEWidget.projFocused(const aProject: TCEProject);
-//begin
-//end;
-{$ENDREGION}
-
 {$REGION Updaters---------------------------------------------------------------}
 procedure TCEWidget.setDelayDur(aValue: Integer);
 begin

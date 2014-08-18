@@ -85,7 +85,7 @@ type
 
   function semanticMsgAna(const aMessg: string): TMessageKind;
   function getLineFromDmdMessage(const aMessage: string): TPoint;
-  function getFileFromDmdMessage(const aMessage: string): TCESynMemo;
+  function openFileFromDmdMessage(const aMessage: string): boolean;
   function newMessageData: PMessageItemData;
 
 implementation
@@ -250,7 +250,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEProjectMonitor -----------------------------------------------------}
+{$REGION ICEProjectObserver ----------------------------------------------------}
 procedure TCEMessagesWidget.projNew(const aProject: TCEProject);
 begin
   fProj := aProject;
@@ -276,7 +276,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+{$REGION ICEMultiDocObserver ---------------------------------------------------}
 procedure TCEMessagesWidget.docNew(const aDoc: TCESynMemo);
 begin
   fDoc := aDoc;
@@ -374,7 +374,7 @@ end;
 
 procedure TCEMessagesWidget.ClearMessages(aCtxt: TMessageContext);
 var
-  i: NativeInt;
+  i: Integer;
   dt: TMessageItemData;
 begin
   for i := List.Items.Count-1 downto 0 do
@@ -542,7 +542,7 @@ begin
   end;
 end;
 
-function getFileFromDmdMessage(const aMessage: string): TCESynMemo;
+function openFileFromDmdMessage(const aMessage: string): boolean;
 var
   i: NativeInt;
   ident: string;
@@ -550,7 +550,7 @@ var
 begin
   ident := '';
   i := 0;
-  result := nil;
+  result := false;
   while(true) do
   begin
     inc(i);
@@ -561,7 +561,7 @@ begin
       ext := extractFileExt(ident);
       if not (ext = '.d') or (ext = '.di') then exit;
       CEMainForm.openFile(ident);
-      result := CEMainForm.EditWidget.currentEditor;
+      exit(true);
     end;
     ident += aMessage[i];
   end;

@@ -274,7 +274,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+{$REGION ICEMultiDocObserver ---------------------------------------------------}
 procedure TCESearchWidget.docNew(const aDoc: TCESynMemo);
 begin
   fEditor := aDoc;

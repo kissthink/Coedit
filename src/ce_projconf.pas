@@ -54,6 +54,7 @@ begin
   EntitiesConnector.addObserver(self);
 end;
 
+
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
 begin
   beginUpdateByEvent;

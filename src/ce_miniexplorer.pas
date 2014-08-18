@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  Menus, ComCtrls, Buttons, ce_widget, lcltype, strutils;
+  Menus, ComCtrls, Buttons, lcltype, strutils, ce_widget, ce_common;
 
 type
   TCEMiniExplorerWidget = class(TCEWidget)
@@ -64,7 +64,7 @@ implementation
 {$R *.lfm}
 
 uses
-  ce_main, ce_common;
+  ce_main;
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMiniExplorerWidget.create(aIwner: TComponent);

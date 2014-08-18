@@ -15,8 +15,7 @@ uses
 type
 
   { TCEEditorWidget }
-
-  TCEEditorWidget = class(TCEWidget, ICEProjectObserver)
+  TCEEditorWidget = class(TCEWidget, ICEMultiDocObserver, ICEProjectObserver)
     imgList: TImageList;
     PageControl: TExtendedNotebook;
     macRecorder: TSynMacroRecorder;
@@ -33,6 +32,7 @@ type
   private
     fKeyChanged: boolean;
     fProj: TCEProject;
+    fDoc: TCESynMemo;
 
     // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
@@ -44,7 +44,6 @@ type
     procedure memoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoChange(Sender: TObject);
     procedure memoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-    function getCurrentEditor: TCESynMemo;
     function getEditor(index: NativeInt): TCESynMemo;
     function getEditorCount: NativeInt;
     function getEditorIndex: NativeInt;
@@ -58,16 +57,19 @@ type
     procedure focusedEditorChanged;
     function getEditorHint: string;
     //
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
+    //
     procedure projNew(const aProject: TCEProject);
     procedure projClosing(const aProject: TCEProject);
     procedure projFocused(const aProject: TCEProject);
     procedure projChanged(const aProject: TCEProject);
-
+    //
     procedure projCompile(const aProject: TCEProject); //warning: removed from itf
     procedure projRun(const aProject: TCEProject); //warning: removed from itf
-
     //
-    property currentEditor: TCESynMemo read getCurrentEditor;
     property editor[index: NativeInt]: TCESynMemo read getEditor;
     property editorCount: NativeInt read getEditorCount;
     property editorIndex: NativeInt read getEditorIndex;
@@ -80,6 +82,7 @@ implementation
 uses
   ce_main, ce_messages;
 
+{$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEEditorWidget.create(aOwner: TComponent);
 var
   bmp: TBitmap;
@@ -97,6 +100,8 @@ begin
   finally
     bmp.Free;
   end;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 
 destructor TCEEditorWidget.destroy;
@@ -105,6 +110,64 @@ begin
   errLst.Free;
   inherited;
 end;
+{$ENDREGION}
+
+{$REGION ICEMultiDocObserver ---------------------------------------------------}
+procedure TCEEditorWidget.docNew(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+end;
+
+procedure TCEEditorWidget.docClosing(const aDoc: TCESynMemo);
+begin
+  fDoc := nil;
+end;
+
+procedure TCEEditorWidget.docFocused(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+  focusedEditorChanged;
+end;
+
+procedure TCEEditorWidget.docChanged(const aDoc: TCESynMemo);
+begin
+  if fDoc <> aDoc then exit;
+  fKeyChanged := true;
+  beginUpdateByDelay;
+  UpdateByEvent;
+end;
+{$ENDREGION}
+
+{$REGION ICEProjectObserver ----------------------------------------------------}
+procedure TCEEditorWidget.projNew(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEEditorWidget.projClosing(const aProject: TCEProject);
+begin
+  fProj := nil;
+end;
+
+procedure TCEEditorWidget.projFocused(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEEditorWidget.projChanged(const aProject: TCEProject);
+begin
+end;
+
+procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
+begin
+  endUpdateByDelay; // warning not trigered anymore
+end;
+
+procedure TCEEditorWidget.projRun(const aProject: TCEProject);
+begin
+  endUpdateByDelay; // warning not trigered anymore
+end;
+{$ENDREGION}
 
 function TCEEditorWidget.getEditorCount: NativeInt;
 begin
@@ -118,41 +181,27 @@ begin
   else result := -1;
 end;
 
-function TCEEditorWidget.getCurrentEditor: TCESynMemo;
-begin
-  if pageControl.PageCount = 0 then result := nil
-  else result := TCESynMemo(pageControl.ActivePage.Controls[0]);
-end;
-
 function TCEEditorWidget.getEditor(index: NativeInt): TCESynMemo;
 begin
   result := TCESynMemo(pageControl.Pages[index].Controls[0]);
 end;
 
 procedure TCEEditorWidget.focusedEditorChanged;
-var
-  curr: TCESynMemo;
 begin
-  curr := getCurrentEditor;
-  macRecorder.Editor := curr;
-  fSyncEdit.Editor := curr;
-  completion.Editor := curr;
+  if fDoc = nil then exit;
   //
-  if pageControl.ActivePageIndex <> -1 then
+  macRecorder.Editor := fDoc;
+  fSyncEdit.Editor := fDoc;
+  completion.Editor := fDoc;
+  if (pageControl.ActivePage.Caption = '') then
   begin
-    //CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
-    if (pageControl.ActivePage.Caption = '') then
-    begin
-      fKeyChanged := true;
-      beginUpdateByDelay;
-    end;
+    fKeyChanged := true;
+    beginUpdateByDelay;
   end;
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
 begin
-  //http://bugs.freepascal.org/view.php?id=26320
-  focusedEditorChanged;
 end;
 
 procedure TCEEditorWidget.completionExecute(Sender: TObject);
@@ -189,14 +238,14 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnKeyPress := @memoKeyPress;
   memo.OnMouseDown := @memoMouseDown;
-  memo.OnChange := @memoChange;
+  //memo.OnChange := @memoChange;
 
   memo.OnMouseMove := @memoMouseMove;
   //
   pageControl.ActivePage := sheet;
 
   //http://bugs.freepascal.org/view.php?id=26320
-  focusedEditorChanged;
+  //focusedEditorChanged;
 end;
 
 procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);
@@ -222,7 +271,6 @@ end;
 procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: char);
 var
   pt: Tpoint;
-  curr: TCESynMemo;
 begin
   fKeyChanged := true;
   if Key = '.' then
@@ -250,65 +298,30 @@ end;
 
 procedure TCEEditorWidget.memoChange(Sender: TObject);
 begin
-  fKeyChanged := true;
-  beginUpdateByDelay;
-  UpdateByEvent;
-end;
-
-procedure TCEEditorWidget.projNew(const aProject: TCEProject);
-begin
-  fProj := aProject;
-end;
-
-procedure TCEEditorWidget.projClosing(const aProject: TCEProject);
-begin
-  fProj := nil;
-end;
-
-procedure TCEEditorWidget.projFocused(const aProject: TCEProject);
-begin
-  fProj := aProject;
-end;
-
-procedure TCEEditorWidget.projChanged(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
-begin
-  endUpdateByDelay; // warning not trigered anymore
-end;
-
-procedure TCEEditorWidget.projRun(const aProject: TCEProject);
-begin
-  endUpdateByDelay; // warning not trigered anymore
 end;
 
 procedure TCEEditorWidget.getSymbolLoc;
 var
-  curr: TCESynMemo;
   str: TMemoryStream;
   srcpos: Integer;
   ftempname, fname: string;
 begin
   if not dcdOn then exit;
-  //
-  curr := getCurrentEditor;
-  if curr = nil then exit;
+  if fDoc = nil then exit;
   //
   str := TMemoryStream.Create;
   try
-    ftempname := curr.tempFilename;
-    curr.Lines.SaveToStream(str);
+    ftempname := fDoc.tempFilename;
+    fDoc.Lines.SaveToStream(str);
     str.SaveToFile(ftempname);
     fname := ftempname;
-    srcpos := curr.SelStart;
-    if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+    srcpos := fDoc.SelStart;
+    if fDoc.GetWordAtRowCol(fDoc.LogicalCaretXY) <> '' then
       ce_dcd.getSymbolLoc(fname, srcpos);
     if fname <> ftempname then if fileExists(fname) then
       CEMainForm.openFile(fname);
     if srcpos <> -1 then
-      getCurrentEditor.SelStart := srcpos;
+      fDoc.SelStart := srcpos; // fDoc probably not be updated
   finally
     str.Free;
   end;
@@ -316,23 +329,20 @@ end;
 
 procedure TCEEditorWidget.getCompletionList;
 var
-  curr: TCESynMemo;
   str: TMemoryStream;
   srcpos: NativeInt;
   fname: string;
 begin
   if not dcdOn then exit;
-  //
-  curr := getCurrentEditor;
-  if curr = nil then exit;
+  if fDoc = nil then exit;
   //
   str := TMemoryStream.Create;
   try
     completion.Position := 0; // previous index could cause an error here.
-    fname := curr.tempFilename;
-    curr.Lines.SaveToStream(str);
+    fname := fDoc.tempFilename;
+    fDoc.Lines.SaveToStream(str);
     str.SaveToFile(fname);
-    srcpos := curr.SelStart;
+    srcpos := fDoc.SelStart;
     completion.ItemList.Clear;
     ce_dcd.getCompletion(fname, srcpos, completion.ItemList);
   finally
@@ -342,7 +352,6 @@ end;
 
 function TCEEditorWidget.getEditorHint: string;
 var
-  curr: TCESynMemo;
   str: TMemoryStream;
   lst: TStringList;
   srcpos: NativeInt;
@@ -350,18 +359,16 @@ var
 begin
   result := '';
   if not dcdOn then exit;
-  //
-  curr := getCurrentEditor;
-  if curr = nil then exit;
+  if fDoc = nil then exit;
   //
   str := TMemoryStream.Create;
   lst := TStringList.Create;
   try
-    fname := curr.tempFilename;
-    curr.Lines.SaveToStream(str);
+    fname := fDoc.tempFilename;
+    fDoc.Lines.SaveToStream(str);
     str.SaveToFile(fname);
-    srcpos := curr.SelStart;
-    if curr.GetWordAtRowCol(curr.LogicalCaretXY) <> '' then
+    srcpos := fDoc.SelStart;
+    if fDoc.GetWordAtRowCol(fDoc.LogicalCaretXY) <> '' then
       ce_dcd.getHint(fname, srcpos, lst);
     result := lst.Text;
   finally
@@ -373,31 +380,25 @@ end;
 procedure TCEEditorWidget.UpdateByEvent;
 const
   modstr: array[boolean] of string = ('...', 'MODIFIED');
-var
-  ed: TCESynMemo;
 begin
-  ed := getCurrentEditor;
-  if ed = nil then exit;
+  if fDoc = nil then exit;
   //
-  editorStatus.Panels[0].Text := format('%d : %d',[ed.CaretY, ed.CaretX]);
-  editorStatus.Panels[1].Text := modstr[ed.modified];
-  editorStatus.Panels[2].Text := ed.fileName;
+  editorStatus.Panels[0].Text := format('%d : %d',[fDoc.CaretY, fDoc.CaretX]);
+  editorStatus.Panels[1].Text := modstr[fDoc.modified];
+  editorStatus.Panels[2].Text := fDoc.fileName;
 end;
 
 procedure TCEEditorWidget.UpdateByDelay;
 var
   dt: PMessageItemData;
-  ed: TCESynMemo;
   err: TLexError;
   md: string;
 begin
-  ed := getCurrentEditor;
-  if ed = nil then exit;
+  if fDoc = nil then exit;
   if not fKeyChanged then exit;
   //
   fKeyChanged := false;
-  //CEMainForm.docChangeNotify(Self, editorIndex);
-  if ed.Lines.Count = 0 then exit;
+  if fDoc.Lines.Count = 0 then exit;
   //
   if fProj = nil then
     CEMainForm.MessageWidget.ClearMessages(mcEditor)
@@ -405,14 +406,14 @@ begin
     // if the source is in proj then we want to keep messages to correct mistakes.
   end;
 
-  lex(ed.Lines.Text, tokLst);
+  lex(fDoc.Lines.Text, tokLst);
 
-  if ed.isDSource then
+  if fDoc.isDSource then
   begin
     checkSyntacticErrors(tokLst, errLst);
     for err in errLst do begin
       dt := newMessageData;
-      dt^.editor := ed;
+      dt^.editor := fDoc;
       dt^.position := point(err.position.x, err.position.y);
       dt^.ctxt := mcEditor;
       CEMainForm.MessageWidget.addMessage(format( '%s  (@line:%.4d @char:%.4d)',
@@ -421,9 +422,9 @@ begin
   end;
 
   md := '';
-  if ed.isDSource then
+  if fDoc.isDSource then
     md := getModuleName(tokLst);
-  if md = '' then md := extractFileName(ed.fileName);
+  if md = '' then md := extractFileName(fDoc.fileName);
   pageControl.ActivePage.Caption := md;
 
   CEMainForm.MessageWidget.scrollToBack;

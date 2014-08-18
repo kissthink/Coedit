@@ -43,7 +43,6 @@ type
     procedure projClosing(const aProject: TCEProject);
     procedure projFocused(const aProject: TCEProject);
     procedure projChanged(const aProject: TCEProject);
-
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -107,8 +106,8 @@ end;
 {$REGION ICEProjectMonitor -----------------------------------------------------}
 procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
 begin
-  //fProject := aProject;
-  //UpdateByEvent;
+  fProject := aProject;
+  UpdateByEvent;
 end;
 
 procedure TCEProjectInspectWidget.projClosing(const aProject: TCEProject);

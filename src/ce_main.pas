@@ -1015,7 +1015,7 @@ end;
 procedure TCEMainForm.actFileNewRunExecute(Sender: TObject);
 begin
   newFile;
-  fEditWidg.currentEditor.Text :=
+  fDoc.Text :=
   'module runnable;' + LineEnding +
   '' + LineEnding +
   'import std.stdio;' + LineEnding +
@@ -1098,80 +1098,61 @@ end;
 
 {$REGION edit ------------------------------------------------------------------}
 procedure TCEMainForm.actEdCopyExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.CopyToClipboard;
+  if assigned(fDoc) then
+    fDoc.CopyToClipboard;
 end;
 
 procedure TCEMainForm.actEdCutExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.CutToClipboard;
+  if assigned(fDoc) then
+    fDoc.CutToClipboard;
 end;
 
 procedure TCEMainForm.actEdPasteExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.PasteFromClipboard;
+  if assigned(fDoc) then
+    fDoc.PasteFromClipboard;
 end;
 
 procedure TCEMainForm.actEdUndoExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.Undo;
+  if assigned(fDoc) then
+    fDoc.Undo;
 end;
 
 procedure TCEMainForm.actEdRedoExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.Redo;
+  if assigned(fDoc) then
+    fDoc.Redo;
 end;
 
 procedure TCEMainForm.actEdMacPlayExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then fEditWidg.macRecorder.PlaybackMacro(curr);
+  if assigned(fDoc) then
+    fEditWidg.macRecorder.PlaybackMacro(fDoc);
 end;
 
 procedure TCEMainForm.actEdMacStartStopExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then
+  if assigned(fDoc) then
   begin
     if fEditWidg.macRecorder.State = msRecording then
       fEditWidg.macRecorder.Stop
-    else fEditWidg.macRecorder.RecordMacro(curr);
+    else fEditWidg.macRecorder.RecordMacro(fDoc);
   end;
 end;
 
 procedure TCEMainForm.actEdIndentExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.ExecuteCommand(ecBlockIndent, '', nil);
+  if assigned(fDoc) then
+    fDoc.ExecuteCommand(ecBlockIndent, '', nil);
 end;
 
 procedure TCEMainForm.actEdUnIndentExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := fEditWidg.currentEditor;
-  if assigned(curr) then curr.ExecuteCommand(ecBlockUnIndent, '', nil);
+  if assigned(fDoc) then
+    fDoc.ExecuteCommand(ecBlockUnIndent, '', nil);
 end;
 
 procedure TCEMainForm.actEdFindExecute(Sender: TObject);
@@ -1184,11 +1165,11 @@ begin
   if win = nil then exit;
   win.Show;
   win.BringToFront;
-  ed := fEditWidg.currentEditor;
-  if ed = nil then exit;
-  if ed.SelAvail then
-    str := ed.SelText
-  else str := ed.Identifier;
+  if fDoc = nil then exit;
+  //
+  if fDoc.SelAvail then
+    str := fDoc.SelText
+  else str := fDoc.Identifier;
   ffindwidg.cbToFind.Text := str;
   ffindwidg.cbToFindChange(nil);
 end;
@@ -1232,9 +1213,12 @@ begin
       dt^.ctxt := aCtxt;
       dt^.project := fProject;
       dt^.position := getLineFromDmdMessage(msg);
-      dt^.editor := getFileFromDmdMessage(msg);
+      if openFileFromDmdMessage(msg) then
+        dt^.editor := fDoc
+      else
+        dt^.editor := nil;
       if dt^.editor = nil then
-        dt^.editor := EditWidget.currentEditor
+        dt^.editor := fDoc
       else
         dt^.ctxt := mcEditor;
       fEditWidg.endUpdatebyDelay; // messages would be cleared by the delayed module name detection.
@@ -1479,15 +1463,12 @@ begin
 end;
 
 procedure TCEMainForm.actFileOpenContFoldExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
 begin
-  curr := EditWidget.currentEditor;
-  if curr = nil then exit;
-  if not fileExists(curr.fileName) then exit;
+  if fDoc = nil then exit;
+  if not fileExists(fDoc.fileName) then exit;
   //
   DockMaster.GetAnchorSite(fExplWidg).Show;
-  fExplWidg.expandPath(extractFilePath(curr.fileName));
+  fExplWidg.expandPath(extractFilePath(fDoc.fileName));
 end;
 
 procedure TCEMainForm.actProjCompileExecute(Sender: TObject);
@@ -1695,7 +1676,7 @@ begin
   if not fileExists(fProject.fileName) then exit;
   //
   openFile(fProject.fileName);
-  EditWidget.currentEditor.Highlighter := LfmSyn;
+  fDoc.Highlighter := LfmSyn;
 end;
 
 procedure TCEMainForm.actProjOptViewExecute(Sender: TObject);
@@ -1923,24 +1904,24 @@ begin
         'CFF', 'CurrentFileFile':
           begin
             result += '`';
-            if EditWidget.currentEditor <> nil then
-              if fileExists(EditWidget.currentEditor.fileName) then
-                result += EditWidget.currentEditor.fileName;
+            if fDoc <> nil then
+              if fileExists(fDoc.fileName) then
+                result += fDoc.fileName;
             result += '`';
           end;
         'CFP', 'CurrentFilePath':
           begin
             result += '`';
-            if EditWidget.currentEditor <> nil then
-              if fileExists(EditWidget.currentEditor.fileName) then
-                result += extractFilePath(EditWidget.currentEditor.fileName);
+            if fDoc <> nil then
+              if fileExists(fDoc.fileName) then
+                result += extractFilePath(fDoc.fileName);
             result += '`';
           end;
         'CI', 'CurrentIdentifier':
           begin
             result += '`';
-            if EditWidget.currentEditor <> nil then
-              result += EditWidget.currentEditor.Identifier;
+            if fDoc <> nil then
+              result += fDoc.Identifier;
             result += '`';
           end;
         'CAF', 'CoeditApplicationFile':

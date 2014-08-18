@@ -57,7 +57,7 @@ var
 implementation
 
 uses
-  graphics, ce_main, forms, ce_interfaces;
+  graphics, ce_main, ce_interfaces;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -118,6 +118,7 @@ begin
   inherited;
   if not Visible then exit;
   identifierToD2Syn;
+  subjDocFocused(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.DoEnter;

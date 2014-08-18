@@ -14,7 +14,7 @@ uses
 type
 
   { TCEStaticExplorerWidget }
-  TCEStaticExplorerWidget = class(TCEWidget)
+  TCEStaticExplorerWidget = class(TCEWidget, ICEProjectObserver, ICEMultiDocObserver)
     btnRefresh: TBitBtn;
     imgList: TImageList;
     Panel1: TPanel;
@@ -222,7 +222,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+{$REGION ICEMultiDocObserver ---------------------------------------------------}
 procedure TCEStaticExplorerWidget.docNew(const aDoc: TCESynMemo);
 begin
 end;
@@ -249,7 +249,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEProjectMonitor -----------------------------------------------------}
+{$REGION ICEProjectObserver ----------------------------------------------------}
 procedure TCEStaticExplorerWidget.projNew(const aProject: TCEProject);
 begin
   fProj := aProject;
