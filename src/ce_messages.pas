@@ -508,6 +508,7 @@ begin
   end;
 end;
 
+//TODO-cbugfix: doesnt work with -vcolumns
 function getLineFromDmdMessage(const aMessage: string): TPoint;
 var
   i: NativeInt;

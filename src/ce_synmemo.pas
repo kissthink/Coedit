@@ -218,6 +218,7 @@ begin
   identifierToD2Syn;
 end;
 
+// TODO-cfeaturerecovery: previously colors was set in the mainform lfm, now they have to be hardcoded.
 initialization
   D2Syn := TSynD2Syn.create(nil);
   LfmSyn := TSynLFMSyn.Create(nil);

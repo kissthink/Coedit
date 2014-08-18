@@ -74,6 +74,7 @@ type
     fVtls: boolean;
     fQuiet: boolean;
     fVgc: boolean;
+    fCol: boolean;
     procedure setDepHandling(const aValue: TDepHandling);
     procedure setVerb(const aValue: boolean);
     procedure setWarn(const aValue: boolean);
@@ -81,6 +82,7 @@ type
     procedure setVtls(const aValue: boolean);
     procedure setQuiet(const aValue: boolean);
     procedure setVgc(const aValue: boolean);
+    procedure setCol(const aValue: boolean);
   published
     property depreciationHandling: TDepHandling read fDepHandling write setDepHandling default warning;
     property verbose: boolean read fVerb write setVerb default false;
@@ -89,6 +91,7 @@ type
     property tlsInformations: boolean read fVtls write setVtls default false;
     property quiet: boolean read fQuiet write setQuiet default false;
     property showHiddenAlloc: boolean read fVgc write setVgc default false;
+    property showColumnsNumber: boolean read fCol write setCol default false;
   public
     constructor create;
     procedure assign(aValue: TPersistent); override;
@@ -440,7 +443,8 @@ begin
   if fWarnEx then aList.Add('-wi');
   if fVtls then aList.Add('-vtls');
   if fQuiet then aList.Add('-quiet');
-  //if fVgc then aList.Add('-vgc');
+  if fVgc then aList.Add('-vgc');
+  if fCol then aList.Add('-vcolumns');
 end;
 
 procedure TMsgOpts.assign(aValue: TPersistent);
@@ -457,6 +461,7 @@ begin
     fVtls   := src.fVtls;
     fQuiet  := src.fQuiet;
     fVgc    := src.fVgc;
+    fCOl    := src.fCol;
   end
   else inherited;
 end;
@@ -509,6 +514,13 @@ begin
   fVgc := aValue;
   doChanged;
 end;
+
+procedure TMsgOpts.setCol(const aValue: boolean);
+begin
+  if fCol = aValue then exit;
+  fCol := aValue;
+  doChanged;
+end;
 {$ENDREGION}
 
 {$REGION TOutputOpts -----------------------------------------------------------}
@@ -526,12 +538,11 @@ end;
 procedure TOutputOpts.depPatch;
 begin
   // patch deprecated fields
-  //if fVerId <> '' then
-  //begin
-  //  if fVerIds.IndexOf(fVerId) = -1 then
-  //    fVerIds.Add(fVerId);
-  //  fVerId := '';
-  //end;
+  if fNoBounds then
+  begin
+    fNoBounds := false;
+    fBoundsCheck := offAlways;
+  end;
 end;
 
 procedure TOutputOpts.getOpts(const aList: TStrings);
@@ -540,7 +551,7 @@ var
 const
   trgKindStr: array[TTargetSystem] of string = ('', '-m32','-m64');
   binKindStr: array[TBinaryKind] of string = ('', '-lib', '-shared', '-c');
-  //bchKindStr: array[TBoundCheckKind] of string = ('on', 'safeonly', 'off');
+  bchKindStr: array[TBoundCheckKind] of string = ('on', 'safeonly', 'off');
 begin
   depPatch;
   //
@@ -550,11 +561,10 @@ begin
   if opt <> '' then aList.Add(opt);
   if fUt then aList.Add('-unittest');
   if fInline then aList.Add('-inline');
-  if fNoBounds then aList.Add('-noboundscheck');
   if fOptimz then aList.Add('-O');
   if fGenStack then aList.Add('-gs');
-  //if fStackStomp then aList.Add('-gx');
-  //if fAllInst then aList.Add('-allinst');
+  if fStackStomp then aList.Add('-gx');
+  if fAllInst then aList.Add('-allinst');
   if fMain then aList.Add('-main');
   if fRelease then aList.Add('-release');
   for opt in fVerIds do
@@ -563,11 +573,11 @@ begin
   if fRelease then
     begin
       if fBoundsCheck <> safeOnly then
-        (*generate option*);
+        aList.Add('-boundscheck=' + bchKindStr[fBoundsCheck] );
     end
   else
     if fBoundsCheck <> onAlways then
-      (*generate option*);
+      aList.Add('-boundscheck=' + bchKindStr[fBoundsCheck] );
 
 end;
 
@@ -581,7 +591,6 @@ begin
     fBinKind := src.fBinKind;
     fTrgKind := src.fTrgKind;
     fUt := src.fUt;
-    //fVerId := src.fVerId;
     fVerIds.Assign(src.fVerIds);
     fInline := src.fInline;
     fNoBounds := src.fNoBounds;
@@ -642,7 +651,7 @@ procedure TOutputOpts.setBoundsCheck(const aValue: TBoundCheckKind);
 begin
   if fBoundsCheck = aValue then exit;
   fBoundsCheck := aValue;
-  doChanged;
+  depPatch;
 end;
 
 procedure TOutputOpts.setNoBounds(const aValue: boolean);
@@ -650,8 +659,6 @@ begin
   if fNoBounds = aValue then exit;
   fNoBounds := aValue;
   doChanged;
-   // turns old option to TBoundCheckKind.onAlways if true and set
-   // fNoBounds to false (wont be written anymore).
 end;
 
 procedure TOutputOpts.setOptims(const aValue: boolean);
