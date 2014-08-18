@@ -1045,12 +1045,15 @@ end;
 procedure TCEMainForm.actFileSaveExecute(Sender: TObject);
 var
   str: string;
+  ed: TCESynMemo;
 begin
   if fEditWidg = nil then exit;
-  if fEditWidg.editorIndex < 0 then exit;
+  ed := fEditWidg.currentEditor;
+  if ed = nil then exit;
   //
-  str := fEditWidg.editor[fEditWidg.editorIndex].fileName;
-  if fileExists(str) then saveFile(fEditWidg.editorIndex)
+  str := ed.fileName;
+  if (str <> ed.tempFilename) and (fileExists(str)) then
+    saveFile(fEditWidg.editorIndex)
   else actFileSaveAs.Execute;
 end;
 
