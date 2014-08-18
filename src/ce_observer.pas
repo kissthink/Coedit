@@ -35,6 +35,7 @@ type
    * Interface for a Coedit subject. Basically designed to hold a list of observer
    *)
   ICESubject = interface
+  ['ICESubject']
     // an observer is proposed. anObserver is not necessarly compatible.
     procedure addObserver(anObserver: TObject);
     // anObserver must be removed.
@@ -52,16 +53,12 @@ type
     // test for a specific interface when adding an observer.
     function acceptObserver(aObject: TObject): boolean; virtual;
   public
-    constructor create;
+    constructor create; virtual;
     destructor destroy; override;
     //
     procedure addObserver(anObserver: TObject);
     procedure removeObserver(anObserver: TObject);
     procedure updateObservers; virtual;
-  end;
-
-  ICEObserver = interface
-    //function subjectType: ICESubject;
   end;
 
 var
@@ -90,13 +87,12 @@ begin
   fUpdating := false;
   for i := 0 to fSubjects.Count-1 do
   begin
-    if (fSubjects[i] as ICESubject) = nil then
+    if not (fSubjects[i] is ICESubject) then
       continue;
     for j := 0 to fObservers.Count-1 do
     begin
-      if (fSubjects[i] as ICEObserver) <> nil then
-        if fSubjects[i] <> fObservers[j] then
-          (fSubjects[i] as ICESubject).addObserver(fObservers[j]);
+      if fSubjects[i] <> fObservers[j] then
+        (fSubjects[i] as ICESubject).addObserver(fObservers[j]);
     end;
   end;
 end;
@@ -113,8 +109,6 @@ end;
 
 procedure TCEEntitiesConnector.addObserver(anObserver: TObject);
 begin
-  if (anObserver as ICEObserver) = nil then
-    exit;
   if fObservers.IndexOf(anObserver) <> -1 then
     exit;
   fUpdating := true;
@@ -132,9 +126,13 @@ begin
 end;
 
 procedure TCEEntitiesConnector.removeObserver(anObserver: TObject);
+var
+  i: Integer;
 begin
   fUpdating := true;
   fObservers.Remove(anObserver);
+  for i := 0 to fSubjects.Count-1 do
+    (fSubjects[i] as ICESubject).removeObserver(anObserver);
 end;
 
 procedure TCEEntitiesConnector.removeSubject(aSubject: TObject);
@@ -148,10 +146,14 @@ end;
 constructor TCECustomSubject.create;
 begin
   fObservers := TObjectList.create(false);
+  EntitiesConnector.addSubject(Self);
+  EntitiesConnector.endUpdate;
 end;
 
 destructor TCECustomSubject.destroy;
 begin
+  EntitiesConnector.removeSubject(Self);
+  EntitiesConnector.endUpdate;
   fObservers.Free;
   Inherited;
 end;

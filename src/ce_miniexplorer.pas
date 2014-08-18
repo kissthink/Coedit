@@ -1,6 +1,7 @@
 unit ce_miniexplorer;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 

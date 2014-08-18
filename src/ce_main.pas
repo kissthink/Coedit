@@ -1,6 +1,7 @@
 unit ce_main;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
@@ -9,7 +10,7 @@ uses
   AnchorDocking, AnchorDockStorage, AnchorDockOptionsDlg, Controls, Graphics,
   Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls, dynlibs,
   ce_common, ce_dmdwrap, ce_project, ce_dcd, ce_plugin, ce_synmemo, ce_widget,
-  ce_messages, ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_search,
+  ce_messages, ce_interfaces, ce_editor, ce_projinspect, ce_projconf, ce_search,
   ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor, ce_customtools,
   ce_observer;
 
@@ -60,7 +61,7 @@ type
   end;
 
   { TCEMainForm }
-  TCEMainForm = class(TForm)
+  TCEMainForm = class(TForm, ICEMultiDocObserver)
     actFileCompAndRun: TAction;
     actFileSaveAll: TAction;
     actFileClose: TAction;
@@ -210,9 +211,8 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   private
 
-    // oh no...a field which is not a class.^^
+    fDoc: TCESynMemo;
     fUpdateCount: NativeInt;
-
     fProject: TCEProject;
     fPlugList: TCEPlugDescriptorList;
     fWidgList: TCEWidgetList;
@@ -228,6 +228,12 @@ type
     fFileMru: TMruFileList;
     fLibMan: TLibraryManager;
     fTools: TCETools;
+
+    // ICEMultiDocObserver
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
 
     //Init - Fina
     procedure getCMdParams;
@@ -262,7 +268,6 @@ type
 
     // project sub routines
     procedure saveProjSource(const aEditor: TCESynMemo);
-    procedure projChange(sender: TObject);
     procedure newProj;
     procedure saveProj;
     procedure saveProjAs(const aFilename: string);
@@ -282,8 +287,6 @@ type
     procedure UpdateDockCaption(Exclude: TControl = nil); override;
     //
     procedure openFile(const aFilename: string);
-    procedure docChangeNotify(Sender: TObject; const aIndex: Integer);
-    procedure docFocusedNotify(Sender: TObject; const aIndex: Integer);
     function expandSymbolicString(const symString: string): string;
     //
     property WidgetList: TCEWidgetList read fWidgList;
@@ -309,6 +312,7 @@ uses
 constructor TCEMainForm.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
+  EntitiesConnector.addObserver(self);
   //
   InitMRUs;
   InitLibMan;
@@ -726,7 +730,6 @@ end;
 
 procedure TCEMainForm.ActionsUpdate(AAction: TBasicAction; var Handled: Boolean);
 var
-  curr: TCESynMemo;
   hasEd: boolean;
   hasProj: boolean;
 begin
@@ -734,25 +737,24 @@ begin
   if fUpdateCount > 0 then exit;
   Inc(fUpdateCount);
   try
-    curr := fEditWidg.currentEditor;
-    hasEd := curr <> nil;
+    hasEd := fDoc <> nil;
     if hasEd then
     begin
-      actEdCopy.Enabled := curr.SelAvail and fEditWidg.Focused;     // allows copy/cut/paste by shortcut on widgets
-      actEdCut.Enabled := curr.SelAvail and fEditWidg.Focused;      //
-      actEdPaste.Enabled := curr.CanPaste and fEditWidg.Focused;
+      actEdCopy.Enabled := fDoc.SelAvail and fEditWidg.Focused;     // allows copy/cut/paste by shortcut on widgets
+      actEdCut.Enabled := fDoc.SelAvail and fEditWidg.Focused;      //
+      actEdPaste.Enabled := fDoc.CanPaste and fEditWidg.Focused;
       {$IFDEF MSWINDOWS}
       // close file : raises a segfault on linux UndoStuff.>>fList<<.Count...
-      actEdUndo.Enabled := curr.CanUndo;
-      actEdRedo.Enabled := curr.CanRedo;
+      actEdUndo.Enabled := fDoc.CanUndo;
+      actEdRedo.Enabled := fDoc.CanRedo;
       {$ENDIF}
       actEdMacPlay.Enabled := true;
       actEdMacStartStop.Enabled := true;
       actEdIndent.Enabled := true;
       actEdUnIndent.Enabled := true;
       //
-      actFileCompAndRun.Enabled := curr.isDSource;
-      actFileCompAndRunWithArgs.Enabled := curr.isDSource;
+      actFileCompAndRun.Enabled := fDoc.isDSource;
+      actFileCompAndRunWithArgs.Enabled := fDoc.isDSource;
       actFileSave.Enabled := true;
       actFileSaveAs.Enabled := true;
       actFileClose.Enabled := true;
@@ -890,12 +892,32 @@ begin
 end;
 {$ENDREGION}
 
+{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEMainForm.docNew(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+end;
+
+procedure TCEMainForm.docClosing(const aDoc: TCESynMemo);
+begin
+  fDoc := nil;
+end;
+
+procedure TCEMainForm.docFocused(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+end;
+
+procedure TCEMainForm.docChanged(const aDoc: TCESynMemo);
+begin
+end;
+{$ENDREGION}
+
 {$REGION file ------------------------------------------------------------------}
 procedure TCEMainForm.newFile;
 begin
   if fEditWidg = nil then exit;
   fEditWidg.addEditor;
-  fEditWidg.focusedEditorChanged;
 end;
 
 function TCEMainForm.findFile(const aFilename: string): NativeInt;
@@ -930,7 +952,6 @@ end;
 procedure TCEMainForm.saveFile(const edIndex: NativeInt);
 var
   str: string;
-  i: NativeInt;
 begin
   if fEditWidg = nil then exit;
   if edIndex >= fEditWidg.editorCount then exit;
@@ -944,9 +965,6 @@ begin
   str := fEditWidg.editor[edIndex].fileName;
   if str = '' then exit;
   fEditWidg.editor[edIndex].save;
-  //
-  for i := 0 to fWidgList.Count-1 do
-    fWidgList.widget[i].docChanged(fEditWidg.editor[edIndex]);
 end;
 
 procedure TCEMainForm.saveFileAs(const edIndex: NativeInt; const aFilename: string);
@@ -957,24 +975,6 @@ begin
   //
   fEditWidg.editor[edIndex].saveToFile(aFilename);
   fFileMru.Insert(0, aFilename);
-end;
-
-procedure TCEMainForm.docChangeNotify(Sender: TObject; const aIndex: Integer);
-var
-  i: NativeInt;
-begin
-  for i := 0 to fWidgList.Count-1 do
-    if fWidgList.widget[i] <> Sender then
-      fWidgList.widget[i].docChanged(fEditWidg.editor[aIndex]);
-end;
-
-procedure TCEMainForm.docFocusedNotify(Sender: TObject; const aIndex: Integer);
-var
-  i: NativeInt;
-begin
-  for i := 0 to fWidgList.Count-1 do
-    if fWidgList.widget[i] <> Sender then
-      fWidgList.widget[i].docFocused(fEditWidg.editor[aIndex]);
 end;
 
 procedure TCEMainForm.mruFileItemClick(Sender: TObject);
@@ -1046,14 +1046,11 @@ end;
 procedure TCEMainForm.actFileSaveExecute(Sender: TObject);
 var
   str: string;
-  ed: TCESynMemo;
 begin
-  if fEditWidg = nil then exit;
-  ed := fEditWidg.currentEditor;
-  if ed = nil then exit;
+  if fDoc = nil then exit;
   //
-  str := ed.fileName;
-  if (str <> ed.tempFilename) and (fileExists(str)) then
+  str := fDoc.fileName;
+  if (str <> fDoc.tempFilename) and (fileExists(str)) then
     saveFile(fEditWidg.editorIndex)
   else actFileSaveAs.Execute;
 end;
@@ -1073,17 +1070,11 @@ begin
 end;
 
 procedure TCEMainForm.actFileCloseExecute(Sender: TObject);
-var
-  curr: TCESynMemo;
-  i: NativeInt;
 begin
-  curr := fEditWidg.currentEditor;
-  if curr.modified then if dlgOkCancel(
+  if fDoc = nil then exit;
+  if fDoc.modified then if dlgOkCancel(
       'The latest mdofifications are not saved, continue ?') = mrCancel
       then exit;
-  //
-  for i := 0 to fWidgList.Count-1 do
-    fWidgList.widget[i].docClose(fEditWidg.currentEditor);
   //
   fEditWidg.removeEditor(fEditWidg.editorIndex);
 end;
@@ -1092,7 +1083,8 @@ procedure TCEMainForm.actFileSaveAllExecute(Sender: TObject);
 var
   i: NativeInt;
 begin
-  for i:= 0 to fEditWidg.editorCount-1 do saveFile(i);
+  for i:= 0 to fEditWidg.editorCount-1 do
+    saveFile(i);
 end;
 
 procedure TCEMainForm.FormDropFiles(Sender: TObject;const FileNames: array of String);
@@ -1327,8 +1319,8 @@ begin
 
   fMesgWidg.ClearAllMessages;
 
-  for i := 0 to fWidgList.Count-1 do
-    fWidgList.widget[i].projCompile(aProject);
+  //for i := 0 to fWidgList.Count-1 do
+    //fWidgList.widget[i].projCompile(aProject);
 
   with fProject.currentConfiguration do
   begin
@@ -1425,8 +1417,8 @@ begin
   if aProject.currentConfiguration.outputOptions.binaryKind <>
     executable then exit;
 
-  for i := 0 to fWidgList.Count-1 do
-    fWidgList.widget[i].projRun(aProject);
+  //for i := 0 to fWidgList.Count-1 do
+    //fWidgList.widget[i].projRun(aProject);
 
   runproc := TProcess.Create(nil);
   try
@@ -1584,14 +1576,6 @@ end;
 {$ENDREGION}
 
 {$REGION project ---------------------------------------------------------------}
-procedure TCEMainForm.projChange(sender: TObject);
-var
-  i: NativeInt;
-begin
-  for i := 0 to WidgetList.Count-1 do
-    WidgetList.widget[i].projChange(fProject);
-end;
-
 procedure TCEMainForm.saveProjSource(const aEditor: TCESynMemo);
 begin
   if fProject = nil then exit;
@@ -1602,24 +1586,15 @@ begin
 end;
 
 procedure TCEMainForm.closeProj;
-var
-  i: NativeInt;
 begin
-  for i := 0 to WidgetList.Count-1 do
-    WidgetList.widget[i].projClose(fProject);
   fProject.Free;
   fProject := nil;
 end;
 
 procedure TCEMainForm.newProj;
-var
-  i: NativeInt;
 begin
   fProject := TCEProject.Create(nil);
   fProject.Name := 'CurrentProject';
-  for i := 0 to WidgetList.Count-1 do
-    WidgetList.widget[i].projNew(fProject);
-  fProject.onChange := @projChange;
   fProject.libraryManager := fLibMan;
 end;
 

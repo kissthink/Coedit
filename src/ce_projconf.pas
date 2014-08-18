@@ -1,16 +1,17 @@
 unit ce_projconf;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
   Classes, SysUtils, FileUtil, RTTIGrids, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, ComCtrls, StdCtrls, Menus, Buttons, PropEdits, ObjectInspector,
-  ce_dmdwrap, ce_project, ce_widget, AnchorDocking;
+  ce_dmdwrap, ce_project, ce_widget, ce_interfaces, ce_observer;
 
 type
-  TCEProjectConfigurationWidget = class(TCEWidget)
+  TCEProjectConfigurationWidget = class(TCEWidget, ICEProjectObserver)
     imgList: TImageList;
     selConf: TComboBox;
     Panel1: TPanel;
@@ -35,9 +36,10 @@ type
   public
     constructor create(aOwner: TComponent); override;
     //
-    procedure projNew(const aProject: TCEProject); override;
-    procedure projChange(const aProject: TCEProject); override;
-    procedure projClose(const aProject: TCEProject); override;
+    procedure projNew(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject);
   end;
 
 implementation
@@ -48,6 +50,8 @@ begin
   inherited;
   Tree.Selected := Tree.Items.GetLastNode;
   Grid.OnEditorFilter := @GridFilter;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
@@ -57,18 +61,25 @@ begin
   endUpdateByEvent;
 end;
 
-procedure TCEProjectConfigurationWidget.projChange(const aProject: TCEProject);
+procedure TCEProjectConfigurationWidget.projClosing(const aProject: TCEProject);
+begin
+  Grid.TIObject := nil;
+  Grid.ItemIndex := -1;
+  fProj := nil;
+end;
+
+procedure TCEProjectConfigurationWidget.projChanged(const aProject: TCEProject);
 begin
   beginUpdateByEvent;
   fProj := aProject;
   endUpdateByEvent;
 end;
 
-procedure TCEProjectConfigurationWidget.projClose(const aProject: TCEProject);
+procedure TCEProjectConfigurationWidget.projFocused(const aProject: TCEProject);
 begin
-  Grid.TIObject := nil;
-  Grid.ItemIndex := -1;
-  fProj := nil;
+  beginUpdateByEvent;
+  fProj := aProject;
+  endUpdateByEvent;
 end;
 
 procedure TCEProjectConfigurationWidget.selConfChange(Sender: TObject);

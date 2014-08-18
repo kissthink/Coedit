@@ -5,9 +5,8 @@ unit ce_widget;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls,
-  AnchorDocking, AnchorDockStorage, ActnList, Menus,
-  ce_synmemo, ce_widgettypes, ce_project;
+  Classes, SysUtils, FileUtil, Forms, Controls, ExtCtrls, ActnList, Menus,
+  ce_interfaces;
 
 type
 
@@ -15,7 +14,7 @@ type
    * Base type for an UI module.
    *)
   PTCEWidget = ^TCEWidget;
-  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocObserver, ICEWidgetPersist)
+  TCEWidget = class(TForm, ICEContextualActions, ICEWidgetPersist)
     Content: TPanel;
     Back: TPanel;
     contextMenu: TPopupMenu;
@@ -65,18 +64,6 @@ type
     procedure endUpdateByEvent;
     // immediate call 'UpdateByEvent'
     procedure forceUpdateByEvent;
-    //
-    procedure docNew(const aDoc: TCESynMemo); virtual;
-    procedure docFocused(const aDoc: TCESynMemo); virtual;
-    procedure docChanged(const aDoc: TCESynMemo); virtual;
-    procedure docClose(const aDoc: TCESynMemo); virtual;
-    //
-    procedure projNew(const aProject: TCEProject); virtual;
-    procedure projChange(const aProject: TCEProject); virtual;
-    procedure projClose(const aProject: TCEProject); virtual;
-    procedure projCompile(const aProject: TCEProject); virtual;
-    procedure projRun(const aProject: TCEProject); virtual;
-    procedure projFocused(const aProject: TCEProject); virtual;
     //
     function contextName: string; virtual;
     function contextActionCount: integer; virtual;
@@ -204,47 +191,47 @@ end;
 {$ENDREGION}
 
 {$REGION ICEMultiDocObserver ----------------------------------------------------}
-procedure TCEWidget.docNew(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
-begin
-end;
-
-procedure TCEWidget.docClose(const aDoc: TCESynMemo);
-begin
-end;
+//procedure TCEWidget.docNew(const aDoc: TCESynMemo);
+//begin
+//end;
+//
+//procedure TCEWidget.docFocused(const aDoc: TCESynMemo);
+//begin
+//end;
+//
+//procedure TCEWidget.docChanged(const aDoc: TCESynMemo);
+//begin
+//end;
+//
+//procedure TCEWidget.docClose(const aDoc: TCESynMemo);
+//begin
+//end;
 {$ENDREGION}
 
-{$REGION ICEProjectMonitor -----------------------------------------------------}
-procedure TCEWidget.projNew(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projChange(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projClose(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projCompile(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projRun(const aProject: TCEProject);
-begin
-end;
-
-procedure TCEWidget.projFocused(const aProject: TCEProject);
-begin
-end;
+{$REGION ICEProjectObserver -----------------------------------------------------}
+//procedure TCEWidget.projNew(const aProject: TCEProject);
+//begin
+//end;
+//
+//procedure TCEWidget.projChange(const aProject: TCEProject);
+//begin
+//end;
+//
+//procedure TCEWidget.projClose(const aProject: TCEProject);
+//begin
+//end;
+//
+//procedure TCEWidget.projCompile(const aProject: TCEProject);
+//begin
+//end;
+//
+//procedure TCEWidget.projRun(const aProject: TCEProject);
+//begin
+//end;
+//
+//procedure TCEWidget.projFocused(const aProject: TCEProject);
+//begin
+//end;
 {$ENDREGION}
 
 {$REGION Updaters---------------------------------------------------------------}

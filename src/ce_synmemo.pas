@@ -1,13 +1,14 @@
 unit ce_synmemo;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
   Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditHighlighter, controls,
   lcltype, LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project,
-  SynEditMouseCmds, ce_common;
+  SynEditMouseCmds, ce_common, ce_observer;
 
 type
   TCESynMemo = class(TSynMemo)
@@ -20,6 +21,7 @@ type
     fIsConfig: boolean;
     fIdentifier: string;
     fTempFileName: string;
+    fMultiDocSubject: TCECustomSubject;
     procedure changeNotify(Sender: TObject);
     procedure identifierToD2Syn;
   protected
@@ -55,7 +57,7 @@ var
 implementation
 
 uses
-  graphics, ce_main, forms;
+  graphics, ce_main, forms, ce_interfaces;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -88,10 +90,16 @@ begin
 
   // avoid many call to get envir.string
   fTempFileName := GetTempDir(false) + 'temp_' + uniqueObjStr(self) + '.d';
+
+  fMultiDocSubject := TCEMultiDocSubject.create;
+  subjDocNew(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 destructor TCESynMemo.destroy;
 begin
+  subjDocClosing(TCEMultiDocSubject(fMultiDocSubject), self);
+  fMultiDocSubject.Free;
+  //
   if fileExists(fTempFileName) then
     sysutils.DeleteFile(fTempFileName);
   inherited;
@@ -102,6 +110,7 @@ begin
   inherited;
   checkFileDate;
   identifierToD2Syn;
+  subjDocFocused(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.UpdateShowing;
@@ -135,6 +144,7 @@ procedure TCESynMemo.changeNotify(Sender: TObject);
 begin
   identifierToD2Syn;
   fModified := true;
+  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.loadFromFile(const aFilename: string);
@@ -148,6 +158,7 @@ begin
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);
   fModified := false;
+  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.saveToFile(const aFilename: string);
@@ -156,6 +167,7 @@ begin
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);
   fModified := false;
+  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.save;
@@ -163,6 +175,7 @@ begin
   Lines.SaveToFile(fFilename);
   FileAge(fFilename, fFileDate);
   fModified := false;
+  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.checkFileDate;

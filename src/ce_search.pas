@@ -1,16 +1,17 @@
 unit ce_search;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   Menus, StdCtrls, actnList, Buttons, SynEdit, SynEditSearch, SynEditTypes, ce_common,
-  ce_widget, ce_synmemo, AnchorDocking;
+  ce_widget, ce_synmemo, ce_interfaces, ce_observer;
 
 type
-  TCESearchWidget = class(TCEWidget)
+  TCESearchWidget = class(TCEWidget, ICEMultiDocObserver)
     btnFind: TBitBtn;
     btnReplace: TBitBtn;
     btnReplaceAll: TBitBtn;
@@ -52,8 +53,10 @@ type
     constructor Create(aOwner: TComponent); override;
     destructor Destroy; override;
     //
-    procedure docFocused(const aDoc: TCESynMemo); override;
-    procedure docClose(const aDoc: TCESynMemo); override;
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -88,6 +91,8 @@ begin
   //
   fSearchMru := TMruList.Create;
   fReplaceMru:= TMruList.Create;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 
 destructor TCESearchWidget.Destroy;
@@ -270,16 +275,26 @@ end;
 {$ENDREGION}
 
 {$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCESearchWidget.docNew(const aDoc: TCESynMemo);
+begin
+  fEditor := aDoc;
+  UpdateByEvent;
+end;
+
+procedure TCESearchWidget.docClosing(const aDoc: TCESynMemo);
+begin
+  if fEditor = aDoc then fEditor := nil;
+  UpdateByEvent;
+end;
+
 procedure TCESearchWidget.docFocused(const aDoc: TCESynMemo);
 begin
   fEditor := aDoc;
   UpdateByEvent;
 end;
 
-procedure TCESearchWidget.docClose(const aDoc: TCESynMemo);
+procedure TCESearchWidget.docChanged(const aDoc: TCESynMemo);
 begin
-  if fEditor = aDoc then fEditor := nil;
-  UpdateByEvent;
 end;
 {$ENDREGION}
 

@@ -1,11 +1,12 @@
 unit ce_project;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
-  Classes, SysUtils, ce_dmdwrap, ce_libman;
+  Classes, SysUtils, ce_dmdwrap, ce_libman, ce_observer;
 
 type
 
@@ -30,6 +31,7 @@ type
     fConfIx: Integer;
     fLibMan: TLibraryManager;
     fChangedCount: NativeInt;
+    fProjectSubject: TCECustomSubject;
     procedure doChanged;
     procedure setLibAliases(const aValue: TStringList);
     procedure subMemberChanged(sender : TObject);
@@ -77,23 +79,32 @@ type
 implementation
 
 uses
-  ce_common, dialogs;
+  ce_common, ce_interfaces, dialogs;
 
 constructor TCEProject.create(aOwner: TComponent);
 begin
   inherited create(aOwner);
+  fProjectSubject := TCEProjectSubject.create;
+  //
   fLibAliases := TStringList.Create;
   fSrcs := TStringList.Create;
   fSrcs.OnChange := @subMemberChanged;
   fSrcsCop := TStringList.Create;
   fOptsColl := TCollection.create(TCompilerConfiguration);
+  //
+  //subjProjNew(TCEProjectSubject(fProjectSubject), self);
+  //
   reset;
   addDefaults;
+  //
   fModified := false;
 end;
 
 destructor TCEProject.destroy;
 begin
+  subjProjClosing(TCEProjectSubject(fProjectSubject), self);
+  fProjectSubject.Free;
+  //
   fOnChange := nil;
   fLibAliases.Free;
   fSrcs.free;
@@ -218,6 +229,7 @@ var
 {$ENDIF}
 begin
   fModified := true;
+  subjProjChanged(TCEProjectSubject(fProjectSubject), self);
   if assigned(fOnChange) then fOnChange(Self);
   {$IFDEF DEBUG}
   lst := TStringList.Create;

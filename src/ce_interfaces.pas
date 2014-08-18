@@ -1,4 +1,4 @@
-unit ce_widgettypes;
+unit ce_interfaces;
 
 {$MODE OBJFPC}{$H+}
 {$INTERFACES CORBA}
@@ -14,7 +14,8 @@ type
   (**
    * An implementer can save and load some stuffs on application start/quit
    *)
-  ICEWidgetPersist = interface(ICEObserver)
+  ICEWidgetPersist = interface
+  ['ICEWidgetPersist']
     // Coedit options are about to be saved.
     procedure beforeSave(sender: TObject);
     // some custom properties can be declared to aFiler.
@@ -27,7 +28,8 @@ type
    * An implementer declares some actions on demand.
    * TODO-cfeature: improve the interface so that a widget can declare a complete main menu category.
    *)
-  ICEContextualActions = interface(ICEObserver)
+  ICEContextualActions = interface
+  ['ICEContextualActions']
     // declares a context name for the actions
     function contextName: string;
     // action count, called before contextAction()
@@ -39,7 +41,8 @@ type
   (**
    * An implementer is informed about the current file(s).
    *)
-  ICEMultiDocObserver = interface(ICEObserver)
+  ICEMultiDocObserver = interface
+  ['ICEMultiDocObserver']
     // the new document aDoc has been created (empty, runnable, project source, ...).
     procedure docNew(const aDoc: TCESynMemo);
     // aDoc is the document being edited.
@@ -47,7 +50,7 @@ type
     // aDoc content has just been modified (edited, saved).
     procedure docChanged(const aDoc: TCESynMemo);
     // aDoc is about to be closed.
-    procedure docClose(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
   end;
 
   (**
@@ -61,19 +64,20 @@ type
   (**
    * An implementer is informed about the current project(s).
    *)
-  ICEProjectObserver = interface(ICEObserver)
+  ICEProjectObserver = interface
+  ['ICEProjectObserver']
     // the new project aProject has been created/opened
     procedure projNew(const aProject: TCEProject);
     // aProject has been modified: switches, source name, ...
-    procedure projChange(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
     // aProject is about to be closed.
-    procedure projClose(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
     // not used yet: the active project is now aProject
     procedure projFocused(const aProject: TCEProject); // rename: projSelected or projActivated
     // aProject is about to be compiled.
-    procedure projCompile(const aProject: TCEProject);
+    //procedure projCompile(const aProject: TCEProject);
     // aProject is about to be executed.
-    procedure projRun(const aProject: TCEProject);
+    //procedure projRun(const aProject: TCEProject);
   end;
 
   (**
@@ -87,7 +91,8 @@ type
   (**
    * An implementer can add a mainmenu entry.
    *)
-  ICEMainMenuProvider = interface(ICEObserver)
+  ICEMainMenuProvider = interface
+  ['ICEMainMenuProvider']
     // item must contain the full items tree to be added
     procedure menuDeclare(out item: TMenuItem);
   end;
@@ -104,19 +109,21 @@ type
    * TCEMultiDocSubject primitives.
    *)
    procedure subjDocNew(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);      {$IFDEF RELEASE}inline;{$ENDIF}
+   procedure subjDocClosing(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);  {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjDocFocused(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);  {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjDocChanged(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);  {$IFDEF RELEASE}inline;{$ENDIF}
-   procedure subjDocClosed(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);   {$IFDEF RELEASE}inline;{$ENDIF}
+
 
   (**
    * TCEProjectSubject primitives.
    *)
    procedure subjProjNew(aSubject: TCEProjectSubject; aProj: TCEProject);     {$IFDEF RELEASE}inline;{$ENDIF}
+   procedure subjProjClosing(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjProjFocused(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjProjChanged(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
-   procedure subjProjClose(aSubject: TCEProjectSubject; aProj: TCEProject);   {$IFDEF RELEASE}inline;{$ENDIF}
-   procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
-   procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);     {$IFDEF RELEASE}inline;{$ENDIF}
+
+   //procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject); //{$IFDEF RELEASE}inline;{$ENDIF}
+   //procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);     //{$IFDEF RELEASE}inline;{$ENDIF}
 
 implementation
 
@@ -124,7 +131,7 @@ implementation
 
 function TCEMultiDocSubject.acceptObserver(aObject: TObject): boolean;
 begin
-  result := (aObject as ICEMultiDocObserver) <> nil;
+  result := (aObject is ICEMultiDocObserver);
 end;
 
 procedure subjDocNew(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);
@@ -133,6 +140,14 @@ var
 begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
     (fObservers.Items[i] as ICEMultiDocObserver).docNew(aDoc);
+end;
+
+procedure subjDocClosing(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);
+var
+  i: Integer;
+begin
+  with aSubject do for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEMultiDocObserver).docClosing(aDoc);
 end;
 
 procedure subjDocFocused(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);
@@ -151,20 +166,11 @@ begin
     (fObservers.Items[i] as ICEMultiDocObserver).docChanged(aDoc);
 end;
 
-procedure subjDocClosed(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);
-var
-  i: Integer;
-begin
-  with aSubject do for i:= 0 to fObservers.Count-1 do
-    (fObservers.Items[i] as ICEMultiDocObserver).docClose(aDoc);
-end;
-
-
 
 
 function TCEProjectSubject.acceptObserver(aObject: TObject): boolean;
 begin
-  result := (aObject as ICEProjectObserver) <> nil;
+  result := (aObject is ICEProjectObserver);
 end;
 
 procedure subjProjNew(aSubject: TCEProjectSubject; aProj: TCEProject);
@@ -173,6 +179,14 @@ var
 begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
     (fObservers.Items[i] as ICEProjectObserver).ProjNew(aProj);
+end;
+
+procedure subjProjClosing(aSubject: TCEProjectSubject; aProj: TCEProject);
+var
+  i: Integer;
+begin
+  with aSubject do for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEProjectObserver).projClosing(aProj);
 end;
 
 procedure subjProjFocused(aSubject: TCEProjectSubject; aProj: TCEProject);
@@ -188,32 +202,26 @@ var
   i: Integer;
 begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
-    (fObservers.Items[i] as ICEProjectObserver).projChange(aProj);
+    (fObservers.Items[i] as ICEProjectObserver).projChanged(aProj);
 end;
 
-procedure subjProjClose(aSubject: TCEProjectSubject; aProj: TCEProject);
-var
-  i: Integer;
-begin
-  with aSubject do for i:= 0 to fObservers.Count-1 do
-    (fObservers.Items[i] as ICEProjectObserver).projClose(aProj);
-end;
 
-procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject);
-var
-  i: Integer;
-begin
-  with aSubject do for i:= 0 to fObservers.Count-1 do
-    (fObservers.Items[i] as ICEProjectObserver).projCompile(aProj);
-end;
 
-procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);
-var
-  i: Integer;
-begin
-  with aSubject do for i:= 0 to fObservers.Count-1 do
-    (fObservers.Items[i] as ICEProjectObserver).projRun(aProj);
-end;
+//procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject);
+//var
+//  i: Integer;
+//begin
+//  with aSubject do for i:= 0 to fObservers.Count-1 do
+//    (fObservers.Items[i] as ICEProjectObserver).projCompile(aProj);
+//end;
+//
+//procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);
+//var
+//  i: Integer;
+//begin
+//  with aSubject do for i:= 0 to fObservers.Count-1 do
+//    (fObservers.Items[i] as ICEProjectObserver).projRun(aProj);
+//end;
 
 
 end.

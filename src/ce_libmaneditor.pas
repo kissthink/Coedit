@@ -1,6 +1,7 @@
 unit ce_libmaneditor;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 

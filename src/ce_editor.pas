@@ -1,6 +1,7 @@
 unit ce_editor;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
@@ -8,22 +9,21 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, SynCompletion, AnchorDocking, ce_widget, ce_d2syn, ce_widgettypes,
+  SynHighlighterLFM, SynCompletion, AnchorDocking, ce_widget, ce_d2syn, ce_interfaces,
   ce_synmemo, ce_dlang, ce_project, ce_common, types, ce_dcd, ce_observer;
 
 type
 
   { TCEEditorWidget }
 
-  TCEEditorWidget = class(TCEWidget)
+  TCEEditorWidget = class(TCEWidget, ICEProjectObserver)
     imgList: TImageList;
     PageControl: TExtendedNotebook;
     macRecorder: TSynMacroRecorder;
     editorStatus: TStatusBar;
     completion: TSynCompletion;
     procedure completionCodeCompletion(var Value: string; SourceValue: string;
-      var SourceStart, SourceEnd: TPoint; KeyChar: TUTF8Char; Shift: TShiftState
-      );
+      var SourceStart, SourceEnd: TPoint; KeyChar: TUTF8Char; Shift: TShiftState);
     procedure completionExecute(Sender: TObject);
     procedure PageControlChange(Sender: TObject);
     procedure PageControlCloseTabClicked(Sender: TObject);
@@ -33,7 +33,6 @@ type
   private
     fKeyChanged: boolean;
     fProj: TCEProject;
-    fMultiDocSubject: TCEMultiDocSubject;
 
     // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
@@ -59,11 +58,14 @@ type
     procedure focusedEditorChanged;
     function getEditorHint: string;
     //
-    procedure projNew(const aProject: TCEProject); override;
-    procedure projClose(const aProject: TCEProject); override;
-    procedure projFocused(const aProject: TCEProject); override;
-    procedure projCompile(const aProject: TCEProject); override;
-    procedure projRun(const aProject: TCEProject); override;
+    procedure projNew(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
+
+    procedure projCompile(const aProject: TCEProject); //warning: removed from itf
+    procedure projRun(const aProject: TCEProject); //warning: removed from itf
+
     //
     property currentEditor: TCESynMemo read getCurrentEditor;
     property editor[index: NativeInt]: TCESynMemo read getEditor;
@@ -95,14 +97,10 @@ begin
   finally
     bmp.Free;
   end;
-  //
-  fMultiDocSubject := TCEMultiDocSubject.create;
-  EntitiesConnector.addSubject(fMultiDocSubject);
 end;
 
 destructor TCEEditorWidget.destroy;
 begin
-  fMultiDocSubject.Free;
   tokLst.Free;
   errLst.Free;
   inherited;
@@ -142,15 +140,13 @@ begin
   //
   if pageControl.ActivePageIndex <> -1 then
   begin
-    CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
+    //CEMainForm.docFocusedNotify(Self, pageControl.ActivePageIndex);
     if (pageControl.ActivePage.Caption = '') then
     begin
       fKeyChanged := true;
       beginUpdateByDelay;
     end;
   end;
-
-  self.fMultiDocSubject.docFocused(curr);
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);
@@ -264,7 +260,7 @@ begin
   fProj := aProject;
 end;
 
-procedure TCEEditorWidget.projClose(const aProject: TCEProject);
+procedure TCEEditorWidget.projClosing(const aProject: TCEProject);
 begin
   fProj := nil;
 end;
@@ -274,14 +270,18 @@ begin
   fProj := aProject;
 end;
 
+procedure TCEEditorWidget.projChanged(const aProject: TCEProject);
+begin
+end;
+
 procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
 begin
-  endUpdateByDelay;
+  endUpdateByDelay; // warning not trigered anymore
 end;
 
 procedure TCEEditorWidget.projRun(const aProject: TCEProject);
 begin
-  endUpdateByDelay;
+  endUpdateByDelay; // warning not trigered anymore
 end;
 
 procedure TCEEditorWidget.getSymbolLoc;
@@ -396,7 +396,7 @@ begin
   if not fKeyChanged then exit;
   //
   fKeyChanged := false;
-  CEMainForm.docChangeNotify(Self, editorIndex);
+  //CEMainForm.docChangeNotify(Self, editorIndex);
   if ed.Lines.Count = 0 then exit;
   //
   if fProj = nil then

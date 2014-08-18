@@ -1,13 +1,14 @@
 unit ce_messages;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
   lcltype, ce_widget, ActnList, Menus, clipbrd, AnchorDocking, ce_project,
-  ce_synmemo, ce_dlangutils;
+  ce_synmemo, ce_dlangutils, ce_interfaces, ce_observer;
 
 type
 
@@ -21,7 +22,7 @@ type
     position: TPoint;
   end;
 
-  TCEMessagesWidget = class(TCEWidget)
+  TCEMessagesWidget = class(TCEWidget, ICEMultiDocObserver, ICEProjectObserver)
     imgList: TImageList;
     List: TTreeView;
     procedure ListDblClick(Sender: TObject);
@@ -66,12 +67,15 @@ type
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
     //
-    procedure projNew(const aProject: TCEProject); override;
-    procedure projClose(const aProject: TCEProject); override;
-    procedure projFocused(const aProject: TCEProject); override;
+    procedure projNew(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
     //
-    procedure docFocused(const aDoc: TCESynMemo); override;
-    procedure docClose(const aDoc: TCESynMemo); override;
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
     //
     procedure ClearAllMessages;
     procedure ClearMessages(aCtxt: TMessageContext);
@@ -115,6 +119,8 @@ begin
   //
   List.PopupMenu := contextMenu;
   List.OnDeletion := @ListDeletion;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 
 procedure TCEMessagesWidget.listDeletion(Sender: TObject; Node: TTreeNode);
@@ -251,7 +257,7 @@ begin
   filterMessages;
 end;
 
-procedure TCEMessagesWidget.projClose(const aProject: TCEProject);
+procedure TCEMessagesWidget.projClosing(const aProject: TCEProject);
 begin
   if fProj = aProject then
     ClearMessages(mcProject);
@@ -264,21 +270,35 @@ begin
   fProj := aProject;
   filterMessages;
 end;
+
+procedure TCEMessagesWidget.projChanged(const aProject: TCEProject);
+begin
+end;
 {$ENDREGION}
 
 {$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEMessagesWidget.docNew(const aDoc: TCESynMemo);
+begin
+  fDoc := aDoc;
+  filterMessages;
+end;
+
+procedure TCEMessagesWidget.docClosing(const aDoc: TCESynMemo);
+begin
+  if aDoc <> fDoc then exit;
+  ClearMessages(mcEditor);
+  fDoc := nil;
+  filterMessages;
+end;
+
 procedure TCEMessagesWidget.docFocused(const aDoc: TCESynMemo);
 begin
   fDoc := aDoc;
   filterMessages;
 end;
 
-procedure TCEMessagesWidget.docClose(const aDoc: TCESynMemo);
+procedure TCEMessagesWidget.docChanged(const aDoc: TCESynMemo);
 begin
-  if aDoc <> fDoc then exit;
-  ClearMessages(mcEditor);
-  fDoc := nil;
-  filterMessages;
 end;
 {$ENDREGION}
 

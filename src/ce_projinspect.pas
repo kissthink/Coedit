@@ -1,16 +1,17 @@
 unit ce_projinspect;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
-  Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
-  actnlist, Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project,
-  ce_common, ce_widget, AnchorDocking;
+  Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics, actnlist,
+  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_interfaces, ce_common,
+  ce_widget, ce_observer;
 
 type
-  TCEProjectInspectWidget = class(TCEWidget)
+  TCEProjectInspectWidget = class(TCEWidget, ICEProjectObserver)
     imgList: TImageList;
     Panel1: TPanel;
     btnAddFile: TSpeedButton;
@@ -38,9 +39,11 @@ type
   public
     constructor create(aOwner: TComponent); override;
     //
-    procedure projNew(const aProject: TCEProject); override;
-    procedure projChange(const aProject: TCEProject); override;
-    procedure projClose(const aProject: TCEProject); override;
+    procedure projNew(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
+
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -70,6 +73,8 @@ begin
   fConfNode := Tree.Items[1];
   //
   Tree.PopupMenu := contextMenu;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 {$ENDREGION}
 
@@ -102,19 +107,25 @@ end;
 {$REGION ICEProjectMonitor -----------------------------------------------------}
 procedure TCEProjectInspectWidget.projNew(const aProject: TCEProject);
 begin
-  fProject := aProject;
-  UpdateByEvent;
+  //fProject := aProject;
+  //UpdateByEvent;
 end;
 
-procedure TCEProjectInspectWidget.projChange(const aProject: TCEProject);
-begin
-  fProject := aProject;
-  UpdateByEvent;
-end;
-
-procedure TCEProjectInspectWidget.projClose(const aProject: TCEProject);
+procedure TCEProjectInspectWidget.projClosing(const aProject: TCEProject);
 begin
   fProject := nil;
+  UpdateByEvent;
+end;
+
+procedure TCEProjectInspectWidget.projFocused(const aProject: TCEProject);
+begin
+  fProject := aProject;
+  UpdateByEvent;
+end;
+
+procedure TCEProjectInspectWidget.projChanged(const aProject: TCEProject);
+begin
+  fProject := aProject;
   UpdateByEvent;
 end;
 {$ENDREGION}

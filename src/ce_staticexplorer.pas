@@ -1,18 +1,19 @@
 unit ce_staticexplorer;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, Menus, ComCtrls, ce_widget, jsonparser, fpjson,
-  ce_synmemo, process, actnlist, Buttons, ce_common, ce_project, AnchorDocking;
+  ce_synmemo, process, actnlist, Buttons, ce_common, ce_project, ce_observer,
+  ce_interfaces;
 
 type
 
   { TCEStaticExplorerWidget }
-
   TCEStaticExplorerWidget = class(TCEWidget)
     btnRefresh: TBitBtn;
     imgList: TImageList;
@@ -59,19 +60,23 @@ type
   public
     constructor create(aOwner: TComponent); override;
     //
-    procedure docFocused(const aDoc: TCESynMemo); override;
-    procedure docChanged(const aDoc: TCESynMemo); override;
-    procedure docClose(const aDoc: TCESynMemo); override;
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docClosing(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
     //
-    procedure projNew(const aProject: TCEProject); override;
-    procedure projChange(const aProject: TCEProject); override;
-    procedure projClose(const aProject: TCEProject); override;
-    procedure projCompile(const aProject: TCEProject); override;
-    procedure projRun(const aProject: TCEProject); override;
+    procedure projNew(const aProject: TCEProject);
+    procedure projClosing(const aProject: TCEProject);
+    procedure projFocused(const aProject: TCEProject);
+    procedure projChanged(const aProject: TCEProject);
+
+    procedure projCompile(const aProject: TCEProject); // warning: removed from itf
+    procedure projRun(const aProject: TCEProject); // warning: removed from itf
+
     //
     procedure declareProperties(aFiler: TFiler); override;
   end;
@@ -124,6 +129,8 @@ begin
   //
   Tree.OnDblClick := @TreeDblClick;
   Tree.PopupMenu := contextMenu;
+  //
+  EntitiesConnector.addObserver(self);
 end;
 {$ENDREGION}
 
@@ -216,6 +223,17 @@ end;
 {$ENDREGION}
 
 {$REGION ICEMultiDocMonitor ----------------------------------------------------}
+procedure TCEStaticExplorerWidget.docNew(const aDoc: TCESynMemo);
+begin
+end;
+
+procedure TCEStaticExplorerWidget.docClosing(const aDoc: TCESynMemo);
+begin
+  if fDoc <> aDoc then exit;
+  fDoc := nil;
+  beginUpdateByDelay;
+end;
+
 procedure TCEStaticExplorerWidget.docFocused(const aDoc: TCESynMemo);
 begin
   fDoc := aDoc;
@@ -229,13 +247,6 @@ begin
   if fAutoRefresh then beginUpdateByDelay
   else if fRefreshOnChange then Rescan;
 end;
-
-procedure TCEStaticExplorerWidget.docClose(const aDoc: TCESynMemo);
-begin
-  if fDoc <> aDoc then exit;
-  fDoc := nil;
-  beginUpdateByDelay;
-end;
 {$ENDREGION}
 
 {$REGION ICEProjectMonitor -----------------------------------------------------}
@@ -244,24 +255,29 @@ begin
   fProj := aProject;
 end;
 
-procedure TCEStaticExplorerWidget.projChange(const aProject: TCEProject);
-begin
-  fProj := aProject;
-end;
-
-procedure TCEStaticExplorerWidget.projClose(const aProject: TCEProject);
+procedure TCEStaticExplorerWidget.projClosing(const aProject: TCEProject);
 begin
   fProj := nil;
 end;
 
+procedure TCEStaticExplorerWidget.projFocused(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
+procedure TCEStaticExplorerWidget.projChanged(const aProject: TCEProject);
+begin
+  fProj := aProject;
+end;
+
 procedure TCEStaticExplorerWidget.projCompile(const aProject: TCEProject);
 begin
-  stopUpdateByDelay;
+  stopUpdateByDelay; // warning: not triggered anymore
 end;
 
 procedure TCEStaticExplorerWidget.projRun(const aProject: TCEProject);
 begin
-  stopUpdateByDelay;
+  stopUpdateByDelay; // warning: not triggered anymore
 end;
 {$ENDREGION}
 

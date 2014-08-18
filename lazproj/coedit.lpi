@@ -215,9 +215,9 @@
         <UnitName Value="ce_project"/>
       </Unit11>
       <Unit12>
-        <Filename Value="..\src\ce_widgettypes.pas"/>
+        <Filename Value="..\src\ce_interfaces.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="ce_widgettypes"/>
+        <UnitName Value="ce_interfaces"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\src\ce_staticexplorer.pas"/>

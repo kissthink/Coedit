@@ -1,6 +1,7 @@
 unit ce_libman;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 

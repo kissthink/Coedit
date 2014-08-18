@@ -1,6 +1,7 @@
 unit ce_plugin;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
