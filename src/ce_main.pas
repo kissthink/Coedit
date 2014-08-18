@@ -828,13 +828,6 @@ begin
 
     trgMnu.Clear;
 
-    itm := TMenuItem.Create(trgMnu);
-    itm.Caption := 'Clear';
-    itm.OnClick := @mruClearClick;
-    itm.Tag := PtrInt(srcLst);
-    trgMnu.Add(itm);
-    trgMnu.AddSeparator;
-
     for i:= 0 to srcLst.Count-1 do
     begin
       fname := srcLst.Strings[i];
@@ -844,6 +837,13 @@ begin
       itm.OnClick := clickTrg;
       trgMnu.Add(itm);
     end;
+
+    trgMnu.AddSeparator;
+    itm := TMenuItem.Create(trgMnu);
+    itm.Caption := 'Clear';
+    itm.OnClick := @mruClearClick;
+    itm.Tag := PtrInt(srcLst);
+    trgMnu.Add(itm);
 
   finally
     Dec(fUpdateCount);
