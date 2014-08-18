@@ -1,6 +1,6 @@
 unit ce_customtools;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

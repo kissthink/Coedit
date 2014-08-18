@@ -1,6 +1,6 @@
 unit ce_libman;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

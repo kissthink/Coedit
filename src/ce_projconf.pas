@@ -1,6 +1,6 @@
 unit ce_projconf;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

@@ -1,6 +1,6 @@
 unit ce_search;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

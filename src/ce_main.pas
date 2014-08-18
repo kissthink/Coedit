@@ -10,7 +10,8 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, process, XMLPropStorage, ComCtrls, dynlibs,
   ce_common, ce_dmdwrap, ce_project, ce_dcd, ce_plugin, ce_synmemo, ce_widget,
   ce_messages, ce_widgettypes, ce_editor, ce_projinspect, ce_projconf, ce_search,
-  ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor, ce_customtools;
+  ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor, ce_customtools,
+  ce_observer;
 
 type
 

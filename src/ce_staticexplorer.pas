@@ -1,6 +1,6 @@
 unit ce_staticexplorer;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

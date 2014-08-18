@@ -1,6 +1,6 @@
 unit ce_editor;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 
@@ -8,8 +8,8 @@ uses
   Classes, SysUtils, FileUtil, ExtendedNotebook, Forms, Controls, lcltype,
   Graphics, SynEditKeyCmds, ComCtrls, SynEditHighlighter, ExtCtrls, Menus,
   SynEditHighlighterFoldBase, SynMacroRecorder, SynPluginSyncroEdit, SynEdit,
-  SynHighlighterLFM, SynCompletion, AnchorDocking, ce_widget, ce_d2syn,
-  ce_synmemo, ce_dlang, ce_project, ce_common, types, ce_dcd;
+  SynHighlighterLFM, SynCompletion, AnchorDocking, ce_widget, ce_d2syn, ce_widgettypes,
+  ce_synmemo, ce_dlang, ce_project, ce_common, types, ce_dcd, ce_observer;
 
 type
 
@@ -33,6 +33,7 @@ type
   private
     fKeyChanged: boolean;
     fProj: TCEProject;
+    fMultiDocSubject: TCEMultiDocSubject;
 
     // http://bugs.freepascal.org/view.php?id=26329
     fSyncEdit: TSynPluginSyncroEdit;
@@ -94,10 +95,14 @@ begin
   finally
     bmp.Free;
   end;
+  //
+  fMultiDocSubject := TCEMultiDocSubject.create;
+  EntitiesConnector.addSubject(fMultiDocSubject);
 end;
 
 destructor TCEEditorWidget.destroy;
 begin
+  fMultiDocSubject.Free;
   tokLst.Free;
   errLst.Free;
   inherited;
@@ -144,6 +149,8 @@ begin
       beginUpdateByDelay;
     end;
   end;
+
+  self.fMultiDocSubject.docFocused(curr);
 end;
 
 procedure TCEEditorWidget.PageControlChange(Sender: TObject);

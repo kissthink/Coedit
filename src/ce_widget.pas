@@ -1,6 +1,6 @@
 unit ce_widget;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 
@@ -15,7 +15,7 @@ type
    * Base type for an UI module.
    *)
   PTCEWidget = ^TCEWidget;
-  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocMonitor, ICEWidgetPersist)
+  TCEWidget = class(TForm, ICEContextualActions, ICEProjectMonitor, ICEMultiDocObserver, ICEWidgetPersist)
     Content: TPanel;
     Back: TPanel;
     contextMenu: TPopupMenu;
@@ -203,7 +203,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEMultiDocMonitor ----------------------------------------------------}
+{$REGION ICEMultiDocObserver ----------------------------------------------------}
 procedure TCEWidget.docNew(const aDoc: TCESynMemo);
 begin
 end;

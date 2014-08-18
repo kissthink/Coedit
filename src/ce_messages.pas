@@ -1,6 +1,6 @@
 unit ce_messages;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

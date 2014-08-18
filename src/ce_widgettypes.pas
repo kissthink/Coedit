@@ -1,11 +1,12 @@
 unit ce_widgettypes;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
 uses
-  Classes, SysUtils, actnList, ce_synmemo, ce_project;
+  Classes, SysUtils, actnList, menus, ce_synmemo, ce_project, ce_observer;
 
 type
 
@@ -37,7 +38,7 @@ type
   (**
    * An implementer is informed about the current file(s).
    *)
-  ICEMultiDocMonitor = interface
+  ICEMultiDocObserver = interface(ICEObserver)
     // the new document aDoc has been created (empty, runnable, project source, ...).
     procedure docNew(const aDoc: TCESynMemo);
     // aDoc is the document being edited.
@@ -45,6 +46,19 @@ type
     // aDoc content has just been modified (edited, saved).
     procedure docChanged(const aDoc: TCESynMemo);
     // aDoc is about to be closed.
+    procedure docClose(const aDoc: TCESynMemo);
+  end;
+
+  (**
+   * An implementer informs some ICEMultiDocObserver about the current file(s)
+   *)
+  TCEMultiDocSubject = class(TCECustomSubject, ICEMultiDocObserver)
+  protected
+    function acceptObserver(aObject: TObject): boolean; override;
+  public
+    procedure docNew(const aDoc: TCESynMemo);
+    procedure docFocused(const aDoc: TCESynMemo);
+    procedure docChanged(const aDoc: TCESynMemo);
     procedure docClose(const aDoc: TCESynMemo);
   end;
 
@@ -66,5 +80,51 @@ type
     procedure projFocused(const aProject: TCEProject); // rename: projSelected or projActivated
   end;
 
+  (**
+   * An implementer can add a mainmenu entry.
+   *)
+  ICEMainMenuProvider = interface(ICEObserver)
+    // item must contain the full items tree to be added
+    procedure menuDeclare(out item: TMenuItem);
+  end;
+
 implementation
+
+function TCEMultiDocSubject.acceptObserver(aObject: TObject): boolean;
+begin
+  result := (aObject as ICEMultiDocObserver) <> nil;
+end;
+
+procedure TCEMultiDocSubject.docNew(const aDoc: TCESynMemo);
+var
+  i: Integer;
+begin
+  for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEMultiDocObserver).docNew(aDoc);
+end;
+
+procedure TCEMultiDocSubject.docFocused(const aDoc: TCESynMemo);
+var
+  i: Integer;
+begin
+  for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEMultiDocObserver).docFocused(aDoc);
+end;
+
+procedure TCEMultiDocSubject.docChanged(const aDoc: TCESynMemo);
+var
+  i: Integer;
+begin
+  for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEMultiDocObserver).docChanged(aDoc);
+end;
+
+procedure TCEMultiDocSubject.docClose(const aDoc: TCESynMemo);
+var
+  i: Integer;
+begin
+  for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICEMultiDocObserver).docClose(aDoc);
+end;
+
 end.

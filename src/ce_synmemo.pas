@@ -1,6 +1,6 @@
 unit ce_synmemo;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

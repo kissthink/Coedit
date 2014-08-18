@@ -1,6 +1,6 @@
 unit ce_dmdwrap;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

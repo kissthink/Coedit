@@ -1,6 +1,6 @@
 unit ce_libmaneditor;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

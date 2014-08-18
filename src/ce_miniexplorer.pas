@@ -1,6 +1,6 @@
 unit ce_miniexplorer;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

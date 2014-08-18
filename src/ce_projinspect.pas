@@ -1,6 +1,6 @@
 unit ce_projinspect;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

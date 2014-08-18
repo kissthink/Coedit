@@ -1,5 +1,5 @@
 unit ce_dcd;
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 

@@ -1,6 +1,6 @@
 unit ce_d2syn;
 
-{$mode objfpc}{$H+}
+{$MODE OBJFPC}{$H+}
 
 interface
 
@@ -465,6 +465,7 @@ end;
 //TODO-cstring literals: delimited strings.
 //TODO-ccomments: correct nested comments handling (inc/dec)
 //TODO-cfeature: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
+//TODO-bugfix: token string, curly brackets pairs must be even.
 
 {$BOOLEVAL ON}
 procedure TSynD2Syn.next;
