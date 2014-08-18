@@ -35,6 +35,7 @@ type
     procedure UpdateByEvent; override;
   public
     constructor create(aOwner: TComponent); override;
+    destructor destroy; override;
     //
     procedure projNew(const aProject: TCEProject);
     procedure projClosing(const aProject: TCEProject);
@@ -54,6 +55,11 @@ begin
   EntitiesConnector.addObserver(self);
 end;
 
+destructor TCEProjectConfigurationWidget.destroy;
+begin
+  EntitiesConnector.removeObserver(self);
+  inherited;
+end;
 
 procedure TCEProjectConfigurationWidget.projNew(const aProject: TCEProject);
 begin

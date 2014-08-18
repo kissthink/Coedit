@@ -166,7 +166,6 @@ type
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
-    LfmSyn: TSynLFMSyn;
     procedure actEdFindExecute(Sender: TObject);
     procedure actEdFindNextExecute(Sender: TObject);
     procedure actFileAddToProjExecute(Sender: TObject);
@@ -682,6 +681,7 @@ end;
 
 destructor TCEMainForm.destroy;
 begin
+  EntitiesConnector.removeObserver(self);
   SaveSettings;
   //
   KillPlugs;
@@ -900,6 +900,7 @@ end;
 
 procedure TCEMainForm.docClosing(const aDoc: TCESynMemo);
 begin
+  if aDoc <> fDoc then exit;
   fDoc := nil;
 end;
 
@@ -910,6 +911,7 @@ end;
 
 procedure TCEMainForm.docChanged(const aDoc: TCESynMemo);
 begin
+  fDoc := aDoc;
 end;
 {$ENDREGION}
 
@@ -1158,7 +1160,6 @@ end;
 procedure TCEMainForm.actEdFindExecute(Sender: TObject);
 var
   win: TAnchorDockHostSite;
-  ed: TCESynMemo;
   str: string;
 begin
   win := DockMaster.GetAnchorSite(fFindWidg);
@@ -1214,13 +1215,8 @@ begin
       dt^.project := fProject;
       dt^.position := getLineFromDmdMessage(msg);
       if openFileFromDmdMessage(msg) then
-        dt^.editor := fDoc
-      else
-        dt^.editor := nil;
-      if dt^.editor = nil then
-        dt^.editor := fDoc
-      else
         dt^.ctxt := mcEditor;
+      dt^.editor := fDoc;
       fEditWidg.endUpdatebyDelay; // messages would be cleared by the delayed module name detection.
       fMesgWidg.addMessage(msg, dt);
       application.ProcessMessages;

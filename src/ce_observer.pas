@@ -132,7 +132,8 @@ begin
   fUpdating := true;
   fObservers.Remove(anObserver);
   for i := 0 to fSubjects.Count-1 do
-    (fSubjects[i] as ICESubject).removeObserver(anObserver);
+    if fSubjects[i] <> nil then
+      (fSubjects[i] as ICESubject).removeObserver(anObserver);
 end;
 
 procedure TCEEntitiesConnector.removeSubject(aSubject: TObject);

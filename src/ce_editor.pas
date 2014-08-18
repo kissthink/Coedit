@@ -106,6 +106,7 @@ end;
 
 destructor TCEEditorWidget.destroy;
 begin
+  EntitiesConnector.removeObserver(self);
   tokLst.Free;
   errLst.Free;
   inherited;
@@ -120,6 +121,7 @@ end;
 
 procedure TCEEditorWidget.docClosing(const aDoc: TCESynMemo);
 begin
+  if fDoc <> aDoc then exit;
   fDoc := nil;
 end;
 
@@ -146,6 +148,7 @@ end;
 
 procedure TCEEditorWidget.projClosing(const aProject: TCEProject);
 begin
+  if fProj <> aProject then exit;
   fProj := nil;
 end;
 
@@ -156,6 +159,7 @@ end;
 
 procedure TCEEditorWidget.projChanged(const aProject: TCEProject);
 begin
+  fProj := aProject;
 end;
 
 procedure TCEEditorWidget.projCompile(const aProject: TCEProject);
@@ -238,14 +242,9 @@ begin
   memo.OnKeyUp := @memoKeyDown;
   memo.OnKeyPress := @memoKeyPress;
   memo.OnMouseDown := @memoMouseDown;
-  //memo.OnChange := @memoChange;
-
   memo.OnMouseMove := @memoMouseMove;
   //
   pageControl.ActivePage := sheet;
-
-  //http://bugs.freepascal.org/view.php?id=26320
-  //focusedEditorChanged;
 end;
 
 procedure TCEEditorWidget.removeEditor(const aIndex: NativeInt);

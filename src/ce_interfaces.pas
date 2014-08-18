@@ -127,7 +127,8 @@ type
 
 implementation
 
-
+uses
+  ce_main;
 
 function TCEMultiDocSubject.acceptObserver(aObject: TObject): boolean;
 begin

@@ -97,6 +97,7 @@ end;
 
 destructor TCESearchWidget.Destroy;
 begin
+  EntitiesConnector.removeObserver(self);
   fSearchMru.Free;
   fReplaceMru.Free;
   inherited;

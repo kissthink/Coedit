@@ -3044,20 +3044,4 @@ object CEMainForm: TCEMainForm
     OnShowHint = ApplicationProperties1ShowHint
     left = 96
   end
-  object LfmSyn: TSynLFMSyn
-    DefaultFilter = 'Fichiers fiches Lazarus (*.lfm)|*.lfm'
-    Enabled = False
-    CommentAttri.Foreground = clGreen
-    CommentAttri.FrameEdges = sfeAround
-    IdentifierAttri.Foreground = clBlack
-    IdentifierAttri.FrameEdges = sfeAround
-    KeyAttri.Foreground = clNavy
-    KeyAttri.FrameEdges = sfeAround
-    NumberAttri.Foreground = clPurple
-    NumberAttri.FrameEdges = sfeAround
-    SpaceAttri.FrameEdges = sfeAround
-    StringAttri.Foreground = clBlue
-    StringAttri.FrameEdges = sfeAround
-    left = 128
-  end
 end

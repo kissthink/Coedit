@@ -59,6 +59,7 @@ type
     property refreshOnFocus: boolean read fRefreshOnFocus write fRefreshOnFocus;
   public
     constructor create(aOwner: TComponent); override;
+    destructor destroy; override;
     //
     procedure docNew(const aDoc: TCESynMemo);
     procedure docClosing(const aDoc: TCESynMemo);
@@ -132,6 +133,13 @@ begin
   //
   EntitiesConnector.addObserver(self);
 end;
+
+destructor TCEStaticExplorerWidget.destroy;
+begin
+  EntitiesConnector.removeObserver(self);
+  inherited;
+end;
+
 {$ENDREGION}
 
 {$REGION ICEWidgetPersist ------------------------------------------------------}
@@ -225,6 +233,8 @@ end;
 {$REGION ICEMultiDocObserver ---------------------------------------------------}
 procedure TCEStaticExplorerWidget.docNew(const aDoc: TCESynMemo);
 begin
+  fDoc := aDoc;
+  beginUpdateByDelay;
 end;
 
 procedure TCEStaticExplorerWidget.docClosing(const aDoc: TCESynMemo);

@@ -33,8 +33,8 @@ type
     fActSaveMsg: TAction;
     fActCopyMsg: TAction;
     fActSelAll: TAction;
-    fProj: TCEProject;
     fMaxMessCnt: Integer;
+    fProj: TCEProject;
     fDoc: TCESynMemo;
     procedure filterMessages;
     procedure clearOutOfRangeMessg;
@@ -53,6 +53,7 @@ type
     property maxMessageCount: Integer read fMaxMessCnt write setMaxMessageCount default 125;
   public
     constructor create(aOwner: TComponent); override;
+    destructor destroy; override;
     //
     procedure scrollToBack;
     procedure addMessage(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
@@ -121,6 +122,12 @@ begin
   List.OnDeletion := @ListDeletion;
   //
   EntitiesConnector.addObserver(self);
+end;
+
+destructor TCEMessagesWidget.destroy;
+begin
+  EntitiesConnector.removeObserver(self);
+  Inherited;
 end;
 
 procedure TCEMessagesWidget.listDeletion(Sender: TObject; Node: TTreeNode);
@@ -299,6 +306,7 @@ end;
 
 procedure TCEMessagesWidget.docChanged(const aDoc: TCESynMemo);
 begin
+  fDoc := aDoc;
 end;
 {$ENDREGION}
 
@@ -561,7 +569,7 @@ begin
       ext := extractFileExt(ident);
       if not (ext = '.d') or (ext = '.di') then exit;
       CEMainForm.openFile(ident);
-      exit(true);
+      result := true;
     end;
     ident += aMessage[i];
   end;

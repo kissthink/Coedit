@@ -8,7 +8,7 @@ interface
 uses
   Classes, SysUtils, SynEdit, SynMemo, ce_d2syn, SynEditHighlighter, controls,
   lcltype, LazSynEditText, SynPluginSyncroEdit, SynEditKeyCmds, ce_project,
-  SynEditMouseCmds, ce_common, ce_observer;
+  SynHighlighterLFM, SynEditMouseCmds, ce_common, ce_observer;
 
 type
   TCESynMemo = class(TSynMemo)
@@ -53,11 +53,12 @@ type
 
 var
   D2Syn: TSynD2Syn;
+  LfmSyn: TSynLfmSyn;
 
 implementation
 
 uses
-  graphics, ce_main, ce_interfaces;
+  graphics, ce_interfaces;
 
 constructor TCESynMemo.Create(aOwner: TComponent);
 begin
@@ -83,14 +84,12 @@ begin
   Highlighter := D2Syn;
   D2Syn.FoldKinds := [fkBrackets, fkComments1, fkComments2, fkStrings];
   //
+  fTempFileName := GetTempDir(false) + 'temp_' + uniqueObjStr(self) + '.d';
   fFilename := '<new document>';
   fModified := false;
   ShowHint := true;
   TextBuffer.AddNotifyHandler(senrUndoRedoAdded, @changeNotify);
-
-  // avoid many call to get envir.string
-  fTempFileName := GetTempDir(false) + 'temp_' + uniqueObjStr(self) + '.d';
-
+  //
   fMultiDocSubject := TCEMultiDocSubject.create;
   subjDocNew(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
@@ -132,7 +131,7 @@ procedure TCESynMemo.SetHighlighter(const Value: TSynCustomHighlighter);
 begin
   inherited;
   fIsDSource := Highlighter = D2Syn;
-  fIsConfig := Highlighter = CEMainForm.LfmSyn;
+  fIsConfig := Highlighter = LfmSyn;
 end;
 
 procedure TCESynMemo.identifierToD2Syn;
@@ -168,7 +167,8 @@ begin
   fFilename := aFilename;
   FileAge(fFilename, fFileDate);
   fModified := false;
-  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
+  if fFilename <> fTempFileName then
+    subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.save;
@@ -176,7 +176,8 @@ begin
   Lines.SaveToFile(fFilename);
   FileAge(fFilename, fFileDate);
   fModified := false;
-  subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
+  if fFilename <> fTempFileName then
+    subjDocChanged(TCEMultiDocSubject(fMultiDocSubject), self);
 end;
 
 procedure TCESynMemo.checkFileDate;
@@ -219,6 +220,8 @@ end;
 
 initialization
   D2Syn := TSynD2Syn.create(nil);
+  LfmSyn := TSynLFMSyn.Create(nil);
 finalization
   D2Syn.free;
+  LfmSyn.Free;
 end.
