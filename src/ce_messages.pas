@@ -508,10 +508,9 @@ begin
   end;
 end;
 
-//TODO-cbugfix: doesnt work with -vcolumns
 function getLineFromDmdMessage(const aMessage: string): TPoint;
 var
-  i: NativeInt;
+  i, j: NativeInt;
   ident: string;
 begin
   result.x := 0;
@@ -533,7 +532,7 @@ begin
         begin
           inc(i);
           if i > length(aMessage) then exit;
-          while( isNumber(aMessage[i]) ) do
+          while( isNumber(aMessage[i]) or (aMessage[i] = ',')) do
           begin
             ident += aMessage[i];
             inc(i);
@@ -541,7 +540,14 @@ begin
           end;
           if aMessage[i] = ')' then
           begin
-            result.y := strToIntDef(ident, -1);
+            j := Pos(',', ident);
+            if j = 0 then
+              result.y := strToIntDef(ident, -1)
+            else
+            begin
+              result.y := strToIntDef(ident[1..j-1], -1);
+              result.x := strToIntDef(ident[j+1..length(ident)], -1);
+            end;
             exit;
           end;
         end;
