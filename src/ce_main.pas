@@ -590,6 +590,7 @@ begin
   end;
   if not Visible then exit;
   //
+  forceDirectory(getDocPath);
   xcfg := TXMLConfigStorage.Create(getDocPath + 'docking.xml',false);
   try
     DockMaster.SaveLayoutToConfig(xcfg);
