@@ -1,6 +1,7 @@
 unit ce_widget;
 
 {$MODE OBJFPC}{$H+}
+{$INTERFACES CORBA}
 
 interface
 
@@ -100,10 +101,6 @@ type
 
 implementation
 {$R *.lfm}
-
-(*******************************************************************************
- * TCEWidget
- *)
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEWidget.create(aOwner: TComponent);

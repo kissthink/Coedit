@@ -290,9 +290,6 @@ type
     //
     property WidgetList: TCEWidgetList read fWidgList;
     property MessageWidget: TCEMessagesWidget read fMesgWidg;
-    property EditWidget: TCEEditorWidget read fEditWidg;
-    property ProjectWidget: TCEProjectInspectWidget read fProjWidg;
-    property ProjectConfWidget: TCEProjectConfigurationWidget read fPrjCfWidg;
     property LibraryManager: TLibraryManager read fLibMan;
   end;
 

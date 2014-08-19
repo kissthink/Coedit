@@ -148,4 +148,6 @@ begin
   saveCompToTxtFile(self, aFilename);
 end;
 
+initialization
+  RegisterClasses([TCEToolItem, TCETools]);
 end.

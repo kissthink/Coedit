@@ -26,7 +26,6 @@ type
 
   (**
    * An implementer declares some actions on demand.
-   * TODO-cfeature: improve the interface so that a widget can declare a complete main menu category.
    *)
   ICEContextualActions = interface
   ['ICEContextualActions']
@@ -43,10 +42,10 @@ type
    *)
   ICEMultiDocObserver = interface
   ['ICEMultiDocObserver']
-    // the new document aDoc has been created (empty, runnable, project source, ...).
+    // aDoc has been created (empty, runnable, project source, ...).
     procedure docNew(const aDoc: TCESynMemo);
     // aDoc is the document being edited.
-    procedure docFocused(const aDoc: TCESynMemo); // rename to: docSelected or docActivated
+    procedure docFocused(const aDoc: TCESynMemo);
     // aDoc content has just been modified (edited, saved).
     procedure docChanged(const aDoc: TCESynMemo);
     // aDoc is about to be closed.
@@ -66,14 +65,14 @@ type
    *)
   ICEProjectObserver = interface
   ['ICEProjectObserver']
-    // the new project aProject has been created/opened
+    // aProject has been created/opened
     procedure projNew(const aProject: TCEProject);
     // aProject has been modified: switches, source name, ...
     procedure projChanged(const aProject: TCEProject);
     // aProject is about to be closed.
     procedure projClosing(const aProject: TCEProject);
     // not used yet: the active project is now aProject
-    procedure projFocused(const aProject: TCEProject); // rename: projSelected or projActivated
+    procedure projFocused(const aProject: TCEProject);
     // aProject is about to be compiled.
     //procedure projCompile(const aProject: TCEProject);
     // aProject is about to be executed.
@@ -81,7 +80,7 @@ type
   end;
 
   (**
-   * An implementer informs some ICEMultiDocObserver about the current file(s)
+   * An implementer informs some ICEProjectObserver about the current project(s)
    *)
   TCEProjectSubject = class(TCECustomSubject)
   protected
@@ -95,6 +94,8 @@ type
   ['ICEMainMenuProvider']
     // item must contain the full items tree to be added
     procedure menuDeclare(out item: TMenuItem);
+    // the implementer can update the actions used in the menu declared before.
+    procedure menuActionsUpdate;
   end;
 
 

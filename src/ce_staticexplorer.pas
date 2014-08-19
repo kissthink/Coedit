@@ -139,7 +139,6 @@ begin
   EntitiesConnector.removeObserver(self);
   inherited;
 end;
-
 {$ENDREGION}
 
 {$REGION ICEWidgetPersist ------------------------------------------------------}
