@@ -94,6 +94,7 @@ begin
   //
   reset;
   addDefaults;
+  subjProjChanged(TCEProjectSubject(fProjectSubject), self);
   //
   fModified := false;
 end;
