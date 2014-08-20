@@ -12,7 +12,7 @@ uses
   ce_common, ce_dmdwrap, ce_project, ce_dcd, ce_plugin, ce_synmemo, ce_widget,
   ce_messages, ce_interfaces, ce_editor, ce_projinspect, ce_projconf, ce_search,
   ce_staticexplorer, ce_miniexplorer, ce_libman, ce_libmaneditor, ce_customtools,
-  ce_observer;
+  ce_observer, ce_writableComponent;
 
 type
 
@@ -26,20 +26,12 @@ type
   (**
    * Encapsulates the options in a writable component.
    *)
-  TCEOptions = class(TComponent)
+  TCEOptions = class(TWritableComponent)
   private
     fFileMru, fProjMru: TMruFileList;
     fLeft, FTop, fWidth, fHeight: Integer;
-    fErrorFlg: boolean;
     procedure setFileMru(aValue: TMruFileList);
     procedure setProjMru(aValue: TMruFileList);
-    procedure saveLayout(str: TStream);
-    procedure loadLayout(str: TStream);
-    //
-    procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-    procedure readerError(Reader: TReader; const Message: string;
-      var Handled: Boolean);
   published
     property APP_Left: Integer read fLeft write fLeft;
     property APP_Top: Integer read fTop write fTop;
@@ -52,12 +44,8 @@ type
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
     procedure defineProperties(Filer: TFiler); override;
-    procedure saveToFile(const aFilename: string);
-    procedure loadFromFile(const aFilename: string);
-    procedure beforeSave;
-    procedure afterLoad;
-    //
-    property hasLoaded: boolean read fErrorFlg;
+    procedure beforeSave; override;
+    procedure afterLoad; override;
   end;
 
   { TCEMainForm }
@@ -1707,20 +1695,6 @@ begin
   inherited;
 end;
 
-procedure TCEOptions.readerPropNoFound(Reader: TReader; Instance: TPersistent;
-  var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-begin
-  Skip := true;
-  Handled := true;
-end;
-
-procedure TCEOptions.readerError(Reader: TReader; const Message: string;
-  var Handled: Boolean);
-begin
-  Handled := true;
-  fErrorFlg := false;
-end;
-
 procedure TCEOptions.setFileMru(aValue: TMruFileList);
 begin
   fFileMru.Assign(aValue);
@@ -1729,39 +1703,6 @@ end;
 procedure TCEOptions.setProjMru(aValue: TMruFileList);
 begin
   fProjMru.Assign(aValue);
-end;
-
-procedure TCEOptions.saveLayout(str: TStream);
-var
-  st: TXMLConfigStorage;
-  cf: TPropStorageXMLConfig;
-begin
-  cf := TPropStorageXMLConfig.Create(nil);
-  st := TXMLConfigStorage.Create(cf);
-  try
-    DockMaster.SaveLayoutToConfig(st);
-    cf.SaveToStream(str);
-    str.Position := 0;
-  finally
-    st.Free;
-    cf.Free;
-  end;
-end;
-
-procedure TCEOptions.loadLayout(str: TStream);
-var
-  st: TXMLConfigStorage;
-  cf: TPropStorageXMLConfig;
-begin
-  cf := TPropStorageXMLConfig.Create(nil);
-  st := TXMLConfigStorage.Create(cf);
-  try
-    cf.LoadFromStream(str);
-    DockMaster.LoadLayoutFromConfig(st,true);
-  finally
-    st.Free;
-    cf.Free;
-  end;
 end;
 
 procedure TCEOptions.defineProperties(Filer: TFiler);
@@ -1788,20 +1729,6 @@ begin
   //
   for i := 0 to CEMainForm.WidgetList.Count-1 do
     CEMainForm.WidgetList.widget[i].beforeSave(nil);
-end;
-
-procedure TCEOptions.saveToFile(const aFilename: string);
-begin
-  fErrorFlg := true;
-  beforeSave;
-  ce_common.saveCompToTxtFile(self, aFilename);
-end;
-
-procedure TCEOptions.loadFromFile(const aFilename: string);
-begin
-  fErrorFlg := true;
-  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
-  afterLoad;
 end;
 
 procedure TCEOptions.afterLoad;

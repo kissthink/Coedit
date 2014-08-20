@@ -135,7 +135,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="24">
+    <Units Count="25">
       <Unit0>
         <Filename Value="coedit.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -286,6 +286,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="ce_observer"/>
       </Unit23>
+      <Unit24>
+        <Filename Value="..\src\ce_writablecomponent.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ce_writableComponent"/>
+      </Unit24>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

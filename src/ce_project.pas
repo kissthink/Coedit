@@ -6,7 +6,8 @@ unit ce_project;
 interface
 
 uses
-  Classes, SysUtils, ce_common, ce_dmdwrap, ce_libman, ce_observer;
+  Classes, SysUtils, ce_common, ce_writableComponent ,ce_dmdwrap, ce_libman,
+  ce_observer;
 
 type
 
@@ -18,12 +19,11 @@ type
  *
  * Basically it' s designed to provide the options for the dmd process.
  *)
-  TCEProject = class(TComponent)
+  TCEProject = class(TWritableComponent)
   private
     fOnChange: TNotifyEvent;
     fModified: boolean;
     fRootFolder: string;
-    fFilename: string;
     fBasePath: string;
     fLibAliases: TStringList;
     fOptsColl: TCollection;
@@ -36,16 +36,17 @@ type
     procedure setLibAliases(const aValue: TStringList);
     procedure subMemberChanged(sender : TObject);
     procedure setOptsColl(const aValue: TCollection);
-    procedure setFname(const aValue: string);
     procedure setRoot(const aValue: string);
     procedure setSrcs(const aValue: TStringList);
     procedure setConfIx(aValue: Integer);
     function getConfig(const ix: integer): TCompilerConfiguration;
     function getCurrConf: TCompilerConfiguration;
+  protected
+    procedure afterSave; override;
+    procedure afterLoad; override;
+    procedure setFilename(const aValue: string); override;
     procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-    procedure readerError(Reader: TReader; const Message: string;
-      var Handled: Boolean);
+      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean); override;
   published
     property RootFolder: string read fRootFolder write setRoot;
     property OptionsCollection: TCollection read fOptsColl write setOptsColl;
@@ -64,14 +65,11 @@ type
     procedure addSource(const aFilename: string);
     function addConfiguration: TCompilerConfiguration;
     procedure getOpts(const aList: TStrings);
-    procedure saveToFile(const aFilename: string);
-    procedure loadFromFile(const aFilename: string);
     function outputFilename: string;
     //
     property libraryManager: TLibraryManager read fLibMan write fLibMan;
     property configuration[ix: integer]: TCompilerConfiguration read getConfig;
     property currentConfiguration: TCompilerConfiguration read getCurrConf;
-    property fileName: string read fFilename write setFname;
     property onChange: TNotifyEvent read fOnChange write fOnChange;
     property modified: boolean read fModified;
   end;
@@ -147,7 +145,7 @@ begin
   afterChanged;
 end;
 
-procedure TCEProject.setFname(const aValue: string);
+procedure TCEProject.setFilename(const aValue: string);
 var
   oldAbs, newRel, oldBase: string;
   i: NativeInt;
@@ -341,16 +339,13 @@ begin
   result := expandFileNameEx(fBasePath, aFilename);
 end;
 
-procedure TCEProject.saveToFile(const aFilename: string);
+procedure TCEProject.afterSave;
 begin
-  saveCompToTxtFile(self, aFilename);
   fModified := false;
 end;
 
-procedure TCEProject.loadFromFile(const aFilename: string);
+procedure TCEProject.afterLoad;
 begin
-  Filename := aFilename;
-  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
   patchPlateformPaths(fSrcs);
   doChanged;
   fModified := false;
@@ -387,12 +382,6 @@ begin
     Skip := true;
     Handled := false;
   end;
-end;
-
-procedure TCEProject.readerError(Reader: TReader; const Message: string;
-  var Handled: Boolean);
-begin
-  Handled := true;
 end;
 
 initialization

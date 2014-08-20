@@ -6,7 +6,7 @@ unit ce_customtools;
 interface
 
 uses
-  Classes, SysUtils, process, ce_common;
+  Classes, SysUtils, process, ce_common, ce_writableComponent;
 
 type
 
@@ -33,22 +33,16 @@ type
     procedure execute;
   end;
 
-  TCETools = class(TComponent)
+  TCETools = class(TWritableComponent)
   private
     fTools: TCollection;
     function getTool(index: Integer): TCEToolItem;
     procedure setTools(const aValue: TCollection);
-    procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-    procedure readerError(Reader: TReader; const Message: string;
-      var Handled: Boolean);
   published
     property tools: TCollection read fTools write setTools;
   public
     constructor create(aOwner: TComponent); override;
     destructor destroy; override;
-    procedure saveToFile(const aFilename: string);
-    procedure loadFromFile(const aFilename: string);
     //
     function addTool: TCEToolItem;
     property tool[index: integer]: TCEToolItem read getTool;
@@ -123,29 +117,6 @@ end;
 function TCETools.addTool: TCEToolItem;
 begin
   result := TCEToolItem(fTools.Add);
-end;
-
-procedure TCETools.readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-begin
-  Skip := true;
-  Handled := false;
-end;
-
-procedure TCETools.readerError(Reader: TReader; const Message: string;
-  var Handled: Boolean);
-begin
-  Handled := true;
-end;
-
-procedure TCETools.loadFromFile(const aFilename: string);
-begin
-  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
-end;
-
-procedure TCETools.saveToFile(const aFilename: string);
-begin
-  saveCompToTxtFile(self, aFilename);
 end;
 
 initialization

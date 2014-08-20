@@ -6,7 +6,7 @@ unit ce_libman;
 interface
 
 uses
-  Classes, SysUtils, ce_common, ce_dcd;
+  Classes, SysUtils, ce_common, ce_writableComponent, ce_dcd;
 
 type
 
@@ -28,14 +28,12 @@ type
   (**
    * Represents all the D libraries present on this system.
    *)
-  TLibraryManager = class(TComponent)
+  TLibraryManager = class(TWritableComponent)
   private
     fCol: TCollection;
     procedure setCol(const aValue: TCollection);
-    procedure readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
-    procedure readerError(Reader: TReader; const Message: string;
-      var Handled: Boolean);
+  protected
+    procedure afterLoad; override;
   published
     property libraries: TCollection read fCol write setCol;
   public
@@ -44,9 +42,6 @@ type
     //
     procedure getLibFiles(const someAliases, aList: TStrings);
     procedure getLibSources(const someAliases, aList: TStrings);
-    //
-    procedure loadFromFile(const aFilename: string);
-    procedure saveToFile(const aFilename: string);
     //
     procedure updateDCD;
   end;
@@ -143,28 +138,9 @@ begin
   end;
 end;
 
-procedure TLibraryManager.readerPropNoFound(Reader: TReader; Instance: TPersistent;
-      var PropName: string; IsPath: boolean; var Handled, Skip: Boolean);
+procedure TLibraryManager.afterLoad;
 begin
-  Skip := true;
-  Handled := false;
-end;
-
-procedure TLibraryManager.readerError(Reader: TReader; const Message: string;
-  var Handled: Boolean);
-begin
-  Handled := true;
-end;
-
-procedure TLibraryManager.loadFromFile(const aFilename: string);
-begin
-  loadCompFromTxtFile(self, aFilename, @readerPropNoFound, @readerError);
   updateDCD;
-end;
-
-procedure TLibraryManager.saveToFile(const aFilename: string);
-begin
-  saveCompToTxtFile(self, aFilename);
 end;
 
 initialization
