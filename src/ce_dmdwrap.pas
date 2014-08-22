@@ -742,7 +742,7 @@ end;
 
 procedure TDebugOpts.updateForceDbgBool;
 begin
-  fForceDbgBool := (fDbgLevel > 0) or  (fDbgIdents.Count > 0);
+  fForceDbgBool := (fDbgLevel > 0) or (fDbgIdents.Count > 0);
   if fForceDbgBool then setDbg(true);
 end;
 

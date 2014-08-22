@@ -344,10 +344,12 @@ procedure TCEProject.afterLoad;
 var
   i, j: Integer;
   src, ini, newdir: string;
+  hasPatched: boolean;
 begin
   patchPlateformPaths(fSrcs);
   doChanged;
   fModified := false;
+  hasPatched := false;
 
   // patch location: this only works when the project file is moved.
   // if the source structure changes this doesn't help much.
@@ -380,13 +382,16 @@ begin
         fSrcs.Strings[j] := ExtractRelativepath(fBasePath, newdir + DirectorySeparator + src)
       else break; // next pass: patch from another folder.
     end;
+    hasPatched := true;
   end;
   //
-  saveToFile(fFilename);
-  // warning for other relative paths
-  if fileExists(getAbsoluteSourceName(0)) then
-    ce_common.dlgOkInfo('the main sources paths has been patched, some others invalid ' +
-    'paths may still exists (-of, -od, etc.) but cannot be automatically handled');
+  if hasPatched then begin
+    saveToFile(fFilename);
+    // warning for other relative paths
+    if fileExists(getAbsoluteSourceName(0)) then
+      ce_common.dlgOkInfo('the main sources paths has been patched, some others invalid ' +
+      'paths may still exists (-of, -od, etc.) but cannot be automatically handled');
+  end;
 end;
 
 procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;
