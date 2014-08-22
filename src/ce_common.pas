@@ -1,6 +1,6 @@
 unit ce_common;
 
-{$MODE OBJFPC}{$H+}
+{$I ce_defines.inc}
 
 interface
 
@@ -13,6 +13,9 @@ uses
 
 const
   DdiagFilter = 'D source|*.d|D interface|*.di|All files|*.*';
+  exeExt = {$IFDEF WINDOWS} '.exe' {$ELSE} ''   {$ENDIF};
+  objExt = {$IFDEF WINDOWS} '.obj' {$ELSE} '.o' {$ENDIF};
+  libExt = {$IFDEF WINDOWS} '.lib' {$ELSE} '.a' {$ENDIF};
 
 var
   DExtList: TStringList;
@@ -57,6 +60,24 @@ type
   TProcessEx = class helper for TProcess
   public
     procedure Assign(aValue: TPersistent);
+  end;
+
+  (**
+   * Makes TReader.ReadProperties visible
+   *)
+  TReaderEx = class helper for TReader
+  public
+    procedure ReadPersistent(aValue: TPersistent);
+  end;
+
+  (**
+   * Makes TWriter.WriteProperties visible
+   * W
+   *)
+  TWriterEx = class helper for TWriter
+  public
+    // works as bin but raises because of 'ObjectBinaryToText'
+    procedure WritePersistent(aValue: TPersistent);
   end;
 
   (**
@@ -159,6 +180,8 @@ type
 
 implementation
 
+// https://stackoverflow.com/questions/25438091/objectbinarytotext-error-with-a-treader-twriter-helper-class
+// http://forum.lazarus.freepascal.org/index.php/topic,25557.0.html
 procedure TProcessEx.Assign(aValue: TPersistent);
 var
   src: TProcess;
@@ -188,6 +211,20 @@ begin
     XTermProgram := src.XTermProgram;
   end
   else inherited;
+end;
+
+procedure TReaderEx.ReadPersistent(aValue: TPersistent);
+begin
+  ReadListBegin;
+  while not EndOfList do ReadProperty(aValue);
+  ReadListEnd;
+end;
+
+procedure TWriterEx.WritePersistent(aValue: TPersistent);
+begin
+  WriteListBegin;
+  WriteProperties(aValue);
+  WriteListEnd;
 end;
 
 constructor TMRUList.Create;
@@ -337,13 +374,9 @@ begin
   result := patchProc(result, '/');
   result := patchProc(result, ':');
   {$ENDIF}
-  {$IFDEF LINUX}
+  {$IFDEF POSIX}
   result := patchProc(result, '\');
   result := patchProc(result, ':');
-  {$ENDIF}
-  {$IFDEF MACOS}
-  result := patchProc(result, '\');
-  result := patchProc(result, '/');
   {$ENDIF}
 end;
 
@@ -607,20 +640,17 @@ begin
 end;
 
 function exeInSysPath(anExeName: string): boolean;
-{$IFDEF WINDOWS}
 var
   ext: string;
-{$ENDIF}
 begin
-  {$IFDEF WINDOWS}
   ext := extractFileExt(anExeName);
-  if ext = '' then
-    anExeName += '.exe';
-  {$ENDIF}
+  if ext <> exeExt then
+    anExeName += exeExt;
   exit(ExeSearch(anExeName, '') <> '');
 end;
 
 initialization
+  RegisterClasses([TMRUList, TMRUFileList]);
   DExtList := TStringList.Create;
   DExtList.Add('.d');
   DExtList.Add('.di');

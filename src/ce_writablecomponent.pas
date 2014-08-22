@@ -1,6 +1,6 @@
 unit ce_writableComponent;
 
-{$MODE OBJFPC}{$H+}
+{$I ce_defines.inc}
 
 interface
 
@@ -12,7 +12,8 @@ type
   (**
    * The ancestor of classes which can be saved or reloaded to/from
    * a text file. It's used each time some options or data have to
-   * persist from a cession to another.
+   * persist from a cession to another, independently from the centralized
+   * system provided by the ICESessionOptionObserver/Subject mechanism.
    *)
   TWritableComponent = class(TComponent)
   protected

@@ -1,7 +1,6 @@
 unit ce_project;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -77,7 +76,7 @@ type
 implementation
 
 uses
-  ce_interfaces;
+  ce_interfaces, controls, dialogs;
 
 constructor TCEProject.create(aOwner: TComponent);
 begin
@@ -301,10 +300,7 @@ begin
   end;
   result := extractFilename(Sources.Strings[0]);
   result := result[1..length(result) - length(extractFileExt(result))];
-  result := extractFilePath(fileName) + DirectorySeparator + result;
-  {$IFDEF MSWINDOWS}
-  result += '.exe';
-  {$ENDIF}
+  result := extractFilePath(fileName) + DirectorySeparator + result + exeExt;
 end;
 
 procedure TCEProject.getOpts(const aList: TStrings);
@@ -345,10 +341,52 @@ begin
 end;
 
 procedure TCEProject.afterLoad;
+var
+  i, j: Integer;
+  src, ini, newdir: string;
 begin
   patchPlateformPaths(fSrcs);
   doChanged;
   fModified := false;
+
+  // patch location: this only works when the project file is moved.
+  // if the source structure changes this doesn't help much.
+  // if both appends then the project must be restarted from scratch.
+  for i := 0 to fSrcs.Count-1 do
+  begin
+    src := getAbsoluteSourceName(i);
+    if fileExists(src) then
+      continue;
+    if ce_common.dlgOkCancel(
+      'The project source(s) point to invalid file(s). ' + LineEnding +
+      'This can be encountered if the project file has been moved from its original location.' + LineEnding + LineEnding +
+      'Do you wish to select the new root folder ?') <> mrOk then
+        exit;
+    // hint for the common dir
+    src := fSrcs.Strings[i];
+    while (src[1] = '.') or (src[1] = DirectorySeparator) do
+        src := src[2..length(src)];
+    // prompt
+    ini := extractFilePath(fFilename);
+    if not selectDirectory( format('select the folder (which contains "%s")',[src]), ini, newdir) then
+      exit;
+    // patch
+    for j := i to fSrcs.Count-1 do
+    begin
+      src := fSrcs.Strings[j];
+      while (src[1] = '.') or (src[1] = DirectorySeparator) do
+        src := src[2..length(src)];
+      if fileExists(expandFilenameEx(fBasePath, newdir + DirectorySeparator + src)) then
+        fSrcs.Strings[j] := ExtractRelativepath(fBasePath, newdir + DirectorySeparator + src)
+      else break; // next pass: patch from another folder.
+    end;
+  end;
+  //
+  saveToFile(fFilename);
+  // warning for other relative paths
+  if fileExists(getAbsoluteSourceName(0)) then
+    ce_common.dlgOkInfo('the main sources paths has been patched, some others invalid ' +
+    'paths may still exists (-of, -od, etc.) but cannot be automatically handled');
 end;
 
 procedure TCEProject.readerPropNoFound(Reader: TReader; Instance: TPersistent;

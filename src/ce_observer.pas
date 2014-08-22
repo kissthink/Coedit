@@ -1,7 +1,6 @@
 unit ce_observer;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -45,7 +44,7 @@ type
   end;
 
   (**
-   *  Standard implementation of an ICESubject
+   * Standard implementation of an ICESubject
    *)
   TCECustomSubject = class(ICESubject)
   protected

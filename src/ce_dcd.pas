@@ -1,10 +1,11 @@
 unit ce_dcd;
-{$MODE OBJFPC}{$H+}
+
+{$I ce_defines.inc}
 
 interface
 
 uses
-  Classes, SysUtils, process, forms, strutils;
+  Classes, SysUtils, process, forms, strutils, ce_common;
 
 
 (**
@@ -67,8 +68,7 @@ begin
   if DCD_server <> nil then
     FreeAndNil(DCD_server);
   DCD_server := TProcess.Create(nil);
-  DCD_server.Executable := extractFilePath(application.ExeName) + directorySeparator
-    + 'dcd-server'{$IFDEF WINDOWS}+ '.exe'{$ENDIF};
+  DCD_server.Executable := extractFilePath(application.ExeName) + directorySeparator + 'dcd-server' + exeExt;
   DCD_server.Options := [poUsePipes{$IFDEF WINDOWS}, poNewConsole{$ENDIF}];
   DCD_server.ShowWindow := swoHIDE;
 end;
@@ -192,8 +192,7 @@ end;
 initialization
   createServer;
   DCD_client := TProcess.Create(nil);
-  DCD_client.Executable := extractFilePath(application.ExeName) + directorySeparator
-    + 'dcd-client'{$IFDEF WINDOWS}+ '.exe'{$ENDIF};
+  DCD_client.Executable := extractFilePath(application.ExeName) + directorySeparator + 'dcd-client' + exeExt;
   DCD_client.Options := [poUsePipes{$IFDEF WINDOWS}, poNewConsole{$ENDIF}];
   DCD_client.ShowWindow := swoHIDE;
   dcdOn := fileExists(DCD_server.Executable) and fileExists(DCD_client.Executable);

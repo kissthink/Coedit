@@ -1,27 +1,33 @@
 unit ce_interfaces;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
 uses
   Classes, SysUtils, actnList, menus, ce_synmemo, ce_project, ce_observer;
 
-
 type
 
   (**
    * An implementer can save and load some stuffs on application start/quit
    *)
-  ICEWidgetPersist = interface
+  ICESessionOptionsObserver = interface
   ['ICEWidgetPersist']
-    // Coedit options are about to be saved.
-    procedure beforeSave(sender: TObject);
-    // some custom properties can be declared to aFiler.
-    procedure declareProperties(aFiler: TFiler);
-    // Coedit options has just been reloaded.
-    procedure afterLoad(sender: TObject);
+    // persistent things are about to be saved.
+    procedure sesoptBeforeSave;
+    // persistent things can be declared to aFiler.
+    procedure sesoptDeclareProperties(aFiler: TFiler);
+    // persistent things have just been reloaded.
+    procedure sesoptAfterLoad;
+  end;
+
+  (**
+   * An implementer gets and gives back some things
+   *)
+  TCESessionOptionsSubject = class(TCECustomSubject)
+  protected
+    function acceptObserver(aObject: TObject): boolean; override;
   end;
 
   (**
@@ -73,10 +79,6 @@ type
     procedure projClosing(const aProject: TCEProject);
     // not used yet: the active project is now aProject
     procedure projFocused(const aProject: TCEProject);
-    // aProject is about to be compiled.
-    //procedure projCompile(const aProject: TCEProject);
-    // aProject is about to be executed.
-    //procedure projRun(const aProject: TCEProject);
   end;
 
   (**
@@ -94,7 +96,7 @@ type
   ['ICEMainMenuProvider']
     // item must contain the full items tree to be added
     procedure menuDeclare(out item: TMenuItem);
-    // the implementer can update the actions used in the menu declared before.
+    // the implementer can update the actions used in the menu declared previously.
     procedure menuActionsUpdate;
   end;
 
@@ -102,7 +104,7 @@ type
 {
   subject Primitives:
 
-  A subject has not necessarly all the informations the observers expect.
+  A subject cannot necessarly provides all the informations the observers expect.
   It can compose using the following "primitives".
 }
 
@@ -123,17 +125,19 @@ type
    procedure subjProjFocused(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjProjChanged(aSubject: TCEProjectSubject; aProj: TCEProject); {$IFDEF RELEASE}inline;{$ENDIF}
 
-   //procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject); //{$IFDEF RELEASE}inline;{$ENDIF}
-   //procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);     //{$IFDEF RELEASE}inline;{$ENDIF}
+  (**
+   * TCESessionOptionsSubject primitives.
+   *)
+   procedure subjSesOptsBeforeSave(aSubject: TCESessionOptionsSubject);                       {$IFDEF RELEASE}inline;{$ENDIF}
+   procedure subjSesOptsDeclareProperties(aSubject: TCESessionOptionsSubject; aFiler: TFiler);{$IFDEF RELEASE}inline;{$ENDIF}
+   procedure subjSesOptsAfterLoad(aSubject: TCESessionOptionsSubject);                        {$IFDEF RELEASE}inline;{$ENDIF}
 
 implementation
 
-uses
-  ce_main;
-
+{$REGION TCEMultiDocSubject-----------------------------------------------------}
 function TCEMultiDocSubject.acceptObserver(aObject: TObject): boolean;
 begin
-  result := (aObject is ICEMultiDocObserver);
+  exit(aObject is ICEMultiDocObserver);
 end;
 
 procedure subjDocNew(aSubject: TCEMultiDocSubject; aDoc: TCESynMemo);
@@ -167,12 +171,12 @@ begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
     (fObservers.Items[i] as ICEMultiDocObserver).docChanged(aDoc);
 end;
+{$ENDREGION}
 
-
-
+{$REGION TCEProjectSubject------------------------------------------------------}
 function TCEProjectSubject.acceptObserver(aObject: TObject): boolean;
 begin
-  result := (aObject is ICEProjectObserver);
+  exit(aObject is ICEProjectObserver);
 end;
 
 procedure subjProjNew(aSubject: TCEProjectSubject; aProj: TCEProject);
@@ -206,24 +210,36 @@ begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
     (fObservers.Items[i] as ICEProjectObserver).projChanged(aProj);
 end;
+{$ENDREGION}
 
+{$REGION TCESessionOptionsSubject------------------------------------------------------}
+function TCESessionOptionsSubject.acceptObserver(aObject: TObject): boolean;
+begin
+  exit(aObject is ICESessionOptionsObserver);
+end;
 
+procedure subjSesOptsBeforeSave(aSubject: TCESessionOptionsSubject);
+var
+  i: Integer;
+begin
+  with aSubject do for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICESessionOptionsObserver).sesoptBeforeSave;
+end;
 
-//procedure subjProjCompile(aSubject: TCEProjectSubject; aProj: TCEProject);
-//var
-//  i: Integer;
-//begin
-//  with aSubject do for i:= 0 to fObservers.Count-1 do
-//    (fObservers.Items[i] as ICEProjectObserver).projCompile(aProj);
-//end;
-//
-//procedure subjProjRun(aSubject: TCEProjectSubject; aProj: TCEProject);
-//var
-//  i: Integer;
-//begin
-//  with aSubject do for i:= 0 to fObservers.Count-1 do
-//    (fObservers.Items[i] as ICEProjectObserver).projRun(aProj);
-//end;
+procedure subjSesOptsDeclareProperties(aSubject: TCESessionOptionsSubject; aFiler: TFiler);
+var
+  i: Integer;
+begin
+  with aSubject do for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICESessionOptionsObserver).sesoptDeclareProperties(aFiler);
+end;
 
-
+procedure subjSesOptsAfterLoad(aSubject: TCESessionOptionsSubject);
+var
+  i: Integer;
+begin
+  with aSubject do for i:= 0 to fObservers.Count-1 do
+    (fObservers.Items[i] as ICESessionOptionsObserver).sesoptAfterLoad;
+end;
+{$ENDREGION}
 end.

@@ -1,6 +1,6 @@
 unit ce_d2syn;
 
-{$MODE OBJFPC}{$H+}
+{$I ce_defines.inc}
 
 interface
 

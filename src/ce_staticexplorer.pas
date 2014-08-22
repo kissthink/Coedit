@@ -1,7 +1,6 @@
 unit ce_staticexplorer;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -74,12 +73,8 @@ type
     procedure projClosing(const aProject: TCEProject);
     procedure projFocused(const aProject: TCEProject);
     procedure projChanged(const aProject: TCEProject);
-
-    procedure projCompile(const aProject: TCEProject); // warning: removed from itf
-    procedure projRun(const aProject: TCEProject); // warning: removed from itf
-
     //
-    procedure declareProperties(aFiler: TFiler); override;
+    procedure sesoptDeclareProperties(aFiler: TFiler); override;
   end;
 
 implementation
@@ -141,7 +136,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEWidgetPersist ------------------------------------------------------}
+{$REGION ICESessionOptionsObserver ------------------------------------------------------}
 procedure TCEStaticExplorerWidget.optget_AutoRefresh(aWriter: TWriter);
 begin
   aWriter.WriteBoolean(fAutoRefresh);
@@ -175,7 +170,7 @@ begin
   fActRefreshOnFocus.Checked := fRefreshOnFocus;
 end;
 
-procedure TCEStaticExplorerWidget.declareProperties(aFiler: TFiler);
+procedure TCEStaticExplorerWidget.sesoptDeclareProperties(aFiler: TFiler);
 begin
   inherited;
   aFiler.DefineProperty(Name + '_AutoRefresh', @optset_AutoRefresh, @optget_AutoRefresh, true);
@@ -277,16 +272,6 @@ end;
 procedure TCEStaticExplorerWidget.projChanged(const aProject: TCEProject);
 begin
   fProj := aProject;
-end;
-
-procedure TCEStaticExplorerWidget.projCompile(const aProject: TCEProject);
-begin
-  stopUpdateByDelay; // warning: not triggered anymore
-end;
-
-procedure TCEStaticExplorerWidget.projRun(const aProject: TCEProject);
-begin
-  stopUpdateByDelay; // warning: not triggered anymore
 end;
 {$ENDREGION}
 

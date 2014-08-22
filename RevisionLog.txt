@@ -1,6 +1,13 @@
 Revision log.
 (single changes can be tracked with the GH commit messages)
 
+r27:
+- all sources: common defines are set by ce_defines.inc
+- ce_dmdwrap.pas: every option likely to represent a path can contain a symbolic string.
+- ce_project: added a routine for patching invalid sources.
+- all sources: session options use the application-wide subject/observer system.
+- ce_main: expandSymbolicString, only empty results are back-quoted.
+
 r26:
 - ce_libmaneditor: added support for folder of library (e.g derelict).
 - ce_main: run project, fix, projects couldn't be executed when not saved.

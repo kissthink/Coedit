@@ -1,7 +1,6 @@
 unit ce_messages;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -62,7 +61,7 @@ type
     procedure addCeErr(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
     procedure addCeWarn(const aMsg: string; aCtxt: TMessageContext = mcUnknown);
     //
-    procedure declareProperties(aFiler: TFiler); override;
+    procedure sesoptDeclareProperties(aFiler: TFiler); override;
     //
     function contextName: string; override;
     function contextActionCount: integer; override;
@@ -154,7 +153,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEWidgetPersist ------------------------------------------------------}
+{$REGION ICESessionOptionsObserver ------------------------------------------------------}
 procedure TCEMessagesWidget.setMaxMessageCount(aValue: Integer);
 begin
   if aValue < 10 then aValue := 10;
@@ -174,7 +173,7 @@ begin
   aWriter.WriteInteger(fMaxMessCnt);
 end;
 
-procedure TCEMessagesWidget.declareProperties(aFiler: TFiler);
+procedure TCEMessagesWidget.sesoptDeclareProperties(aFiler: TFiler);
 begin
   inherited;
   aFiler.DefineProperty(Name + '_MaxMessageCount', @optset_MaxMessageCount, @optget_MaxMessageCount, true);

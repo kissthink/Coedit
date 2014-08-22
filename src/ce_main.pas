@@ -1,7 +1,6 @@
 unit ce_main;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -16,40 +15,13 @@ uses
 
 type
 
-  TCEMainForm = class;
-
-  // TODO-cfeature: input handling
   // TODO-cfeature: options
   // TODO-cwidget: options editor
   // TODO-cwidget: custom tools editor
   // TODO-cfeature: tools menu
-  (**
-   * Encapsulates the options in a writable component.
-   *)
-  TCEOptions = class(TWritableComponent)
-  private
-    fFileMru, fProjMru: TMruFileList;
-    fLeft, FTop, fWidth, fHeight: Integer;
-    procedure setFileMru(aValue: TMruFileList);
-    procedure setProjMru(aValue: TMruFileList);
-  published
-    property APP_Left: Integer read fLeft write fLeft;
-    property APP_Top: Integer read fTop write fTop;
-    property APP_Width: Integer read fWidth write fWidth;
-    property APP_Height: Integer read fHeight write fHeight;
-    //
-    property MRU_Files: TMruFileList read fFileMru write setFileMru;
-    property MRU_Projects: TMruFileList read fProjMru write setProjMru;
-  public
-    constructor create(aOwner: TComponent); override;
-    destructor destroy; override;
-    procedure defineProperties(Filer: TFiler); override;
-    procedure beforeSave; override;
-    procedure afterLoad; override;
-  end;
 
   { TCEMainForm }
-  TCEMainForm = class(TForm, ICEMultiDocObserver)
+  TCEMainForm = class(TForm, ICEMultiDocObserver, ICESessionOptionsObserver)
     actFileCompAndRun: TAction;
     actFileSaveAll: TAction;
     actFileClose: TAction;
@@ -222,6 +194,19 @@ type
     procedure docFocused(const aDoc: TCESynMemo);
     procedure docChanged(const aDoc: TCESynMemo);
 
+    // ICESessionOptionsObserver
+    procedure sesoptBeforeSave;
+    procedure sesoptDeclareProperties(aFiler: TFiler);
+    procedure sesoptAfterLoad;
+    procedure optget_FileMRUItems(aWriter: TWriter);
+    procedure optset_FileMRUItems(aReader: TReader);
+    procedure optget_FileMRULimit(aWriter: TWriter);
+    procedure optset_FileMRULimit(aReader: TReader);
+    procedure optget_ProjMRUItems(aWriter: TWriter);
+    procedure optset_ProjMRUItems(aReader: TReader);
+    procedure optget_ProjMRULimit(aWriter: TWriter);
+    procedure optset_ProjMRULimit(aReader: TReader);
+
     //Init - Fina
     procedure getCMdParams;
     procedure checkCompilo;
@@ -290,7 +275,7 @@ implementation
 {$R *.lfm}
 
 uses
-  SynMacroRecorder, strutils;
+  SynMacroRecorder, strutils, ce_options;
 
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEMainForm.create(aOwner: TComponent);
@@ -528,8 +513,8 @@ var
   fname2: string;
   opts: TCEOptions;
 begin
-  fname1 := getDocPath + 'options.txt';
-  fname2 := getDocPath + 'options.bak';
+  fname1 := getDocPath + 'options2.txt';
+  fname2 := getDocPath + 'options2.bak';
   opts := TCEOptions.create(nil);
   try
     if fileExists(fname1) then
@@ -557,7 +542,7 @@ begin
     forceDirectory(getDocPath);
     fLibMan.saveToFile(getDocPath + 'libraryManager.txt');
     fTools.saveToFile(getDocPath + 'tools.txt');
-    opts.saveToFile(getDocPath + 'options.txt');
+    opts.saveToFile(getDocPath + 'options2.txt');
   finally
     opts.Free;
   end;
@@ -667,7 +652,6 @@ end;
 
 destructor TCEMainForm.destroy;
 begin
-  EntitiesConnector.removeObserver(self);
   SaveSettings;
   //
   KillPlugs;
@@ -677,6 +661,7 @@ begin
   fFileMru.Free;
   fProject.Free;
   //
+  EntitiesConnector.removeObserver(self);
   inherited;
 end;
 
@@ -1241,7 +1226,7 @@ begin
     dmdproc.Parameters.Add(editor.fileName);
     dmdproc.Parameters.Add('-w');
     dmdproc.Parameters.Add('-wi');
-    dmdproc.Parameters.Add('-of' + fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF});
+    dmdproc.Parameters.Add('-of' + fname + exeExt);
     LibraryManager.getLibFiles(nil, dmdproc.Parameters);
     LibraryManager.getLibSources(nil, dmdproc.Parameters);
     dmdproc.Execute;
@@ -1253,16 +1238,11 @@ begin
       runproc.Options := [poStderrToOutPut, poUsePipes];
       runproc.CurrentDirectory := extractFilePath(runProc.Executable);
       runproc.Parameters.DelimitedText := expandSymbolicString(runArgs);
-      runproc.Executable := fname {$IFDEF WINDOWS}+ '.exe'{$ENDIF};
+      runproc.Executable := fname + exeExt;
       runproc.Execute;
       repeat ProcessOutputToMsg(runproc, mcEditor) until not runproc.Running;
-      {$IFDEF MSWINDOWS}
-       sysutils.DeleteFile(fname + '.exe');
-       sysutils.DeleteFile(fname + '.obj');
-      {$ELSE}
-       sysutils.DeleteFile(fname);
-       sysutils.DeleteFile(fname + '.o');
-      {$ENDIF}
+       sysutils.DeleteFile(fname + exeExt);
+       sysutils.DeleteFile(fname + objExt);
     end
     else begin
       ProcessOutputToMsg(dmdproc, mcEditor);
@@ -1284,9 +1264,6 @@ var
 begin
 
   fMesgWidg.ClearAllMessages;
-
-  //for i := 0 to fWidgList.Count-1 do
-    //fWidgList.widget[i].projCompile(aProject);
 
   with fProject.currentConfiguration do
   begin
@@ -1382,9 +1359,6 @@ var
 begin
   if aProject.currentConfiguration.outputOptions.binaryKind <>
     executable then exit;
-
-  //for i := 0 to fWidgList.Count-1 do
-    //fWidgList.widget[i].projRun(aProject);
 
   runproc := TProcess.Create(nil);
   try
@@ -1675,80 +1649,61 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION options ---------------------------------------------------------------}
-constructor TCEOptions.create(aOwner: TComponent);
+{$REGION ICESessionOptionsObserver ----------------------------------------------------}
+procedure TCEMainForm.sesoptBeforeSave;
 begin
-  inherited;
-  fFileMru := TMruFileList.Create;
-  fProjMru := TMruFileList.Create;
-  //
-  fLeft := 0;
-  fTop := 0;
-  fWidth := 800;
-  fHeight := 600;
 end;
 
-destructor TCEOptions.destroy;
+procedure TCEMainForm.sesoptDeclareProperties(aFiler: TFiler);
 begin
-  fFileMru.Free;
-  fProjMru.Free;
-  inherited;
+  aFiler.DefineProperty('Menu_FileMRU_Items', @optset_FileMRUItems, @optget_FileMRUItems, true);
+  aFiler.DefineProperty('Menu_FileMRU_Limit', @optset_FileMRULimit, @optget_FileMRULimit, true);
+  aFiler.DefineProperty('Menu_ProjMRU_Items', @optset_ProjMRUItems, @optget_ProjMRUItems, true);
+  aFiler.DefineProperty('Menu_ProjMRU_Limit', @optset_ProjMRULimit, @optget_ProjMRULimit, true);
 end;
 
-procedure TCEOptions.setFileMru(aValue: TMruFileList);
+procedure TCEMainForm.sesoptAfterLoad;
 begin
-  fFileMru.Assign(aValue);
 end;
 
-procedure TCEOptions.setProjMru(aValue: TMruFileList);
+procedure TCEMainForm.optget_FileMRUItems(aWriter: TWriter);
 begin
-  fProjMru.Assign(aValue);
+  aWriter.WriteString(fFileMru.DelimitedText);
 end;
 
-procedure TCEOptions.defineProperties(Filer: TFiler);
-var
-  i: NativeInt;
+procedure TCEMainForm.optset_FileMRUItems(aReader: TReader);
 begin
-  inherited;
-  // Filer is either a TReader or a TWriter
-  for i := 0 to CEMainForm.WidgetList.Count-1 do
-    CEMainForm.WidgetList.widget[i].declareProperties(Filer);
+  fFileMru.DelimitedText := aReader.ReadString;
 end;
 
-procedure TCEOptions.beforeSave;
-var
-  i: NativeInt;
+procedure TCEMainForm.optget_FileMRULimit(aWriter: TWriter);
 begin
-  fLeft   := CEMainForm.Left;
-  fTop    := CEMainForm.Top;
-  fWidth  := CEMainForm.Width;
-  fHeight := CEMainForm.Height;
-  //
-  fFileMru.Assign(CEMainForm.fFileMru);
-  fProjMru.Assign(CEMainForm.fProjMru);
-  //
-  for i := 0 to CEMainForm.WidgetList.Count-1 do
-    CEMainForm.WidgetList.widget[i].beforeSave(nil);
+  aWriter.WriteInteger(fFileMru.maxCount);
 end;
 
-procedure TCEOptions.afterLoad;
-var
-  i: NativeInt;
+procedure TCEMainForm.optset_FileMRULimit(aReader: TReader);
 begin
-  CEMainForm.Left   := fLeft;
-  CEMainForm.Top    := fTop;
-  CEMainForm.Width  := fWidth;
-  CEMainForm.Height := fHeight;
-  if fLeft < 0 then fLeft := 0;
-  if fTop < 0 then fTop := 0;
-  if fWidth < 800 then fWidth := 800;
-  if fHeight < 600 then fWidth := 600;
-  //
-  CEMainForm.fFileMru.Assign(fFileMru);
-  CEMainForm.fProjMru.Assign(fProjMru);
-  //
-  for i := 0 to CEMainForm.WidgetList.Count-1 do
-    CEMainForm.WidgetList.widget[i].afterLoad(nil);
+  fFileMru.maxCount := aReader.ReadInteger;
+end;
+
+procedure TCEMainForm.optget_ProjMRUItems(aWriter: TWriter);
+begin
+  aWriter.WriteString(fProjMru.DelimitedText);
+end;
+
+procedure TCEMainForm.optset_ProjMRUItems(aReader: TReader);
+begin
+  fProjMru.DelimitedText := aReader.ReadString;
+end;
+
+procedure TCEMainForm.optget_ProjMRULimit(aWriter: TWriter);
+begin
+  aWriter.WriteInteger(fProjMru.maxCount);
+end;
+
+procedure TCEMainForm.optset_ProjMRULimit(aReader: TReader);
+begin
+  fProjMru.maxCount := aReader.ReadInteger;
 end;
 {$ENDREGION}
 
@@ -1760,7 +1715,7 @@ var
   i: integer;
 begin
   if symString = '' then
-    exit(symString);
+    exit('``');
 
   result := '';
   elems := TStringList.Create;
@@ -1798,62 +1753,55 @@ begin
           continue;
         'CPF', 'CurrentProjectFile':
           begin
-            result += '`';
             if fProject <> nil then
               if fileExists(fProject.fileName) then
                 result += fProject.fileName;
-            result += '`';
           end;
         'CPP', 'CurrentProjectPath':
           begin
-            result += '`';
             if fProject <> nil then
               if fileExists(fProject.fileName) then
                 result += extractFilePath(fProject.fileName);
-            result += '`';
           end;
         'CPR', 'CurrentProjectRoot':
           begin
-            result += '`';
             if fProject <> nil then
               if directoryExists(fProject.getAbsoluteFilename(fProject.RootFolder)) then
                 result += fProject.getAbsoluteFilename(fProject.RootFolder)
               else if directoryExists(fProject.RootFolder) then
                 result += fProject.RootFolder;
-            result += '`';
           end;
         'CFF', 'CurrentFileFile':
           begin
-            result += '`';
             if fDoc <> nil then
               if fileExists(fDoc.fileName) then
                 result += fDoc.fileName;
-            result += '`';
           end;
         'CFP', 'CurrentFilePath':
           begin
-            result += '`';
             if fDoc <> nil then
               if fileExists(fDoc.fileName) then
                 result += extractFilePath(fDoc.fileName);
-            result += '`';
           end;
         'CI', 'CurrentIdentifier':
           begin
-            result += '`';
             if fDoc <> nil then
               result += fDoc.Identifier;
-            result += '`';
           end;
         'CAF', 'CoeditApplicationFile':
-          result += '`' + application.ExeName + '`';
+          result += application.ExeName;
         'CAP', 'CoeditApplicationPath':
-          result += '`' + extractFilePath(Application.ExeName) + '`';
+          result += extractFilePath(Application.ExeName);
       end;
     end;
   finally
     elems.Free;
   end;
+  // as the result may be used in TProcess.Parameter, it has not to be empty
+  // otherwise next parameter switch can be considered as the parameter value,
+  // eg --a=<CI> --b --c, the program will think that --b is --a value if <CI> is empty.
+  if result = '' then
+    result += '``';
 end;
 
 procedure PlugDispatchToHost(aPlugin: TCEPlugin; opCode: LongWord; data0: Integer; data1, data2: Pointer); cdecl;

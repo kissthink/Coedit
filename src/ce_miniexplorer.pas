@@ -1,7 +1,6 @@
 unit ce_miniexplorer;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -55,7 +54,7 @@ type
     constructor create(aIwner: TComponent); override;
     destructor destroy; override;
     //
-    procedure declareProperties(aFiler: TFiler); override;
+    procedure sesoptDeclareProperties(aFiler: TFiler); override;
     //
     procedure expandPath(const aPath: string);
   end;
@@ -100,7 +99,7 @@ end;
 {$ENDREGION}
 
 {$REGION ICEWidgetPersist ------------------------------------------------------}
-procedure TCEMiniExplorerWidget.declareProperties(aFiler: TFiler);
+procedure TCEMiniExplorerWidget.sesoptDeclareProperties(aFiler: TFiler);
 begin
   inherited;
   aFiler.DefineProperty(Name + '_LastFolder', @optset_LastFold, @optget_LastFold, true);

@@ -1,7 +1,6 @@
 unit ce_widget;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -15,7 +14,7 @@ type
    * Base type for an UI module.
    *)
   PTCEWidget = ^TCEWidget;
-  TCEWidget = class(TForm, ICEContextualActions, ICEWidgetPersist)
+  TCEWidget = class(TForm, ICEContextualActions, ICESessionOptionsObserver)
     Content: TPanel;
     Back: TPanel;
     contextMenu: TPopupMenu;
@@ -70,9 +69,9 @@ type
     function contextActionCount: integer; virtual;
     function contextAction(index: integer): TAction; virtual;
     //
-    procedure beforeSave(sender: TObject); virtual;
-    procedure declareProperties(aFiler: TFiler); virtual;
-    procedure afterLoad(sender: TObject); virtual;
+    procedure sesoptBeforeSave; virtual;
+    procedure sesoptDeclareProperties(aFiler: TFiler); virtual;
+    procedure sesoptAfterLoad; virtual;
     //
     // returns true if one of the three updater is processing.
     property updating: boolean read fUpdating;
@@ -102,6 +101,9 @@ type
 implementation
 {$R *.lfm}
 
+uses
+  ce_observer;
+
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEWidget.create(aOwner: TComponent);
 var
@@ -123,29 +125,31 @@ begin
     itm.Action := contextAction(i);
     contextMenu.Items.Add(itm);
   end;
-
   PopupMenu := contextMenu;
+
+  EntitiesConnector.addObserver(self);
 end;
 
 destructor TCEWidget.destroy;
 begin
+  EntitiesConnector.removeObserver(self);
   inherited;
 end;
 {$ENDREGION}
 
-{$REGION ICEWidgetPersist ------------------------------------------------------}
-procedure TCEWidget.beforeSave(sender: TObject);
+{$REGION ICESessionOptionsObserver ----------------------------------------------------}
+procedure TCEWidget.sesoptBeforeSave;
 begin
 end;
 
-procedure TCEWidget.declareProperties(aFiler: TFiler);
+procedure TCEWidget.sesoptDeclareProperties(aFiler: TFiler);
 begin
   // override rules: inhertied must be called. No dots in the property name, property name prefixed with the widget Name
   aFiler.DefineProperty(Name + '_updaterByLoopInterval', @optset_LoopInterval, @optget_LoopInterval, true);
   aFiler.DefineProperty(Name + '_updaterByDelayDuration', @optset_UpdaterDelay, @optget_UpdaterDelay, true);
 end;
 
-procedure TCEWidget.afterLoad(sender: TObject);
+procedure TCEWidget.sesoptAfterLoad;
 begin
 end;
 

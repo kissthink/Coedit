@@ -1,6 +1,6 @@
 unit ce_dmdwrap;
 
-{$MODE OBJFPC}{$H+}
+{$I ce_defines.inc}
 
 interface
 
@@ -361,8 +361,8 @@ procedure TDocOpts.getOpts(const aList: TStrings);
 begin
   if fGenDoc then aList.Add('-D');
   if fGenJson then aList.Add('-X');
-  if fDocDir <> '' then aList.Add('-Dd' + fDocDir);
-  if fJsonFname <> '' then aList.Add('-Xf' + fJsonFname);
+  if fDocDir <> '' then aList.Add('-Dd' + CEMainForm.expandSymbolicString(fDocDir));
+  if fJsonFname <> '' then aList.Add('-Xf' + CEMainForm.expandSymbolicString(fJsonFname));
 end;
 
 procedure TDocOpts.assign(aValue: TPersistent);
@@ -816,13 +816,13 @@ begin
       aList.Add(str);
   end;
   for str in fIncl do if str <> '' then
-    aList.Add('-I'+ str);
+    aList.Add('-I'+ CEMainForm.expandSymbolicString(str));
   for str in fImpt do if str <> '' then
-    aList.Add('-J'+ str);
+    aList.Add('-J'+ CEMainForm.expandSymbolicString(str));
   if fFname <> '' then
-    aList.Add('-of' + fFname);
+    aList.Add('-of' + CEMainForm.expandSymbolicString(fFname));
   if fObjDir <> '' then
-    aList.Add('-od' + fObjDir);
+    aList.Add('-od' + CEMainForm.expandSymbolicString(fObjDir));
 end;
 
 procedure TPathsOpts.assign(aValue: TPersistent);
@@ -920,7 +920,7 @@ begin
       str2 := '-' + str1
     else
       str2 := str1;
-    aList.Add(str2);
+    aList.Add(CEMainForm.expandSymbolicString(str2));
   end;
 end;
 

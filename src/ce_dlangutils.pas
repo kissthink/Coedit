@@ -1,6 +1,6 @@
 unit ce_dlangutils;
 
-{$MODE OBJFPC}{$H+}
+{$I ce_defines.inc}
 
 interface
 

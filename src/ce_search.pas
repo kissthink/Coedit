@@ -1,7 +1,6 @@
 unit ce_search;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -62,7 +61,7 @@ type
     function contextActionCount: integer; override;
     function contextAction(index: integer): TAction; override;
     //
-    procedure declareProperties(aFiler: TFiler); override;
+    procedure sesoptDeclareProperties(aFiler: TFiler); override;
     //
     procedure actFindNextExecute(sender: TObject);
     procedure actReplaceNextExecute(sender: TObject);
@@ -104,8 +103,8 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION ICEWidgetPersist ------------------------------------------------------}
-procedure TCESearchWidget.declareProperties(aFiler: TFiler);
+{$REGION ICESessionOptionsObserver ------------------------------------------------------}
+procedure TCESearchWidget.sesoptDeclareProperties(aFiler: TFiler);
 begin
   inherited;
   aFiler.DefineProperty(Name + '_FindMRU', @optset_SearchMru, @optget_SearchMru, true);

@@ -1,7 +1,6 @@
 unit ce_libman;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
@@ -107,11 +106,7 @@ begin
         listFiles(lst, itm.libFile);
         for j:= 0 to lst.Count-1 do
         begin
-          {$IFDEF WINDOWS}
-          if extractFileExt(lst.Strings[j]) = '.lib' then
-          {$ELSE}
-          if extractFileExt(lst.Strings[j]) = '.a' then
-          {$ENDIF}
+          if extractFileExt(lst.Strings[j]) = libExt then
             if aList.IndexOf(lst.Strings[j]) = -1 then
               aList.Add(lst.Strings[j]);
         end;

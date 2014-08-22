@@ -1,7 +1,6 @@
 unit ce_customtools;
 
-{$MODE OBJFPC}{$H+}
-{$INTERFACES CORBA}
+{$I ce_defines.inc}
 
 interface
 
