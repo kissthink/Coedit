@@ -13,11 +13,13 @@ object CurrentProject: TCEProject
       postBuildProcess.executable = '<CAP>cleaner.exe'
       postBuildProcess.options = [poUsePipes, poStderrToOutPut]
       postBuildProcess.parameters.Strings = (
-        '-r'
-        '-f'
-        '<CAP>'
         '-e'
         '.tmp,.res'
+        '-f'
+        'afile.file,anotherfile.hji'
+        '-p'
+        '<CAP>'
+        '-r'
       )
       postBuildProcess.showWindow = swoHIDE
       runOptions.options = []
