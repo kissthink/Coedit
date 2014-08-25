@@ -406,6 +406,7 @@ begin
 
   lex(fDoc.Lines.Text, tokLst);
 
+  {
   if fDoc.isDSource then
   begin
     checkSyntacticErrors(tokLst, errLst);
@@ -418,6 +419,7 @@ begin
       [err.msg, err.position.y, err.position.x]), dt);
     end;
   end;
+  }
 
   md := '';
   if fDoc.isDSource then
