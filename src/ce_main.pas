@@ -1371,10 +1371,10 @@ begin
     repeat
         prm := ExtractDelimited(i, runArgs, [' ']);
         prm := expandSymbolicString(prm);
-        if prm <> '' then
+        if prm <> '``' then
           runProc.Parameters.AddText(prm);
         Inc(i);
-    until prm = '';
+    until prm = '``';
     procname := aProject.outputFilename;
 
     if not fileExists(procname) then
