@@ -78,9 +78,12 @@ begin
     itm := TLibraryItem(fCol.Items[i]);
     ce_dcd.addDcdImport(itm.libSourcePath);
   end;
-
 end;
 
+(**
+ * the caller gets all the *.lib/*.a files in aList if someAliases is nil
+ * otherwise the static libs selected by the aliases in someAliases.
+ *)
 procedure TLibraryManager.getLibFiles(const someAliases, aList: TStrings);
 var
   itm: TLibraryItem;
@@ -91,11 +94,15 @@ begin
   begin
     itm := TLibraryItem(fCol.Items[i]);
     if someAliases <> nil then
-      if someAliases.IndexOf(itm.libAlias) = -1 then continue;
+      if someAliases.IndexOf(itm.libAlias) = -1 then
+        continue;
     // single lib files
     if fileExists(itm.libFile) then
     begin
-      if aList.IndexOf(itm.libFile) <> -1 then continue;
+      if aList.IndexOf(itm.libFile) <> -1 then
+        continue;
+      if not FileExists(itm.libFile) then
+        continue;
       aList.Add(itm.libFile);
     end
     // folder of lib file
@@ -117,6 +124,10 @@ begin
   end;
 end;
 
+(**
+ * the caller gets all the paths were are located the lib sources in aList if someAliases is nil
+ * otherwise the paths were are located the lib sources selected by the aliases in someAliases.
+ *)
 procedure TLibraryManager.getLibSources(const someAliases, aList: TStrings);
 var
   itm: TLibraryItem;
@@ -126,9 +137,13 @@ begin
   begin
     itm := TLibraryItem(fCol.Items[i]);
     if someAliases <> nil then
-      if someAliases.IndexOf(itm.libAlias) = -1 then continue;
+      if someAliases.IndexOf(itm.libAlias) = -1 then
+        continue;
     //
-    if aList.IndexOf(itm.libSourcePath) <> -1 then continue;
+    if aList.IndexOf(itm.libSourcePath) <> -1 then
+      continue;
+    if not directoryExists(itm.libSourcePath) then
+      continue;
     aList.Add('-I' + itm.libSourcePath);
   end;
 end;
