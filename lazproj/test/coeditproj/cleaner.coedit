@@ -7,7 +7,7 @@ object CurrentProject: TCEProject
       outputOptions.boundsCheck = offAlways
       outputOptions.optimizations = True
       outputOptions.release = True
-      pathsOptions.outputFilename = '<CPP>..\..\cleaner.exe'
+      pathsOptions.outputFilename = '<CAP>cleaner.exe'
       preBuildProcess.options = []
       preBuildProcess.showWindow = swoNone
       postBuildProcess.executable = '<CAP>cleaner.exe'

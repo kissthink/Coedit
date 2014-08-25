@@ -1,9 +1,15 @@
-module runnable;
+module expandSymString;
 
 import std.stdio;
 import std.getopt;
 
-// pass --a=<CPF> --b=<CPP> --c=<CPR> --d=<CFF> --e=<CFP> --f=<CI> --g=<CAF> --h=<CAP> as parameters in "Run file..."
+/*
+pass:
+
+--a=<CPF> --b=<CPP> --c=<CPR> --d=<CFF> --e=<CFP> --f=<CI> --g=<CAF> --h=<CAP>
+
+as parameters in "Run, Compile and Run file..."
+*/
 void main(string args[])
 {
 
@@ -13,7 +19,6 @@ void main(string args[])
         expanded = "";
         getopt(args, std.getopt.config.passThrough, c, &expanded);
         if (expanded.length != 0)
-            writeln(expanded);
+            writeln(c, " : ", expanded);
     }
-
 }
