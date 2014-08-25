@@ -1,0 +1,30 @@
+object CurrentProject: TCEProject
+  OptionsCollection = <  
+    item
+      name = 'release'
+      outputOptions.inlining = True
+      outputOptions.noBoundsCheck = False
+      outputOptions.boundsCheck = offAlways
+      outputOptions.optimizations = True
+      outputOptions.release = True
+      pathsOptions.outputFilename = '<CPP>..\..\cleaner.exe'
+      preBuildProcess.options = []
+      preBuildProcess.showWindow = swoNone
+      postBuildProcess.executable = '<CAP>cleaner.exe'
+      postBuildProcess.options = [poUsePipes, poStderrToOutPut]
+      postBuildProcess.parameters.Strings = (
+        '-r'
+        '-f'
+        '<CAP>'
+        '-e'
+        '.tmp,.res'
+      )
+      postBuildProcess.showWindow = swoHIDE
+      runOptions.options = []
+      runOptions.showWindow = swoNone
+    end>
+  Sources.Strings = (
+    '..\src\cleaner.d'
+  )
+  ConfigurationIndex = 0
+end

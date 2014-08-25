@@ -1259,7 +1259,7 @@ procedure TCEMainForm.compileProject(const aProject: TCEProject);
 var
   dmdproc: TProcess;
   ppproc: TProcess;
-  olddir, prjpath: string;
+  olddir, prjpath, ppname: string;
   i: NativeInt;
 begin
 
@@ -1267,12 +1267,14 @@ begin
 
   with fProject.currentConfiguration do
   begin
-    if preBuildProcess.executable <> '' then
-      if exeInSysPath(preBuildProcess.executable) then
+    ppname := expandSymbolicString(preBuildProcess.executable);
+    if ppname <> '``' then
+      if exeInSysPath(ppname) then
       begin
         ppproc := TProcess.Create(nil);
         try
           preBuildProcess.setProcess(ppproc);
+          ppproc.Executable := ppname;
           for i:= 0 to ppproc.Parameters.Count-1 do
             ppproc.Parameters.Strings[i] := expandSymbolicString(ppproc.Parameters.Strings[i]);
           if ppproc.CurrentDirectory = '' then
@@ -1324,12 +1326,14 @@ begin
 
     with fProject.currentConfiguration do
     begin
-      if postBuildProcess.executable <> '' then
-        if exeInSysPath(postBuildProcess.executable) then
+      ppname := expandSymbolicString(postBuildProcess.executable);
+      if ppname <> '``' then
+        if exeInSysPath(ppname) then
         begin
           ppproc := TProcess.Create(nil);
           try
             postBuildProcess.setProcess(ppproc);
+            ppproc.Executable := ppname;
             for i:= 0 to ppproc.Parameters.Count-1 do
               ppproc.Parameters.Strings[i] := expandSymbolicString(ppproc.Parameters.Strings[i]);
             if ppproc.CurrentDirectory = '' then

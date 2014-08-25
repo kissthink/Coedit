@@ -646,7 +646,10 @@ begin
   ext := extractFileExt(anExeName);
   if ext <> exeExt then
     anExeName += exeExt;
-  exit(ExeSearch(anExeName, '') <> '');
+  if FileExists(anExeName) then
+    exit(true)
+  else
+    exit(ExeSearch(anExeName, '') <> '');
 end;
 
 initialization
