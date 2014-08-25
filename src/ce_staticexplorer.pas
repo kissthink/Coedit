@@ -85,9 +85,9 @@ uses ce_main, ce_libman;
 {$REGION Standard Comp/Obj------------------------------------------------------}
 constructor TCEStaticExplorerWidget.create(aOwner: TComponent);
 begin
-  fAutoRefresh := true;
+  fAutoRefresh := false;
   fRefreshOnFocus := true;
-  fRefreshOnChange := true;
+  fRefreshOnChange := false;
   fActRefresh := TAction.Create(self);
   fActRefresh.OnExecute := @actRefreshExecute;
   fActRefresh.Caption := 'Refresh';
