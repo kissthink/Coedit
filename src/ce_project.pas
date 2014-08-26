@@ -5,6 +5,9 @@ unit ce_project;
 interface
 
 uses
+  {$IFDEF DEBUG}
+  LclProc,
+  {$ENDIF}
   Classes, SysUtils, ce_common, ce_writableComponent ,ce_dmdwrap, ce_libman,
   ce_observer;
 
@@ -210,7 +213,7 @@ begin
   if fChangedCount > 0 then
   begin
     {$IFDEF DEBUG}
-    writeln('project update count > 0');
+    DebugLn('project update count > 0');
     {$ENDIF}
     exit;
   end;
@@ -233,7 +236,7 @@ begin
     lst.Add('---------begin----------');
     getOpts(lst);
     lst.Add('---------end-----------');
-    writeln(lst.Text);
+    DebugLn(lst.Text);
   finally
     lst.Free;
   end;

@@ -739,7 +739,7 @@ procedure checkSyntacticErrors(const aTokenList: TLexTokenList; const anErrorLis
 const
   errPrefix = 'syntactic error: ';
 var
-  tk, old1, old2, lastSig: TLexToken;
+  tk, old1, old2, lastSignifiant: TLexToken;
   err: PLexError;
   tkIndex: NativeInt;
   pareCnt, curlCnt, squaCnt: NativeInt;
@@ -764,7 +764,7 @@ begin
   squaLeft:= False;
   FillByte( old1, sizeOf(TLexToken), 0);
   FillByte( old2, sizeOf(TLexToken), 0);
-  FillByte( lastSig, sizeOf(TLexToken), 0);
+  FillByte( lastSignifiant, sizeOf(TLexToken), 0);
 
   for tk in aTokenList do
   begin
@@ -827,9 +827,9 @@ _preSeq:
     begin
       // empty statements:
       if (tk.kind = ltkSymbol) and (tk.data = ';') then
-        if (lastSig.kind = ltkSymbol) and (lastSig.data = ';') then
+        if (lastSignifiant.kind = ltkSymbol) and (lastSignifiant.data = ';') then
           addError('invalid syntax for empty statement');
-      if tk.kind <> ltkComment then lastSig := tk;
+      if tk.kind <> ltkComment then lastSignifiant := tk;
 
       // suspicious double keywords
       if (old1.kind = ltkKeyword) and (tk.kind = ltkKeyword) then

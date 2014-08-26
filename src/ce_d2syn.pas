@@ -40,33 +40,11 @@ const
 
 type
 
-
-  {$IFDEF USE_DICT_LINKEDCHARMAP}
-  PCharMap = ^TCharMap;
-  TCharMap = record
-    chars: array [Byte] of PCharMap;
-  end;
-
-  // slightly fatest then a hash-based-dictionary but huge memory use.
-  TD2Dictionary = object
-  private
-    fRoot: TCharMap;
-    fTerm: NativeInt;
-    fFreeList: array of pointer;
-    fLongest, fShortest: NativeInt;
-    procedure addEntry(const aValue: string);
-  public
-    constructor create;
-    destructor destroy;
-    function find(const aValue: string): boolean;
-  end;
-  {$ELSE} {$IFDEF USE_DICT_GPERF}
-  // TODO: a perfect hash dictionnary based on gperf
-  {$ELSE}
   TD2DictionaryEntry = record
     filled: Boolean;
     values: array of string;
   end;
+
   TD2Dictionary = object
   private
     fLongest, fShortest: NativeInt;
@@ -76,17 +54,35 @@ type
   public
     constructor create;
     destructor destroy; // do not remove even if empty (compat with char-map version)
-    function find(const aValue: string): boolean;
+    function find(const aValue: string): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
   end;
-  {$ENDIF}
-  {$ENDIF}
 
   TTokenKind = (tkCommt, tkIdent, tkKeywd, tkStrng, tkBlank, tkSymbl, tkNumbr, tkCurrI, tkDDocs, tkAsblr);
 
   TRangeKind = (rkNone, rkString1, rkString2, rkTokString, rkBlockCom1, rkBlockCom2, rkBlockDoc1, rkBlockDoc2, rkAsm);
 
+  TRangeKinds = set of TRangeKind;
+
   TFoldKind = (fkBrackets, fkComments1, fkComments2, fkStrings);
   TFoldKinds = set of TFoldKind;
+
+  PRangeInfo = ^TRangeInfo;
+  TRangeInfo = record
+    kinds: TRangeKinds;
+    nestedCommCount: integer;
+    tkStrCurlyCount: integer;
+  end;
+
+  TSynD2SynRange = class(TSynCustomHighlighterRange)
+  private
+    nestedCommentsCount: Integer;
+    tokenStringBracketsCount: Integer;
+    rangeKinds: TRangeKinds;
+  public
+    procedure Assign(Src: TSynCustomHighlighterRange); override;
+    function Compare(Range: TSynCustomHighlighterRange): integer; override;
+    procedure Clear; override;
+  end;
 
 	TSynD2Syn = class (TSynCustomFoldHighlighter)
 	private
@@ -105,14 +101,13 @@ type
     fLineBuf: string;
     fTokStart, fTokStop: Integer;
     fTokKind: TTokenKind;
-    fRange: TRangeKind;
+    fCurrRange: TSynD2SynRange;
     fFoldKinds: TFoldKinds;
     fAttribLut: array[TTokenKind] of TSynHighlighterAttributes;
-    // readNext is mostly used to advanced the reader head.
-    function readNext: Char;
-    function readCurr: Char;
-    function readPrev: Char;
-    function readPrevPrev: Char;
+    function readNext: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+    function readCurr: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+    function readPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+    function readPrevPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
     procedure setFoldKinds(aValue: TFoldKinds);
     procedure setWhiteAttrib(aValue: TSynHighlighterAttributes);
     procedure setNumbrAttrib(aValue: TSynHighlighterAttributes);
@@ -127,6 +122,8 @@ type
     procedure doAttribChange(sender: TObject);
     procedure setCurrIdent(const aValue: string);
     procedure doChanged;
+  protected
+    function GetRangeClass: TSynCustomHighlighterRangeClass; override;
 	published
     // Defines which kind of range can be folded, among curly brackets, block comments and nested comments
     property FoldKinds: TFoldKinds read fFoldKinds write setFoldKinds;
@@ -160,68 +157,6 @@ type
 
 implementation
 
-{$IFDEF USE_DICT_LINKEDCHARMAP}
-constructor TD2Dictionary.create;
-var
-  value: string;
-  i: NativeInt;
-begin
-  fTerm := 1;
-  for i := 0 to 255 do fRoot.chars[i] := nil;
-  for value in D2Kw do
-    addEntry(value);
-end;
-
-destructor TD2Dictionary.destroy;
-var
-  i: NativeInt;
-begin
-  for i := 0 to high(fFreeList) do
-    FreeMem(fFreeList[i]);
-end;
-
-procedure TD2Dictionary.addEntry(const aValue: string);
-var
-  len, i, j: NativeInt;
-  currMap: PCharMap;
-  newMap: PCharMap;
-begin
-  len := length(aValue);
-  if len > fLongest then fLongest := len;
-  if len < fShortest then fShortest := len;
-  currMap := @fRoot;
-  for i := 1 to len do
-  begin
-    if (currMap^.chars[Byte(aValue[i])] = nil) then
-    begin
-      newMap := new(PCharMap);
-      for j := 0 to 255 do newMap^.chars[j] := nil;
-      setLength(fFreeList, length(fFreeList) + 1);
-      fFreeList[high(fFreeList)] := newMap;
-      currMap^.chars[Byte(aValue[i])] := newMap;
-    end;
-    if i < len then currMap := currMap^.chars[Byte(aValue[i])];
-  end;
-  currMap^.chars[0] := @fTerm;
-end;
-
-function TD2Dictionary.find(const aValue: string): boolean;
-var
-  len, i: NativeInt;
-  currMap: PCharMap;
-begin
-  len := length(aValue);
-  if len > fLongest then exit(false);
-  if len < fShortest then exit(false);
-  currMap := @fRoot;
-  for i := 1 to len do
-  begin
-    if currMap^.chars[Byte(aValue[i])] = nil then exit(false);
-    if i < len then currMap := currMap^.chars[Byte(aValue[i])];
-  end;
-  exit( currMap^.chars[0] = @fTerm );
-end;
-{$ELSE}
 constructor TD2Dictionary.create;
 var
   value: string;
@@ -273,7 +208,46 @@ begin
   for i:= 0 to high(fEntries[hash].values) do
     if fEntries[hash].values[i] = aValue then exit(true);
 end;
-{$ENDIF}
+
+procedure TSynD2SynRange.Assign(Src: TSynCustomHighlighterRange);
+var
+  src_t: TSynD2SynRange;
+begin
+  inherited;
+  if Src is TSynD2SynRange then
+  begin
+    src_t := TSynD2SynRange(Src);
+    rangeKinds := src_t.rangeKinds;
+    nestedCommentsCount := src_t.nestedCommentsCount;
+    tokenStringBracketsCount := src_t.tokenStringBracketsCount;
+  end;
+end;
+
+function TSynD2SynRange.Compare(Range: TSynCustomHighlighterRange): integer;
+var
+  src_t: TSynD2SynRange;
+begin
+  result := inherited Compare(Range);
+  if result <> 0 then exit;
+  //
+  if Range is TSynD2SynRange then
+  begin
+    src_t := TSynD2SynRange(Range);
+    if src_t.rangeKinds <> rangeKinds then exit(1);
+    if src_t.nestedCommentsCount <> nestedCommentsCount then exit(1);
+    if src_t.tokenStringBracketsCount <> tokenStringBracketsCount then exit(1);
+    exit(0);
+  end;
+end;
+
+procedure TSynD2SynRange.Clear;
+begin
+  inherited;
+  nestedCommentsCount := 0;
+  tokenStringBracketsCount := 0;
+  rangeKinds := [];
+end;
+
 
 constructor TSynD2Syn.create(aOwner: TComponent);
 begin
@@ -344,8 +318,14 @@ end;
 
 destructor TSynD2Syn.destroy;
 begin
+  fCurrRange.Free;
   fKeyWords.destroy;
   inherited;
+end;
+
+function TSynD2Syn.GetRangeClass: TSynCustomHighlighterRangeClass;
+begin
+  result := TSynD2SynRange;
 end;
 
 procedure TSynD2Syn.doChanged;
@@ -437,40 +417,49 @@ begin
 end;
 
 {$IFDEF DEBUG}{$R-}{$ENDIF}
-function TSynD2Syn.readNext: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+function TSynD2Syn.readNext: Char;
 begin
   Inc(fTokStop);
   result := fLineBuf[fTokStop];
 end;
 {$IFDEF DEBUG}{$R+}{$ENDIF}
 
-function TSynD2Syn.readCurr: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+function TSynD2Syn.readCurr: Char;
 begin
   result := fLineBuf[fTokStop];
 end;
 
-// unlike readNext, readPrev doesn't change the reader head position.
-function TSynD2Syn.readPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+function TSynD2Syn.readPrev: Char;
 begin
   result := fLineBuf[fTokStop-1];
 end;
 
-function TSynD2Syn.readPrevPrev: Char; {$IFNDEF DEBUG}inline;{$ENDIF}
+function TSynD2Syn.readPrevPrev: Char;
 begin
   result := fLineBuf[fTokStop-2];
 end;
-
 
 //TODO-cnumber literals: stricter, separate parser for each form (bin,dec,hex,float,etc)
 //TODO-cstring literals: delimited strings.
 //TODO-ccomments: correct nested comments handling (inc/dec)
 //TODO-cfeature: something like pascal {$region} : /*folder blabla*/  /*endfolder*/
-//TODO-bugfix: token string, curly brackets pairs must be even.
 
 {$BOOLEVAL ON}
 procedure TSynD2Syn.next;
+var
+  reader: PChar;
 label
   _postString1;
+procedure readerReset;
+begin
+  fTokStop := fTokStart;
+  reader := @fLineBuf[fTokStop];
+end;
+procedure readerNext;
+begin
+  Inc(reader);
+  Inc(fTokStop);
+end;
 begin
 
   fTokStart := fTokStop;
@@ -478,6 +467,7 @@ begin
 
   // EOL
   if fTokStop > length(fLineBuf) then exit;
+  readerReset;
 
   // spaces
   if isWhite(readCurr) then
@@ -488,264 +478,213 @@ begin
   end;
 
   // line comment
-  if fRange = rkNone then if (readCurr = '/') then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, '//') then
   begin
-    if (readNext = '/') then
-    begin
-      fTokKind := tkCommt;
-      if readNext <> #10 then if readCurr = '/' then
-      begin
-        fTokKind := tkDDocs;
-      end;
-      while readCurr <> #10 do readNext(*!*);
-      exit;
-    end
-    else
-      Dec(fTokStop);
-  end;
+    fTokKind := tkCommt;
+    if readDelim(reader, fTokStop, '/') then
+      fTokKind := tkDDocs;
+    readLine(reader, fTokStop);
+    exit;
+  end else readerReset;
 
   // block comments 1
-  if fRange = rkNone then if (readCurr = '/') then if (readNext = '*') then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, '/*') then
   begin
-    if (readNext = '*') then fTokKind := tkDDocs
+    if readDelim(reader, fTokStop, '*') then fTokKind := tkDDocs
       else fTokKind := tkCommt;
-    while(true) do
-    begin
-      if readCurr = #10 then break;
-      if readNext = #10 then break;
-      if (readPrev = '*') and (readCurr = '/') then break;
-    end;
-    if (readCurr = #10) then
-      begin
-        if fTokKind = tkDDocs then fRange := rkBlockDoc1
-          else fRange := rkBlockCom1;
-        if fkComments1 in fFoldKinds then
-          StartCodeFoldBlock(nil);
-      end
-    else readNext;
-    exit;
-  end
-  else Dec(fTokStop);
-  if (fRange = rkBlockCom1) or (fRange = rkBlockDoc1) then
-  begin
-    while(true) do
-      begin
-        if readCurr = #10 then break;
-        if readNext = #10 then break;
-        if (readPrev = '*') and (readCurr = '/') then break;
-      end;
-    if (readCurr = #10) then
-    begin
-      if fRange = rkBlockDoc1 then fTokKind := tkDDocs
-        else fTokKind := tkCommt;
+    if readUntil(reader, fTokStop, '*/') then
       exit;
-    end;
-    if (readCurr = '/') then
+    if fTokKind = tkDDocs then
+      fCurrRange.rangeKinds += [rkBlockDoc1]
+    else
+      fCurrRange.rangeKinds += [rkBlockCom1];
+    readLine(reader, fTokStop);
+    if fkComments1 in fFoldKinds then
+      StartCodeFoldBlock(nil);
+    exit;
+  end else readerReset;
+  if (rkBlockCom1 in fCurrRange.rangeKinds) or (rkBlockDoc1 in fCurrRange.rangeKinds) then
+  begin
+    if (rkBlockDoc1 in fCurrRange.rangeKinds) then fTokKind := tkDDocs
+      else fTokKind := tkCommt;
+    if readUntil(reader, fTokStop, '*/') then
     begin
-      if fRange = rkBlockDoc1 then fTokKind := tkDDocs
-        else fTokKind := tkCommt;
-      fRange := rkNone;
-      readNext;
+      fCurrRange.rangeKinds -= [rkBlockDoc1, rkBlockCom1];
       if fkComments1 in fFoldKinds then
         EndCodeFoldBlock;
       exit;
     end;
+    readLine(reader, fTokStop);
+    exit;
   end;
 
   // block comments 2
-  if fRange = rkNone then if (readCurr = '/') then if (readNext = '+') then
-    begin
-      if (readNext = '+') then fTokKind := tkDDocs
-        else fTokKind := tkCommt;
-      while(true) do
-      begin
-        if readCurr = #10 then break;
-        if readNext = #10 then break;
-        if (readPrev = '+') and (readCurr = '/') then break;
-      end;
-      if (readCurr = #10) then
-      begin
-        if fTokKind = tkDDocs then fRange := rkBlockDoc2
-          else fRange := rkBlockCom2;
-        if fkComments2 in fFoldKinds then
-          StartCodeFoldBlock(nil);
-      end
-      else readNext;
-      exit;
-    end
-    else Dec(fTokStop);
-  if (fRange = rkBlockCom2) or (fRange = rkBlockDoc2) then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, '/+') then
   begin
-    while(true) do
-      begin
-        if readCurr = #10 then break;
-        if readNext = #10 then break;
-        if (readPrev = '+') and (readCurr = '/') then break;
-      end;
-    if (readCurr = #10) then
-    begin
-      if fRange = rkBlockDoc2 then fTokKind := tkDDocs
-        else fTokKind := tkCommt;
+    if readDelim(reader, fTokStop, '+') then fTokKind := tkDDocs
+      else fTokKind := tkCommt;
+    if readUntil(reader, fTokStop, '+/') then
       exit;
-    end;
-    if (readCurr = '/') then
+    if fTokKind = tkDDocs then fCurrRange.rangeKinds += [rkBlockDoc2]
+      else fCurrRange.rangeKinds += [rkBlockCom2];
+    readLine(reader, fTokStop);
+    if fkComments2 in fFoldKinds then
+      StartCodeFoldBlock(nil);
+    exit;
+  end else readerReset;
+  if (rkBlockCom2 in fCurrRange.rangeKinds) or (rkBlockDoc2 in fCurrRange.rangeKinds) then
+  begin
+    if (rkBlockDoc2 in fCurrRange.rangeKinds) then fTokKind := tkDDocs
+      else fTokKind := tkCommt;
+    if readUntil(reader, fTokStop, '+/') then
     begin
-      if fRange = rkBlockDoc2 then fTokKind := tkDDocs
-        else fTokKind := tkCommt;
-      fRange := rkNone;
-      readNext;
+      fCurrRange.rangeKinds -= [rkBlockDoc2, rkBlockCom2];
+
       if fkComments2 in fFoldKinds then
         EndCodeFoldBlock;
       exit;
     end;
+    readLine(reader, fTokStop);
+    exit;
   end;
 
   // string 1
-  if fRange = rkNone then if (readCurr in ['r','x','"']) then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, stringPrefixes) then
   begin
-    // check WYSIWYG/hex prefix
-    if readCurr in ['r','x'] then
+    if readPrev in ['r','x'] then
     begin
-      if not (readNext = '"') then
-      begin
-        Dec(fTokStop);
+      if not (readCurr = '"') then
         goto _postString1;
+      readerNext;
+    end;
+    fTokKind := tkStrng;
+    while(true) do
+    begin
+      if not readUntilAmong(reader, fTokStop, stringStopChecks) then
+        break;
+      if readCurr = '\' then
+      begin
+        readerNext;
+        if readWhile(reader, fTokStop, '\') then
+          continue;
+        if readCurr = '"' then
+          readerNext;
+        continue;
+      end
+      else if readCurr = '"' then
+      begin
+        readerNext;
+        readDelim(reader, fTokStop, stringPostfixes);
+        exit;
       end;
     end;
-    // go to end of string/eol
-    while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do
-    begin
-      // test special case "//"
-      if readCurr = '"' then if
-        (readPrev = '\') then if
-          (readPrevPrev = '\') then
-            break;
-    end;
-    if (readCurr = #10) then
-    begin
-      fRange := rkString1;
-      if fkStrings in fFoldKinds then
-        StartCodeFoldBlock(nil);
-    end
-    else
-    begin
-      readNext;
-      // check postfix
-      if isStringPostfix(readCurr) then
-        readNext;
-    end;
+    fCurrRange.rangeKinds += [rkString1];
+    if fkStrings in fFoldKinds then
+      StartCodeFoldBlock(nil);
+    exit;
+  end else _postString1: readerReset;
+  if rkString1 in fCurrRange.rangeKinds then
+  begin
     fTokKind := tkStrng;
+    while(true) do
+    begin
+      if not readUntilAmong(reader, fTokStop, stringStopChecks) then
+        break;
+      if readCurr = '\' then
+      begin
+        readerNext;
+        if readWhile(reader, fTokStop, '\') then
+          continue;
+        if readCurr = '"' then
+          readerNext;
+        continue;
+      end
+      else if readCurr = '"' then
+      begin
+        readerNext;
+        fCurrRange.rangeKinds -= [rkString1];
+        readDelim(reader, fTokStop, stringPostfixes);
+        if fkStrings in fFoldKinds then
+          EndCodeFoldBlock();
+        exit;
+      end
+      else break;
+    end;
+    readLine(reader, fTokStop);
     exit;
   end;
-  if fRange = rkString1 then
-  begin
-    if (readCurr <> '"') then while (((readNext <> '"') or (readPrev = '\')) and (not (readCurr = #10))) do
-    begin
-      // test special case "//"
-      if readCurr = '"' then if
-        (readPrev = '\') then if
-          (readPrevPrev = '\') then
-            break;
-    end;
-    if (readCurr = #10) then
-    begin
-      fTokKind := tkStrng;
-      exit;
-    end;
-    if (readCurr = '"') then
-    begin
-      fTokKind := tkStrng;
-      if fkStrings in fFoldKinds then
-        EndCodeFoldBlock;
-      fRange := rkNone;
-      readNext;
-      // check postfix
-      if isStringPostfix(readCurr) then
-        readNext;
-      exit;
-    end;
-  end;
-  _postString1:
 
   // string 2
-  if fRange = rkNone then if (readCurr = '`') then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, '`') then
   begin
-    // go to end of string/eol
-    while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then
-    begin
-      fRange := rkString2;
-      if fkStrings in fFoldKinds then
-        StartCodeFoldBlock(nil);
-    end
-    else
-    begin
-      readNext;
-      // check postfix
-      if isStringPostfix(readCurr) then
-        readNext;
-    end;
     fTokKind := tkStrng;
+    if readUntil(reader, fTokStop, '`') then
+    begin
+      readDelim(reader, fTokStop, stringPostfixes);
+      exit;
+    end;
+    fCurrRange.rangeKinds += [rkString2];
+    readLine(reader, fTokStop);
+    if fkStrings in fFoldKinds then
+      StartCodeFoldBlock(nil);
     exit;
-  end;
-  if fRange = rkString2 then
+  end else readerReset;
+  if rkString2 in fCurrRange.rangeKinds then
   begin
-    if (readCurr <> '`') then while ((readNext <> '`') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then
+    fTokKind := tkStrng;
+    if readUntil(reader, fTokStop, '`') then
     begin
-      fTokKind := tkStrng;
-      exit;
-    end;
-    if (readCurr = '`') then
-    begin
-      fTokKind := tkStrng;
+      fCurrRange.rangeKinds -= [rkString2];
       if fkStrings in fFoldKinds then
-        EndCodeFoldBlock;
-      fRange := rkNone;
-      readNext;
-      // check postfix
-      if isStringPostfix(readCurr) then
-        readNext;
+        EndCodeFoldBlock();
+      readDelim(reader, fTokStop, stringPostfixes);
       exit;
     end;
+    readLine(reader, fTokStop);
+    exit;
   end;
 
   //token string
-  if fRange = rkNone then if (readCurr = 'q') and (readNext = '{') then
+  if fCurrRange.rangeKinds = [] then if readDelim(reader, fTokStop, 'q{') then
   begin
-    // go to end of string/eol
-    while ((readNext <> '}') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then
-    begin
-      fRange := rkTokString;
-      if fkStrings in fFoldKinds then
-        StartCodeFoldBlock(nil);
-    end
-    else readNext;
     fTokKind := tkStrng;
+    inc(fCurrRange.tokenStringBracketsCount);
+    while readUntilAmong(reader, fTokStop, ['{','}']) do
+    begin
+      if readCurr = '{' then inc(fCurrRange.tokenStringBracketsCount) else
+      if readCurr = '}' then dec(fCurrRange.tokenStringBracketsCount);
+      readerNext;
+      if fCurrRange.tokenStringBracketsCount = 0 then
+        exit;
+    end;
+    fCurrRange.rangeKinds += [rkTokString];
+    readLine(reader, fTokStop);
+    if fkStrings in fFoldKinds then
+      StartCodeFoldBlock(nil);
     exit;
-  end else Dec(fTokStop);
-  if fRange = rkTokString then
+  end else readerReset;
+  if rkTokString in fCurrRange.rangeKinds then
   begin
-    if (readCurr <> '}') then while ((readNext <> '}') and (not (readCurr = #10))) do (*!*);
-    if (readCurr = #10) then
+    fTokKind := tkStrng;
+    while readUntilAmong(reader, fTokStop, ['{','}']) do
     begin
-      fTokKind := tkStrng;
-      exit;
+      if readCurr = '{' then inc(fCurrRange.tokenStringBracketsCount) else
+      if readCurr = '}' then dec(fCurrRange.tokenStringBracketsCount);
+      readerNext;
+      if fCurrRange.tokenStringBracketsCount = 0 then
+      begin
+        fCurrRange.rangeKinds -= [rkTokString];
+        if fkStrings in fFoldKinds then
+          EndCodeFoldBlock();
+        exit;
+      end;
     end;
-    if (readCurr = '}') then
-    begin
-      fTokKind := tkStrng;
-      if fkStrings in fFoldKinds then
-        EndCodeFoldBlock;
-      fRange := rkNone;
-      readNext;
-      exit;
-    end;
+    readLine(reader, fTokStop);
+    exit;
   end;
 
   // char literals
-  if fRange = rkNone then if (readCurr = #39) then
+  if fCurrRange.rangeKinds = [] then if (readCurr = #39) then
   begin
     while (((readNext <> #39) or (readPrev = '\')) and (not (readCurr = #10))) do (*!*);
     if (readCurr = #39) then
@@ -771,7 +710,7 @@ begin
     fTokKind := tkSymbl;
     if (fkBrackets in fFoldKinds) then case readCurr of
       '{': StartCodeFoldBlock(nil);
-      '}': begin EndCodeFoldBlock; if (readCurr = '}')and (fRange = rkAsm) then fRange := rkNone;end;
+      '}': begin EndCodeFoldBlock; if (readCurr = '}') and (rkAsm in fCurrRange.rangeKinds) then fCurrRange.rangeKinds -= [rkAsm]; end;
       end;
     readNext;
     exit;
@@ -824,12 +763,9 @@ begin
     else
       if fLineBuf[FTokStart..fTokStop-1]  = fCurrIdent then
         fTokKind := tkCurrI;
-
     //check asm range
     if fLineBuf[FTokStart..fTokStop-1] = 'asm' then
-      fRange := rkAsm;
-
-
+      fCurrRange.rangeKinds += [rkAsm];
     exit;
   end;
 
@@ -847,31 +783,46 @@ end;
 
 function TSynD2Syn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
-  if (fRange = rkAsm) and (fTokKind <> tkSymbl) and (fTokKind <> tkKeywd) then
+  if (rkAsm in fCurrRange.rangeKinds) and (fTokKind <> tkSymbl) and (fTokKind <> tkKeywd) then
     result := fAttribLut[tkAsblr]
   else
     result := fAttribLut[fTokKind];
 end;
 
-{$WARNINGS OFF} {$HINTS OFF}
+
 procedure TSynD2Syn.SetRange(Value: Pointer);
+var
+  distant: TSynD2SynRange;
 begin
   inherited SetRange(Value);
-  fRange := TRangeKind(PtrInt(CodeFoldRange.RangeType));
+  distant := TSynD2SynRange(CodeFoldRange.RangeType);
+  //
+  fCurrRange.rangeKinds := distant.rangeKinds;
+  fCurrRange.tokenStringBracketsCount := distant.tokenStringBracketsCount;
+  fCurrRange.nestedCommentsCount := distant.nestedCommentsCount;
 end;
-{$HINTS ON} {$WARNINGS ON}
 
-{$HINTS OFF}
 function TSynD2Syn.GetRange: Pointer;
+var
+  distant: TSynD2SynRange;
 begin
-  CodeFoldRange.RangeType := Pointer(PtrInt(fRange));
+  distant := TSynD2SynRange(inherited GetRange);
+  if (distant = nil) then
+    distant := TSynD2SynRange.Create(nil);
+  distant.rangeKinds := fCurrRange.rangeKinds;
+  distant.tokenStringBracketsCount := fCurrRange.tokenStringBracketsCount;
+  distant.nestedCommentsCount := fCurrRange.nestedCommentsCount;
+  //
+  CodeFoldRange.RangeType := Pointer(distant);
   Result := inherited GetRange;
 end;
-{$HINTS ON}
 
 procedure TSynD2Syn.ResetRange;
 begin
-  fRange := rkNone;
+  if fCurrRange = nil then
+    fCurrRange := TSynD2SynRange.Create(nil)
+  else
+    fCurrRange.Clear;
 end;
 
 function TSynD2Syn.GetTokenPos: Integer;

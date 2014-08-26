@@ -50,7 +50,7 @@ type
 implementation
 
 uses
-  ce_main, ce_messages;
+  ce_main;
 
 constructor TCEToolItem.create(ACollection: TCollection);
 begin

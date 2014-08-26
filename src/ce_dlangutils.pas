@@ -7,6 +7,16 @@ interface
 uses
   SysUtils;
 
+type
+  TCharSet = set of Char;
+
+const
+  stringPostfixes: TCharSet = ['c', 'w', 'd'];
+  stringPrefixes: TCharSet = ['r', 'x', '"'];
+  stringStopChecks: TCharSet = ['\', '"'];
+  charStopChecks: TCharSet = ['\', #39];
+  symbols: TCharSet = [';', '{', '}', '(', ')', '[', ']', ',', '.', ':', '?', '$', '"', #39];
+
 function isWhite(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isSpace(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isAlpha(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
@@ -23,6 +33,20 @@ function isOperator4(const s: string): boolean; {$IFNDEF DEBUG} inline; {$ENDIF}
 function isStringPostfix(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isIdentifier(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isFirstIdentifier(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
+
+
+function readLine(var aReader: PChar; var aPosition: Integer): boolean;
+
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;
+
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+
+function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;
+
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelims: TCharSet): boolean; overload;
 
 implementation
 
@@ -137,5 +161,100 @@ begin
   exit(isIdentifier(c) and (not isNumber(c)));
 end;
 {$BOOLEVAL OFF}
+
+function readLine(var aReader: PChar; var aPosition: Integer): boolean;
+begin
+  result := true;
+  while aReader^ <> #10 do
+  begin
+    inc(aReader);
+    inc(aPosition);
+  end;
+end;
+
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+begin
+  while aReader^ <> aDelim do
+  begin
+    if aReader^ = #10 then
+      exit(false);
+    inc(aReader);
+    inc(aPosition);
+  end;
+  inc(aReader);
+  inc(aPosition);
+  exit(true);
+end;
+
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean;
+begin
+  while aReader[0..length(aDelim)-1] <> aDelim do
+  begin
+    if aReader^ = #10 then
+      exit(false);
+    inc(aReader);
+    inc(aPosition);
+  end;
+  inc(aReader, length(aDelim));
+  inc(aPosition, length(aDelim));
+  exit(true);
+end;
+
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+begin
+  result := false;
+  while aReader^ = aDelim do
+  begin
+    inc(aReader);
+    inc(aPosition);
+    result := true;
+  end;
+end;
+
+function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;
+begin
+  while not (aReader^ in aDelim) do
+  begin
+    if aReader^ = #10 then
+      exit(false);
+    inc(aReader);
+    inc(aPosition);
+  end;
+  exit(true);
+end;
+
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+begin
+  if aReader^ <> aDelim then
+    exit(false);
+  inc(aReader);
+  inc(aPosition);
+  exit(true);
+end;
+
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelims: TCharSet): boolean;
+begin
+  if not (aReader^ in aDelims) then
+    exit(false);
+  inc(aReader);
+  inc(aPosition);
+  exit(true);
+end;
+
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean;
+var
+  i: Integer;
+begin
+  for i := 1 to length(aDelim) do
+  begin
+    if aReader^ = #10 then
+      exit(false);
+    if aReader^ <> aDelim[i] then
+      exit(false);
+    inc(aReader);
+    inc(aPosition);
+  end;
+  exit(true);
+end;
 
 end.

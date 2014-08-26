@@ -267,8 +267,8 @@ begin
 end;
 
 procedure TCEEditorWidget.memoKeyPress(Sender: TObject; var Key: char);
-var
-  pt: Tpoint;
+//var
+  //pt: Tpoint;
 begin
   fKeyChanged := true;
   if Key = '.' then
@@ -388,8 +388,8 @@ end;
 
 procedure TCEEditorWidget.UpdateByDelay;
 var
-  dt: PMessageItemData;
-  err: TLexError;
+  //dt: PMessageItemData;
+  //err: TLexError;
   md: string;
 begin
   if fDoc = nil then exit;
