@@ -127,7 +127,6 @@ type
   protected
     function GetRangeClass: TSynCustomHighlighterRangeClass; override;
 	published
-    // Defines which kind of range can be folded, among curly brackets, block comments and nested comments
     property FoldKinds: TFoldKinds read fFoldKinds write setFoldKinds;
     property WhiteAttrib: TSynHighlighterAttributes read fWhiteAttrib write setWhiteAttrib;
     property NumbrAttrib: TSynHighlighterAttributes read fNumbrAttrib write setNumbrAttrib;
@@ -725,24 +724,20 @@ begin
       4:begin
           if (not isOperator1(reader^)) and
             isOperator4(fLineBuf[fTokStart..fTokStop-1])
-          then exit
-            else Dec(fTokStop, 4);
+          then exit;
         end;
       3:begin
           if (not isOperator1(reader^)) and
             isOperator3(fLineBuf[fTokStart..fTokStop-1])
-          then exit
-            else Dec(fTokStop, 3);
+          then exit;
         end;
       2:begin
           if (not isOperator1(reader^)) and
             isOperator2(fLineBuf[fTokStart..fTokStop-1])
-          then exit
-            else Dec(fTokStop, 2);
+          then exit;
         end;
       1:begin
-          if not isOperator1(reader^) then exit
-            else Dec(fTokStop);
+          if not isOperator1(reader^) then exit;
         end;
     end;
     fTokKind := tkIdent;
