@@ -35,18 +35,18 @@ function isIdentifier(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isFirstIdentifier(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 
 
-function readLine(var aReader: PChar; var aPosition: Integer): boolean;
+function readLine(var aReader: PChar; var aPosition: Integer): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;
-function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;    {$IFNDEF DEBUG}inline;{$ENDIF}
+function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;  {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;  {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;
+function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;
-function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;
-function readDelim(var aReader: PChar; var aPosition: Integer; const aDelims: TCharSet): boolean; overload;
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;      {$IFNDEF DEBUG}inline;{$ENDIF}
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;    {$IFNDEF DEBUG}inline;{$ENDIF}
+function readDelim(var aReader: PChar; var aPosition: Integer; const aDelims: TCharSet): boolean; overload; {$IFNDEF DEBUG}inline;{$ENDIF}
 
 implementation
 
@@ -98,8 +98,7 @@ end;
 
 function isOperator1(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 begin
-  exit(c in ['/', '*', '-', '+', '%', '>', '<', '=', '!',
-                  '&', '|', '^', '~']);
+  exit(c in ['/', '*', '-', '+', '%', '>', '<', '=', '!', '&', '|', '^', '~']);
 end;
 
 function isOperator2(const s: string): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
@@ -148,7 +147,7 @@ end;
 
 function isStringPostfix(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 begin
-  exit(c in ['c', 'w', 'd']);
+  exit(c in stringPostfixes);
 end;
 
 function isIdentifier(const c: char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
