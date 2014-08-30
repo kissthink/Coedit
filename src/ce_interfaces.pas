@@ -21,7 +21,6 @@ type
     // persistent things have just been reloaded.
     procedure sesoptAfterLoad;
   end;
-
   (**
    * An implementer gets and gives back some things
    *)
@@ -29,6 +28,8 @@ type
   protected
     function acceptObserver(aObject: TObject): boolean; override;
   end;
+
+
 
   (**
    * An implementer declares some actions on demand.
@@ -42,6 +43,8 @@ type
     // declares actions, called in loop, from 0 to contextActionCount-1
     function contextAction(index: integer): TAction;
   end;
+
+
 
   (**
    * An implementer is informed about the current file(s).
@@ -57,7 +60,6 @@ type
     // aDoc is about to be closed.
     procedure docClosing(const aDoc: TCESynMemo);
   end;
-
   (**
    * An implementer informs some ICEMultiDocObserver about the current file(s)
    *)
@@ -65,6 +67,8 @@ type
   protected
     function acceptObserver(aObject: TObject): boolean; override;
   end;
+
+
 
   (**
    * An implementer is informed about the current project(s).
@@ -80,7 +84,6 @@ type
     // not used yet: the active project is now aProject
     procedure projFocused(const aProject: TCEProject);
   end;
-
   (**
    * An implementer informs some ICEProjectObserver about the current project(s)
    *)
@@ -88,6 +91,8 @@ type
   protected
     function acceptObserver(aObject: TObject): boolean; override;
   end;
+
+
 
   (**
    * An implementer can add a mainmenu entry.
@@ -98,6 +103,37 @@ type
     procedure menuDeclare(out item: TMenuItem);
     // the implementer can update the actions used in the menu declared previously.
     procedure menuActionsUpdate;
+  end;
+  (**
+   * An implementer agregates its observers menus.
+   *)
+  TCEMainMenuSubject = class(TCECustomSubject)
+  protected
+    function acceptObserver(aObject: TObject): boolean; override;
+  end;
+
+
+
+  (**
+   * An implementer can expose some customizable shortcuts
+   *)
+  ICEEditableShortCut = interface
+  ['ICEEditableShortCut']
+    // a TCEEditableShortCutSubject queries the editable shortcuts count.
+    procedure scGetCount(out aValue: Integer);
+    // a TCEEditableShortCutSubject queries the shortcut category name.
+    procedure scGetCategory(out aValue: string);
+    // a TCEEditableShortCutSubject queries the state of the index-th shortcut.
+    procedure scGetItem(index: Integer; out aName: string; out aShortcut: Word);
+    // a TCEEditableShortCutSubject sends the possibly modified assignation of the index-th shortcut.
+    procedure scSetItem(index: Integer; const aCategory, aName: string; aShortcut: Word);
+  end;
+  (**
+   * An implementer manages its observers shortcuts.
+   *)
+  TCEEditableShortCutSubject = class(TCECustomSubject)
+  protected
+    function acceptObserver(aObject: TObject): boolean; override;
   end;
 
 
@@ -131,6 +167,7 @@ type
    procedure subjSesOptsBeforeSave(aSubject: TCESessionOptionsSubject);                       {$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjSesOptsDeclareProperties(aSubject: TCESessionOptionsSubject; aFiler: TFiler);{$IFDEF RELEASE}inline;{$ENDIF}
    procedure subjSesOptsAfterLoad(aSubject: TCESessionOptionsSubject);                        {$IFDEF RELEASE}inline;{$ENDIF}
+
 
 implementation
 
@@ -212,7 +249,7 @@ begin
 end;
 {$ENDREGION}
 
-{$REGION TCESessionOptionsSubject------------------------------------------------------}
+{$REGION TCESessionOptionsSubject-----------------------------------------------}
 function TCESessionOptionsSubject.acceptObserver(aObject: TObject): boolean;
 begin
   exit(aObject is ICESessionOptionsObserver);
@@ -240,6 +277,20 @@ var
 begin
   with aSubject do for i:= 0 to fObservers.Count-1 do
     (fObservers.Items[i] as ICESessionOptionsObserver).sesoptAfterLoad;
+end;
+{$ENDREGION}
+
+{$REGION TCEEditableShortCutSubject}
+function TCEMainMenuSubject.acceptObserver(aObject: TObject): boolean;
+begin
+  exit(aObject is ICEMainMenuProvider);
+end;
+{$ENDREGION}
+
+{$REGION TCEEditableShortCutSubject}
+function TCEEditableShortCutSubject.acceptObserver(aObject: TObject): boolean;
+begin
+  exit(aObject is ICEEditableShortCut);
 end;
 {$ENDREGION}
 end.
