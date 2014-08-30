@@ -10,7 +10,11 @@ uses
   ce_widget, ce_observer;
 
 type
+
+  { TCEProjectInspectWidget }
+
   TCEProjectInspectWidget = class(TCEWidget, ICEProjectObserver)
+    btnRemFold: TSpeedButton;
     imgList: TImageList;
     Panel1: TPanel;
     btnAddFile: TSpeedButton;
@@ -22,6 +26,7 @@ type
     procedure btnAddFileClick(Sender: TObject);
     procedure btnAddFoldClick(Sender: TObject);
     procedure btnRemFileClick(Sender: TObject);
+    procedure btnRemFoldClick(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure TreeSelectionChanged(Sender: TObject);
@@ -223,6 +228,28 @@ begin
       lst.Free;
     end;
   end;
+end;
+
+procedure TCEProjectInspectWidget.btnRemFoldClick(Sender: TObject);
+var
+  dir, fname: string;
+  i: Integer;
+begin
+  if fProject = nil then exit;
+  if Tree.Selected = nil then exit;
+  if Tree.Selected.Parent <> fFileNode then exit;
+  //
+  fname := Tree.Selected.Text;
+  i := fProject.Sources.IndexOf(fname);
+  if i = -1 then exit;
+  fname := fProject.getAbsoluteSourceName(i);
+  dir := extractFilePath(fname);
+  if not DirectoryExists(dir) then exit;
+  //
+  for i:= fProject.Sources.Count-1 downto 0 do
+    if extractFilePath(fProject.getAbsoluteSourceName(i)) = dir then
+      fProject.Sources.Delete(i);
+  UpdateByEvent;
 end;
 
 procedure TCEProjectInspectWidget.btnRemFileClick(Sender: TObject);
