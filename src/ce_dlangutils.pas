@@ -15,7 +15,8 @@ const
   stringPrefixes: TCharSet = ['r', 'x', '"'];
   stringStopChecks: TCharSet = ['\', '"'];
   charStopChecks: TCharSet = ['\', #39];
-  symbols: TCharSet = [';', '{', '}', '(', ')', '[', ']', ',', '.', ':', '?', '$', '"', #39];
+  symbChars: TCharSet = [';', '{', '}', '(', ')', '[', ']', ',', '.', ':', '?', '$', '"', #39];
+  hexaChars: TCharSet = ['0'..'9', 'a'..'f', 'A'..'F', '_'];
 
 function isWhite(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
 function isSpace(const c: Char): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
@@ -40,13 +41,17 @@ function readLine(var aReader: PChar; var aPosition: Integer): boolean; {$IFNDEF
 function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;    {$IFNDEF DEBUG}inline;{$ENDIF}
 function readUntil(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;  {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;  {$IFNDEF DEBUG}inline;{$ENDIF}
+function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;     {$IFNDEF DEBUG}inline;{$ENDIF}
 
-function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean; {$IFNDEF DEBUG}inline;{$ENDIF}
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;  overload;   {$IFNDEF DEBUG}inline;{$ENDIF}
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean; overload;{$IFNDEF DEBUG}inline;{$ENDIF}
 
 function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;      {$IFNDEF DEBUG}inline;{$ENDIF}
 function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload;    {$IFNDEF DEBUG}inline;{$ENDIF}
 function readDelim(var aReader: PChar; var aPosition: Integer; const aDelims: TCharSet): boolean; overload; {$IFNDEF DEBUG}inline;{$ENDIF}
+
+function tryReadDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean; overload;   {$IFNDEF DEBUG}inline;{$ENDIF}
+function tryReadDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean; overload; {$IFNDEF DEBUG}inline;{$ENDIF}
 
 implementation
 
@@ -199,17 +204,6 @@ begin
   exit(true);
 end;
 
-function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
-begin
-  result := false;
-  while aReader^ = aDelim do
-  begin
-    inc(aReader);
-    inc(aPosition);
-    result := true;
-  end;
-end;
-
 function readUntilAmong(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;
 begin
   while not (aReader^ in aDelim) do
@@ -221,6 +215,29 @@ begin
   end;
   exit(true);
 end;
+
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+begin
+  result := false;
+  while aReader^ = aDelim do
+  begin
+    inc(aReader);
+    inc(aPosition);
+    result := true;
+  end;
+end;
+
+function readWhile(var aReader: PChar; var aPosition: Integer; const aDelim: TCharSet): boolean;
+begin
+  result := false;
+  while aReader^ in aDelim do
+  begin
+    inc(aReader);
+    inc(aPosition);
+    result := true;
+  end;
+end;
+
 
 function readDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
 begin
@@ -254,6 +271,32 @@ begin
     inc(aPosition);
   end;
   exit(true);
+end;
+
+function tryReadDelim(var aReader: PChar; var aPosition: Integer; const aDelim: Char): boolean;
+var
+  savedReader: PChar;
+  savedPos: Integer;
+begin
+  savedReader := aReader;
+  savedPos := aPosition;
+  if readDelim(aReader, aPosition, aDelim) then exit(true);
+  aReader := savedReader;
+  aPosition := savedPos;
+  exit(false);
+end;
+
+function tryReadDelim(var aReader: PChar; var aPosition: Integer; const aDelim: string): boolean;
+var
+  savedReader: PChar;
+  savedPos: Integer;
+begin
+  savedReader := aReader;
+  savedPos := aPosition;
+  if readDelim(aReader, aPosition, aDelim) then exit(true);
+  aReader := savedReader;
+  aPosition := savedPos;
+  exit(false);
 end;
 
 end.

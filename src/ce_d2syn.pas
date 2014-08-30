@@ -63,8 +63,8 @@ type
   // a terminal range kind, cannot be combined with another range kind.
   TPrimaryRange = (prString1, prString2, prBlockCom1, prBlockCom2, prBlockDoc1, prBlockDoc2);
 
-  // can be combined to an primary range
-  TSecondaryRange = (srTokenString, srActiveVersion, srInactiveVersion);
+  // can be combined to a primary range
+  TSecondaryRange = (srTokenString, srActiveVersion, srInactiveVersion, srAssembly);
 
   // used by the secondary ranges to transform the standard token attributes.
   TAttributeTransform = (taFontStyle, taFontColor, taBackColor);
@@ -695,6 +695,22 @@ begin
     exit;
   end else readerReset;
 
+
+  // hex litterals
+  {if readDelim(reader, fTokStop, '0x') then
+  begin
+    readWhile(reader, fTokStop, hexaChars);
+    if not tryReadDelim(reader, fTokStop, 'Lu') then
+      if not tryReadDelim(reader, fTokStop, 'LU') then
+        if not tryReadDelim(reader, fTokStop, 'uL') then
+          if not tryReadDelim(reader, fTokStop, 'UL') then
+            if not tryReadDelim(reader, fTokStop, 'L') then
+              if not tryReadDelim(reader, fTokStop, 'u') then
+                tryReadDelim(reader, fTokStop, 'U');
+    fTokKind := tkNumbr;
+    exit;
+  end else readerReset;}
+
   // numbers 1
   if (isNumber(reader^)) then
   begin
@@ -703,7 +719,7 @@ begin
     exit;
   end;
 
-  // symbols 1: ponctuation
+  // symbChars 1: ponctuation
   if isSymbol(reader^) then
   begin
     fTokKind := tkSymbl;
@@ -715,7 +731,7 @@ begin
     exit;
   end;
 
-  // symbols 2: operators
+  // symbChars 2: operators
   if isOperator1(reader^) then
   begin
     fTokKind := tkSymbl;
@@ -740,7 +756,7 @@ begin
           if not isOperator1(reader^) then exit;
         end;
     end;
-    fTokKind := tkIdent;
+    fTokKind := tkIdent; // invalid op not colorized.
   end;
 
   // Keyword - Identifier

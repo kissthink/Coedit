@@ -617,7 +617,7 @@ begin
       continue;
     end;
 
-    // symbols
+    // symbChars
     if isSymbol(reader.head^) then
     begin
       identifier += reader.head^;
