@@ -711,8 +711,8 @@ begin
     hasEd := fDoc <> nil;
     if hasEd then
     begin
-      actEdCopy.Enabled := fDoc.SelAvail and fEditWidg.Focused;     // allows copy/cut/paste by shortcut on widgets
-      actEdCut.Enabled := fDoc.SelAvail and fEditWidg.Focused;      //
+      actEdCopy.Enabled := fDoc.SelAvail and fEditWidg.Focused;
+      actEdCut.Enabled := fDoc.SelAvail and fEditWidg.Focused;
       actEdPaste.Enabled := fDoc.CanPaste and fEditWidg.Focused;
       {$IFDEF MSWINDOWS}
       // close file : raises a segfault on linux UndoStuff.>>fList<<.Count...
@@ -730,6 +730,7 @@ begin
       actFileSaveAs.Enabled := true;
       actFileClose.Enabled := true;
       actFileSaveAll.Enabled := true;
+      actFileOpenContFold.Enabled := true;
     end
     else begin
       actEdCopy.Enabled := false;
@@ -750,6 +751,7 @@ begin
       actFileSaveAs.Enabled := false;
       actFileClose.Enabled := false;
       actFileSaveAll.Enabled := false;
+      actFileOpenContFold.Enabled := false;
     end;
 
     hasProj := fProject <> nil;
@@ -764,6 +766,7 @@ begin
     actProjRunWithArgs.Enabled := hasProj;
     actProjSource.Enabled := hasProj;
     actProjOptView.Enabled := hasProj;
+    actProjOpenContFold.Enabled := hasProj;
 
     actFileAddToProj.Enabled := hasEd and hasProj;
 

@@ -6,13 +6,12 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TreeFilterEdit, Forms, Controls, Graphics, actnlist,
-  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, ce_project, ce_interfaces, ce_common,
-  ce_widget, ce_observer;
+  Dialogs, ExtCtrls, ComCtrls, Menus, Buttons, lcltype, ce_project, ce_interfaces,
+  ce_common, ce_widget, ce_observer;
 
 type
 
   { TCEProjectInspectWidget }
-
   TCEProjectInspectWidget = class(TCEWidget, ICEProjectObserver)
     btnRemFold: TSpeedButton;
     imgList: TImageList;
@@ -141,9 +140,10 @@ begin
 end;
 {$ENDREGION}
 
-procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
+procedure TCEProjectInspectWidget.TreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  if Key = 13 then TreeDblClick(nil);
+  if Key = VK_RETURN then
+    TreeDblClick(nil);
 end;
 
 procedure TCEProjectInspectWidget.TreeSelectionChanged(Sender: TObject);
